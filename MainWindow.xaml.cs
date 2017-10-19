@@ -15,7 +15,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using Microsoft.Kinect;
-   
+
+    using System.Drawing;
+
+
 
     using Emgu.CV;
     using Emgu.CV.CvEnum;
@@ -97,7 +100,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             this.infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
 
             // create the bitmap to display
-            this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+            this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
 
             // set IsAvailableChanged event notifier
             this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
@@ -237,82 +240,133 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         if (((this.infraredFrameDescription.Width * this.infraredFrameDescription.Height) == (infraredBuffer.Size / this.infraredFrameDescription.BytesPerPixel)) &&
                             (this.infraredFrameDescription.Width == this.infraredBitmap.PixelWidth) && (this.infraredFrameDescription.Height == this.infraredBitmap.PixelHeight))
                         {
-                           //   this.ProcessInfraredFrameData(infraredBuffer.UnderlyingBuffer, infraredBuffer.Size);
-
-                            infraredBitmap.Lock();
-
-                            
-
-                            Mat img = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
-
-                            // CvInvoke.Normalize(img, img, 0, 255, NormType.MinMax, DepthType.Cv16U);
-
-
-                            infraredFrame.CopyFrameDataToIntPtr(img.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
-
-                            Image<Gray, Byte> testIMG = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-                            testIMG = img.ToImage<Gray, Byte>();
-
-
-
-                         
-                            //    Image<Gray, Byte> testIMG = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-
-                            //     testIMG = img.ToImage<Gray, Byte>();
-
-                            //       
+                            //      this.ProcessInfraredFrameData(infraredBuffer.UnderlyingBuffer, infraredBuffer.Size);
+                            this.ProcessInfraredFrameDataEMGU( infraredFrame, infraredBuffer.Size);
 
 
 
 
-
-
-
-                            /* 
-                             * Mat matLena = CvInvoke.Imread("c:\\lena.jpg", Emgu.CV.CvEnum.ImreadModes.AnyColor);
-                                                        Image<Bgr, Byte> imgLena = matLena.ToImage<Bgr, Byte>();
-
-                                                        Image<Gray, Byte> imgLenaGray = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-
-
-                                                       CvInvoke.CvtColor(imgLena, imgLenaGray, Emgu.CV.CvEnum.ColorConversion.Bgra2Gray);
-                                                        CvInvoke.Threshold(imgLenaGray, imgLenaGray, 50, 255, Emgu.CV.CvEnum.ThresholdType.Trunc);
-
-
-                                                        Image<Gray, byte> cpimg = imgLenaGray.Resize(infraredFrameDescription.Width, infraredFrameDescription.Height, Emgu.CV.CvEnum.Inter.Linear);//this is image with resize
-
-
-                                                        CvInvoke.Flip(cpimg, cpimg, Emgu.CV.CvEnum.FlipType.Vertical);
-                                                        */
-
-
-
-
-                            this.StatusText = "hej " + testIMG.Mat.Size + " " + infraredFrame.FrameDescription.LengthInPixels +  " " + img.Total + " " + rnd.Next(1, 13) + " "  + img.ElementSize + " "                     +        infraredFrame.FrameDescription.GetType();
-
-
-
-
-                            CopyMemory(infraredBitmap.BackBuffer, img.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
-                            
-                            infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
-
-                            infraredBitmap.Unlock();
-
-                            /*
-                            imgLena.Dispose();
-                            imgLenaGray.Dispose();
-                            cpimg.Dispose();
-                            */
-                            img.Dispose();
-                            testIMG.Dispose();
-
-                       
                         }
                     }
                 }
             }
         }
+
+
+        /// <summary> EMGU VERSION
+        /// Directly accesses the underlying image buffer of the InfraredFrame to 
+        /// create a displayable bitmap.
+        /// This function requires the /unsafe compiler option as we make use of direct
+        /// access to the native memory pointed to by the infraredFrameData pointer.
+        /// </summary>
+        /// <param name="infraredFrame"> the InfraredFrame image </param>
+        /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
+        private unsafe void ProcessInfraredFrameDataEMGU(InfraredFrame infraredFrame, uint infraredFrameDataSize)
+        {
+
+
+
+            infraredBitmap.Lock();
+
+
+            // create EMGU and copy the Frame Data into it 
+            Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
+            infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
+
+            // nomalize the 16bit vals to 8bit vals (max 255)
+            CvInvoke.Normalize(mat, mat, 0, 255, NormType.MinMax);
+            
+            // convert to 8bit image
+            Image<Gray, Byte> img = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
+            mat.ConvertTo(img, DepthType.Cv8U);
+            mat.Dispose();
+
+
+            // Threshold for 90 % of max values
+            double[] maxVal;
+            img.MinMax(out _, out maxVal, out _, out _);
+            CvInvoke.Threshold(img, img, maxVal[0] *.9, 255, ThresholdType.Binary);
+
+
+
+
+            //    ConvolutionKernelF kernel1 = new ConvolutionKernelF(4,4);
+
+            //   CvInvoke.Dilate(img, img, kernel1, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1));
+
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(3, 3 ), new System.Drawing.Point(-1, -1));
+
+            Mat kernel3 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
+
+            img = img.MorphologyEx(MorphOp.Open, kernel2, new System.Drawing.Point(-1,-1),1, BorderType.Default, new MCvScalar(1.0));
+
+
+            /*
+                        // draw examples
+
+                        int aaa = (int)100;
+                        int bbb = (int)100;
+                        int radius = 20;
+                        System.Drawing.Point start = new System.Drawing.Point(1, 1);
+                        System.Drawing.Point second = new System.Drawing.Point(100, 100);
+                        LineSegment2D line5 = new LineSegment2D(start, second);
+                        CvInvoke.Line(img, start, second, new Gray(150).MCvScalar, 2);
+                       */
+
+            // draw centroids for connected areas 
+            Mat labels = new Mat();
+            Mat stats = new Mat();
+            Mat centroids = new Mat();
+            MCvPoint2D64f[] centroidPoints;
+            double x, y;
+            int n;
+
+            n = CvInvoke.ConnectedComponentsWithStats(img, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
+
+
+            centroidPoints = new MCvPoint2D64f[n];
+            centroids.CopyTo(centroidPoints);
+            int i = 0;
+            foreach (MCvPoint2D64f point in centroidPoints)
+            {
+
+
+                if (i > 0)
+                {
+                    int cx = stats.GetData(i, 0)[0];
+                    int cy = stats.GetData(i, 1)[0];
+                    int width = stats.GetData(i, 2)[0];
+                    int height = stats.GetData(i, 3)[0];
+                    int area = stats.GetData(i, 4)[0];
+
+
+                    if (area > 2)
+                    {
+                        Rectangle rect = new Rectangle((int)point.X - (width / 2) -5, (int)point.Y - (height / 2) -5, width + 10, height + 10);
+                        CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                    }
+                }
+                i++;
+            }
+            if(centroidPoints.Length > 1)
+            {
+                this.StatusText = "ole " + centroidPoints.Length + " " + stats.GetData(1,4)[0];
+            } 
+
+            // copy the processed image back into the backbuffer and dispose the EMGU image
+            CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height ));
+            img.Dispose();
+
+            // draw entire image and unlock bitmap
+            infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
+            infraredBitmap.Unlock();
+
+
+            
+            
+        }
+
+
 
         /// <summary>
         /// Directly accesses the underlying image buffer of the InfraredFrame to 
@@ -347,6 +401,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             // unlock the bitmap
             this.infraredBitmap.Unlock();
         }
+
+
+
+
 
         /// <summary>
         /// Handles the event which the sensor becomes unavailable (E.g. paused, closed, unplugged).
