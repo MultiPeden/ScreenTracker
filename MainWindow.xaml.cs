@@ -135,6 +135,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         private bool thresholdedClicked;
         Random rnd = new Random();
 
+        UDPsender udpSender;
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
@@ -211,7 +212,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             // initialize the components (controls) of the window
             this.InitializeComponent();
 
-
+            udpSender = new UDPsender();
 
 
         }
@@ -455,7 +456,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 }
 
 
-
+               
 
             }
             catch (Exception)
@@ -678,6 +679,15 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                     }
                 }
                 i++;
+            }
+
+            if (centroidPoints.Length > 1)
+            {
+                udpSender.WriteToSocket("" + centroidPoints.Length + " Obejcts detected");
+            }
+            else
+            {
+                udpSender.WriteToSocket("No objects detected");
             }
             return img;
 
