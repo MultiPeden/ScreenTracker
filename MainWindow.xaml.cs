@@ -215,6 +215,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             udpSender = new UDPsender();
 
 
+
+
+
         }
 
         /// <summary>
@@ -350,12 +353,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         {
             MultiSourceFrameReference frameReference = e.FrameReference;
 
-
             MultiSourceFrame multiSourceFrame = null;
             InfraredFrame infraredFrame = null;
             ColorFrame colorFrame = null;
             DepthFrame depthFrame = null;
-
 
             multiSourceFrame = frameReference.AcquireFrame();
 
@@ -365,11 +366,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 return;
             }
 
-
-
             try
             {
-
                 ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
                 InfraredFrameReference infraredFrameReference = multiSourceFrame.InfraredFrameReference;
                 DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
@@ -377,17 +375,12 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 colorFrame = colorFrameReference.AcquireFrame();
                 infraredFrame = infraredFrameReference.AcquireFrame();
 
-
                 if ((colorFrame == null) || (infraredFrame == null || depthFrame == null))
                 {
                     return;
                 }
 
-
-
-
                 // color image
-    
                 FrameDescription colorFrameDescription = colorFrame.FrameDescription;
                 // the fastest way to process the color frame data is to directly access 
                 // the underlying buffer
@@ -403,10 +396,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 colorFrame.Dispose();
                 colorFrame = null;
 
-
-
                 // IR image
-
                 FrameDescription infraredFrameDescription = infraredFrame.FrameDescription;
 
                 // the fastest way to process the infrared frame data is to directly access 
@@ -462,6 +452,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             catch (Exception)
             {
                 // ignore if the frame is no longer available
+                Console.WriteLine("FRAME CHRASHED");
 
             }
             finally
@@ -505,17 +496,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="ColorFrame"> the InfraredFrame image </param>
         private unsafe void ProcessColorFrameDataEMGU(ColorFrame colorFrame)
         {
-
-
-
             colorBitmap.Lock();
 
             Mat colorMat = new Mat(colorFrameDescription.Height, colorFrameDescription.Width, DepthType.Cv16U, 4);
             colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height * 4), ColorImageFormat.Bgra);
-
-
-
-            // this.StatusText = "billede farve ";
 
             //uncomment to gray scale
             //   CvInvoke.CvtColor(colorMat, colorMat, Emgu.CV.CvEnum.ColorConversion.Bgra2Gray);
@@ -531,11 +515,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             colorBitmap.Unlock();
             colorMat.Dispose();
-
-
-
-
-
         }
 
 
@@ -552,19 +531,13 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
         private unsafe void ProcessInfraredFrameDataEMGU(InfraredFrame infraredFrame)
         {
-
-
-
             infraredBitmap.Lock();
-
 
             // create EMGU and copy the Frame Data into it 
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
 
             // nomalize the 16bit vals to 8bit vals (max 255)
-            //
-
             CvInvoke.Normalize(mat, mat, 0, 255, NormType.MinMax);
 
             // convert to 8bit image
@@ -581,62 +554,33 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
             CvInvoke.Threshold(img, thresholdImg, maxVal[0] * .9, 255, ThresholdType.Binary);
 
-
-
-
-            //    ConvolutionKernelF kernel1 = new ConvolutionKernelF(4,4);
-
-            //   CvInvoke.Dilate(img, img, kernel1, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1));
-
+            // perform opening 
             Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
-
-            //Mat kernel3 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
-
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Open, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
-
-            /*
-                        // draw examples
-
-                        int aaa = (int)100;
-                        int bbb = (int)100;
-                        int radius = 20;
-                        System.Drawing.Point start = new System.Drawing.Point(1, 1);
-                        System.Drawing.Point second = new System.Drawing.Point(100, 100);
-                        LineSegment2D line5 = new LineSegment2D(start, second);
-                        CvInvoke.Line(img, start, second, new Gray(150).MCvScalar, 2);
-                       */
-
-
-
-            /*
-            if(centroidPoints.Length > 1)
-            {
-                this.StatusText = "ole " + centroidPoints.Length + " " + stats.GetData(1,4)[0];
-            } 
-            */
-
+            // find controids of reflective surfaces and mark them on the image 
             img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
-
-
+            
 
             // copy the processed image back into the backbuffer and dispose the EMGU image
             CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height));
             img.Dispose();
+            thresholdImg.Dispose();
 
             // draw entire image and unlock bitmap
             infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
             infraredBitmap.Unlock();
-
-
-
-
         }
 
 
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thesholdedImg, bool showThesholdedImg)
         {
 
+            String jSon = "{'IRPoint':[";
+             jSon = "{\"Items\":[";
+
+            int minArea = 2;
+            int padding = 10;
 
             // draw centroids for connected areas 
             Mat labels = new Mat();
@@ -657,6 +601,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 img = thesholdedImg;
             }
 
+            
 
             foreach (MCvPoint2D64f point in centroidPoints)
             {
@@ -664,72 +609,42 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
                 if (i > 0)
                 {
-                    int cx = stats.GetData(i, 0)[0];
-                    int cy = stats.GetData(i, 1)[0];
+                  //  int cx = stats.GetData(i, 0)[0];
+                  //  int cy = stats.GetData(i, 1)[0];
                     int width = stats.GetData(i, 2)[0];
                     int height = stats.GetData(i, 3)[0];
                     int area = stats.GetData(i, 4)[0];
 
 
-                    if (area > 2)
+   
+
+                    // if the area is more than minArea, discard 
+                    if(true) // (area > minArea)
                     {
-                        Rectangle rect = new Rectangle((int)point.X - (width / 2) - 5, (int)point.Y - (height / 2) - 5, width + 10, height + 10);
+                        Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding*2, height + padding*2);
 
                         CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                        //if (i==0)
+                        jSon += IRUtils.IRPointsJson(i, (int)point.X, (int)point.Y);
+                        if(i < centroidPoints.Length-1)
+                         jSon += ",";
                     }
                 }
                 i++;
             }
 
+            jSon += "]}";
+
+
             if (centroidPoints.Length > 1)
             {
-                udpSender.WriteToSocket("" + centroidPoints.Length + " Obejcts detected");
+                udpSender.WriteToSocket(jSon);
+           //     Console.WriteLine(jSon);
             }
-            else
-            {
-                udpSender.WriteToSocket("No objects detected");
-            }
+
             return img;
 
         }
-
-
-
-        /// <summary>
-        /// Directly accesses the underlying image buffer of the InfraredFrame to 
-        /// create a displayable bitmap.
-        /// This function requires the /unsafe compiler option as we make use of direct
-        /// access to the native memory pointed to by the infraredFrameData pointer.
-        /// </summary>
-        /// <param name="infraredFrameData">Pointer to the InfraredFrame image data</param>
-        /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private unsafe void ProcessInfraredFrameData(IntPtr infraredFrameData, uint infraredFrameDataSize)
-        {
-            // infrared frame data is a 16 bit value
-            ushort* frameData = (ushort*)infraredFrameData;
-
-            // lock the target bitmap
-            this.infraredBitmap.Lock();
-
-            // get the pointer to the bitmap's back buffer
-            float* backBuffer = (float*)this.infraredBitmap.BackBuffer;
-
-            // process the infrared data
-            for (int i = 0; i < (int)(infraredFrameDataSize / this.infraredFrameDescription.BytesPerPixel); ++i)
-            {
-                // since we are displaying the image as a normalized grey scale image, we need to convert from
-                // the ushort data (as provided by the InfraredFrame) to a value from [InfraredOutputValueMinimum, InfraredOutputValueMaximum]
-                backBuffer[i] = Math.Min(InfraredOutputValueMaximum, (((float)frameData[i] / InfraredSourceValueMaximum * InfraredSourceScale) * (1.0f - InfraredOutputValueMinimum)) + InfraredOutputValueMinimum);
-            }
-
-            // mark the entire bitmap as needing to be drawn
-            this.infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, this.infraredBitmap.PixelWidth, this.infraredBitmap.PixelHeight));
-
-            // unlock the bitmap
-            this.infraredBitmap.Unlock();
-        }
-
-
 
 
 
@@ -808,14 +723,16 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             thresholdedClicked = true;
             StatusText = "threshold on ";
 
-
         }
 
         private void CheckBox_threshold_UnChecked(object sender, RoutedEventArgs e)
         {
-
             thresholdedClicked = false;
             StatusText = "threshold off ";
         }
+
+
+
+
     }
 }
