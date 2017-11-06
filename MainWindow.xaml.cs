@@ -137,6 +137,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         UDPsender udpSender;
 
+        MCvPoint2D64f[] prevPoints;
+
+
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
@@ -214,7 +217,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             udpSender = new UDPsender();
 
-
+            prevPoints = null;
 
 
 
@@ -446,7 +449,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 }
 
 
-               
+
 
             }
             catch (Exception)
@@ -556,11 +559,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             // perform opening 
             Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
-            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Open, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
             img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
-            
+
 
             // copy the processed image back into the backbuffer and dispose the EMGU image
             CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height));
@@ -575,9 +578,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thesholdedImg, bool showThesholdedImg)
         {
-
-            String jSon = "{'IRPoint':[";
-             jSon = "{\"Items\":[";
 
             int minArea = 2;
             int padding = 10;
@@ -601,52 +601,104 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 img = thesholdedImg;
             }
 
-            
+            MCvPoint2D64f[] newPoints = new MCvPoint2D64f[centroidPoints.Length-1];
+            int index;
+            //  prevPoints = new Vector[centroidPoints.Length];
 
-            foreach (MCvPoint2D64f point in centroidPoints)
+            if (prevPoints == null || prevPoints.Length != newPoints.Length)
             {
-
-
-                if (i > 0)
+                foreach (MCvPoint2D64f point in centroidPoints)
                 {
-                  //  int cx = stats.GetData(i, 0)[0];
-                  //  int cy = stats.GetData(i, 1)[0];
-                    int width = stats.GetData(i, 2)[0];
-                    int height = stats.GetData(i, 3)[0];
-                    int area = stats.GetData(i, 4)[0];
-
-
-   
-
-                    // if the area is more than minArea, discard 
-                    if(true) // (area > minArea)
+                    if (i > 0)
                     {
-                        Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding*2, height + padding*2);
+                        //  int cx = stats.GetData(i, 0)[0];
+                        //  int cy = stats.GetData(i, 1)[0];
+                        int width = stats.GetData(i, 2)[0];
+                        int height = stats.GetData(i, 3)[0];
+                        int area = stats.GetData(i, 4)[0];
 
-                        CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
-                        //if (i==0)
-                        jSon += IRUtils.IRPointsJson(i, (int)point.X, (int)point.Y);
-                        if(i < centroidPoints.Length-1)
-                         jSon += ",";
+                        // if the area is more than minArea, discard 
+                        if (true) // (area > minArea)
+                        {
+                            Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+
+                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                            //if (i==0)
+
+                            newPoints[i-1] = new MCvPoint2D64f((int)point.X, (int)point.Y);
+                        }
                     }
+                    i++;
                 }
-                i++;
+
             }
+            else
+            {
+                foreach (MCvPoint2D64f point in centroidPoints)
+                {
+                    if (i > 0)
+                    {
+                        //  int cx = stats.GetData(i, 0)[0];
+                        //  int cy = stats.GetData(i, 1)[0];
+                        int width = stats.GetData(i, 2)[0];
+                        int height = stats.GetData(i, 3)[0];
+                        int area = stats.GetData(i, 4)[0];
 
-            jSon += "]}";
+                        // if the area is more than minArea, discard 
+                        if (true) // (area > minArea)
+                        {
+                            Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
+                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                            //if (i==0)
+                            index = IRUtils.LowDist(point, prevPoints);                      
+                            newPoints[index] = point;
+
+                        }
+                    }
+                    i++;
+                }
+
+            }
 
             if (centroidPoints.Length > 1)
             {
-                udpSender.WriteToSocket(jSon);
-           //     Console.WriteLine(jSon);
+                SendJson(newPoints);
             }
+            prevPoints = newPoints;
+
+
+
+
+
 
             return img;
 
         }
 
+        private String PointstoJson(MCvPoint2D64f[] points)
+        {
+            int i = 0;
+            String jSon = "{\"Items\":[";
+            foreach (MCvPoint2D64f point in points)
+            {
+                jSon += IRUtils.IRPointsJson(i, (int)point.X, (int)point.Y);
+                if (i < points.Length - 1)
+                    jSon += ",";
+                i++;
+            }
+            jSon += "]}";
+            return jSon;
+        }
 
+        private void SendJson(MCvPoint2D64f[] newPoints)
+        {
+            String jSon = PointstoJson(newPoints);
+            udpSender.WriteToSocket(jSon);
+            Console.WriteLine(jSon);
+
+
+        }
 
         /// <summary>
         /// Handles the event which the sensor becomes unavailable (E.g. paused, closed, unplugged).
