@@ -378,10 +378,12 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 colorFrame = colorFrameReference.AcquireFrame();
                 infraredFrame = infraredFrameReference.AcquireFrame();
 
+
                 if ((colorFrame == null) || (infraredFrame == null || depthFrame == null))
                 {
                     return;
                 }
+
 
                 // color image
                 FrameDescription colorFrameDescription = colorFrame.FrameDescription;
@@ -682,7 +684,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             String jSon = "{\"Items\":[";
             foreach (MCvPoint2D64f point in points)
             {
-                jSon += IRUtils.IRPointsJson(i, (int)point.X, (int)point.Y);
+                // invert y axis
+                jSon += IRUtils.IRPointsJson(i, (int)point.X, this.infraredFrameDescription.Height - (int)point.Y);
                 if (i < points.Length - 1)
                     jSon += ",";
                 i++;
@@ -695,7 +698,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         {
             String jSon = PointstoJson(newPoints);
             udpSender.WriteToSocket(jSon);
-            Console.WriteLine(jSon);
+            //Console.WriteLine(jSon);
 
 
         }
