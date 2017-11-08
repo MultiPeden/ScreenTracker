@@ -24,6 +24,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
     using System.Runtime.InteropServices;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Interaction logic for the MainWindow
@@ -139,6 +140,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         MCvPoint2D64f[] prevPoints;
 
+
+        int minThreshold = 240; 
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
@@ -552,15 +555,18 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
 
-            // Threshold for 90 % of max values
+            // Threshold for max(97 %, 240) 
             double[] maxVal;
             img.MinMax(out _, out maxVal, out _, out _);
 
+
+            Console.WriteLine(maxVal[0] * .97);
+            
             Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-            CvInvoke.Threshold(img, thresholdImg, maxVal[0] * .9, 255, ThresholdType.Binary);
+            CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * .97 , minThreshold), 255, ThresholdType.Binary);
 
             // perform opening 
-            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(5, 5), new System.Drawing.Point(-1, -1));
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
@@ -603,12 +609,16 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 img = thesholdedImg;
             }
 
-            MCvPoint2D64f[] newPoints = new MCvPoint2D64f[centroidPoints.Length-1];
+            MCvPoint2D64f[] newPoints;
             int index;
             //  prevPoints = new Vector[centroidPoints.Length];
 
-            if (prevPoints == null || prevPoints.Length != newPoints.Length)
+            
+            if (prevPoints == null ) //|| prevPoints.Length != newPoints.Length) 
             {
+                newPoints = new MCvPoint2D64f[centroidPoints.Length - 1];
+
+                // initialize points
                 foreach (MCvPoint2D64f point in centroidPoints)
                 {
                     if (i > 0)
@@ -635,7 +645,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             }
             else
-            {
+            { // update points
+                newPoints = prevPoints;
+
                 foreach (MCvPoint2D64f point in centroidPoints)
                 {
                     if (i > 0)
@@ -653,7 +665,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
                             CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
                             //if (i==0)
-                            index = IRUtils.LowDist(point, prevPoints);                      
+                            index = IRUtils.LowDist(point, prevPoints);
+                          
                             newPoints[index] = point;
 
                         }
