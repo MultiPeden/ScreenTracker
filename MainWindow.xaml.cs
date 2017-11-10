@@ -25,6 +25,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     using Emgu.CV.Structure;
     using System.Runtime.InteropServices;
     using System.Collections.Generic;
+    using System.Threading;
 
     /// <summary>
     /// Interaction logic for the MainWindow
@@ -141,7 +142,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         MCvPoint2D64f[] prevPoints;
 
 
-        int minThreshold = 240; 
+        int minThreshold = 240;
+
+  
+        TCPserv commands;
+        Thread TCPthread;
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
@@ -222,7 +227,14 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             prevPoints = null;
 
+            // AsynchronousSocketListener commmands = new AsynchronousSocketListener();
+            // commmands.StartListening();
+            commands = new TCPserv(this);
+            
+            TCPthread = new Thread(commands.StartListening);
+            TCPthread.Start();
 
+           
 
         }
 
@@ -309,6 +321,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 this.kinectSensor.Close();
                 this.kinectSensor = null;
             }
+            if(TCPthread.IsAlive)
+            {
+                commands.StopRunnning();
+            }
         }
 
         /// <summary>
@@ -318,6 +334,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="e">event arguments</param>
         private void ScreenshotButton_Click(object sender, RoutedEventArgs e)
         {
+
+
+
             if (this.infraredBitmap != null)
             {
                 // create a png bitmap encoder which knows how to save a .png file
@@ -556,14 +575,18 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
             // Threshold for max(97 %, 240) 
-            double[] maxVal;
-            img.MinMax(out _, out maxVal, out _, out _);
+           // double[] maxVal;
+           // img.MinMax(out _, out maxVal, out _, out _);
 
+        //    Gray average =  img.GetAverage();
+          //  double avg = average.Intensity;
 
-            Console.WriteLine(maxVal[0] * .97);
-            
-            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-            CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * .97 , minThreshold), 255, ThresholdType.Binary);
+            //   Console.WriteLine("math max " + Math.Max(maxVal[0] * .5, minThreshold) + "             img max  " + maxVal[0]);
+
+            Image <Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
+          //  CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * .80 , minThreshold), 255, ThresholdType.Binary);
+            CvInvoke.Threshold(img, thresholdImg, minThreshold, 255, ThresholdType.Binary);
+
 
             // perform opening 
             Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(5, 5), new System.Drawing.Point(-1, -1));
@@ -800,7 +823,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         }
 
 
-
+        public void ResetMesh()
+        {
+            prevPoints = null;
+        }
 
     }
 }
