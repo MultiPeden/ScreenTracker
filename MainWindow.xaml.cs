@@ -205,7 +205,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             this.kinectSensor.Open();
 
             // set the status text
-            this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText:
+            this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText
+                                                             : Properties.Resources.NoSensorStatusText;
 
             // use the window object as the view model in this simple example
             this.DataContext = this;
@@ -572,6 +573,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         }
 
 
+
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thesholdedImg, bool showThesholdedImg)
         {
 
@@ -587,6 +589,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             n = CvInvoke.ConnectedComponentsWithStats(thesholdedImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
 
+
             centroidPoints = new MCvPoint2D64f[n];
             centroids.CopyTo(centroidPoints);
             int i = 0;
@@ -599,6 +602,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             MCvPoint2D64f[] newPoints;
             int index;
             //  prevPoints = new Vector[centroidPoints.Length];
+
 
             if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
             {
@@ -648,24 +652,32 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         if (true) // (area > minArea)
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+
                             CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
                             //if (i==0)
                             index = IRUtils.LowDist(point, prevPoints);
+
                             newPoints[index] = point;
 
                         }
-                        i++;
                     }
+                    i++;
                 }
-                if (centroidPoints.Length > 1)
-                {
-                    SendJson(newPoints);
-                }
-                prevPoints = newPoints;
-                return img;
+
             }
 
-            private String PointstoJson(MCvPoint2D64f[] points)
+            if (centroidPoints.Length > 1)
+            {
+                SendJson(newPoints);
+            }
+            prevPoints = newPoints;
+
+
+            return img;
+
+        }
+
+        private String PointstoJson(MCvPoint2D64f[] points)
             {
                 int i = 0;
                 String jSon = "{\"Items\":[";
@@ -774,4 +786,3 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         }
     }
-}
