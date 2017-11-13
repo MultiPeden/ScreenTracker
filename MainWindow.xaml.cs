@@ -556,7 +556,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             CvInvoke.Threshold(img, thresholdImg, minThreshold, 255, ThresholdType.Binary);
 
             // perform opening 
-            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(5, 5), new System.Drawing.Point(-1, -1));
+            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
@@ -577,8 +578,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thesholdedImg, bool showThesholdedImg)
         {
 
-            int minArea = 2;
-            int padding = 10;
+            int minArea = 2;    //user set
+            int padding = 10; //app set
 
             // draw centroids for connected areas 
             Mat labels = new Mat();
@@ -624,7 +625,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2); // 2 pixel box thick
                             //if (i==0)
 
                             newPoints[i - 1] = new MCvPoint2D64f((int)point.X, (int)point.Y);

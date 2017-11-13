@@ -34,5 +34,17 @@ namespace Microsoft.Samples.Kinect.InfraredBasics.Properties {
                 this["minThreshold"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
+        public int kernelSize {
+            get {
+                return ((int)(this["kernelSize"]));
+            }
+            set {
+                this["kernelSize"] = value;
+            }
+        }
     }
 }
