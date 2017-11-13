@@ -451,10 +451,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // ignore if the frame is no longer available
-                Console.WriteLine("FRAME CHRASHED");
+                Console.WriteLine("FRAME CHRASHED: " + ex.ToString());
 
             }
             finally
@@ -533,27 +533,29 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
 
-            // nomalize the 16bit vals to 8bit vals (max 255)
-            CvInvoke.Normalize(mat, mat, 0, 255, NormType.MinMax);
 
             // convert to 8bit image
             Image<Gray, Byte> img = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
-            mat.ConvertTo(img, DepthType.Cv8U);
-            mat.Dispose();
-
-            // Threshold for max(97 %, 240) 
-            // double[] maxVal;
-            // img.MinMax(out _, out maxVal, out _, out _);
-
-            //    Gray average =  img.GetAverage();
-            //  double avg = average.Intensity;
-
-            //   Console.WriteLine("math max " + Math.Max(maxVal[0] * .5, minThreshold) + "             img max  " + maxVal[0]);
-
             Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
 
-            //  CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * .80 , minThreshold), 255, ThresholdType.Binary);
-            CvInvoke.Threshold(img, thresholdImg, minThreshold, 255, ThresholdType.Binary);
+            // nessesary for calling  CvInvoke.Threshold because it only supports 8 and 32-bit datatypes  
+            mat.ConvertTo(img, DepthType.Cv32F);
+            mat.Dispose();
+
+
+            // find max val of the 16 bit ir-image
+            img.MinMax(out _, out double[] maxVal, out _, out _);
+
+            // apply threshold with 98% of maxval || minThreshold
+            // to obtain binary image with only 0's & 255
+            int minThreshold = Properties.UserSettings.Default.minThreshold;
+             CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * 0.98, minThreshold) , 255 , ThresholdType.Binary);
+
+
+            // nomalize the 16bit vals to 8bit vals (max 255)
+            CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
+            // convert back to 8 bit for showing as a bitmap
+           // thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv8U);
 
             // perform opening 
             int kernelSize = Properties.UserSettings.Default.kernelSize;
@@ -561,10 +563,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
-            img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
+            img = DrawTrackedData(img,  thresholdImg, thresholdedClicked);
 
             // copy the processed image back into the backbuffer and dispose the EMGU image
-            CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height));
+            CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height ));
             img.Dispose();
             thresholdImg.Dispose();
 
@@ -575,21 +577,21 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
 
-        private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thesholdedImg, bool showThesholdedImg)
+        private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thresholdImg, bool showThesholdedImg)
         {
 
             int minArea = 2;    //user set
             int padding = 10; //app set
 
-            // draw centroids for connected areas 
+ 
             Mat labels = new Mat();
             Mat stats = new Mat();
             Mat centroids = new Mat();
             MCvPoint2D64f[] centroidPoints;
             int n;
 
-            n = CvInvoke.ConnectedComponentsWithStats(thesholdedImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
-
+            n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
+            
 
             centroidPoints = new MCvPoint2D64f[n];
             centroids.CopyTo(centroidPoints);
@@ -597,12 +599,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             if (showThesholdedImg)
             {
-                img = thesholdedImg;
+                img = thresholdImg;
             }
 
             MCvPoint2D64f[] newPoints;
             int index;
-            //  prevPoints = new Vector[centroidPoints.Length];
 
 
             if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
@@ -625,7 +626,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2); // 2 pixel box thick
+                            CvInvoke.Rectangle(img, rect, new Gray(65535).MCvScalar, 2); // 2 pixel box thick
                             //if (i==0)
 
                             newPoints[i - 1] = new MCvPoint2D64f((int)point.X, (int)point.Y);

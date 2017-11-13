@@ -25,7 +25,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("240")]
+        [global::System.Configuration.DefaultSettingValueAttribute("65000")]
         public int minThreshold {
             get {
                 return ((int)(this["minThreshold"]));

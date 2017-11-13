@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="minThreshold" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">240</Value>
+      <Value Profile="(Default)">65000</Value>
     </Setting>
     <Setting Name="kernelSize" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
