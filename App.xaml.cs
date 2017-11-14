@@ -14,5 +14,17 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     /// </summary>
     public partial class App : Application
     {
+        void App_Startup(object sender, StartupEventArgs e)
+        {
+            Console.WriteLine("Starting app");
+
+            // Create main application window
+            MainWindow mainWindow = new MainWindow();
+
+            mainWindow.Show();
+
+
+
+        }
     }
 }
