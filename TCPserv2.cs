@@ -7,19 +7,19 @@ using System.Net.Sockets;
 namespace Microsoft.Samples.Kinect.InfraredBasics
 {
 
-    public class TCPserv2
+    public class TCPserv
     {
         // Incoming data from the client.  
         public static string data = null;
-        private KinectData kinectData;
+        private MainWindow mainWindow;
         private bool running;
         private Socket handler;
         private Socket listener;
 
-        public TCPserv2(KinectData kinectData)
+        public TCPserv(MainWindow mainWindow)
         {
            
-            this.kinectData = kinectData;
+            this.mainWindow = mainWindow;
             this.running = true;
            
         }
@@ -101,7 +101,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             {
                 case "resetMesh":
                     Console.WriteLine("resetMesh");
-                    kinectData.ResetMesh();
+                    mainWindow.ResetMesh();
                     return "Mesh has been recalculated";
             
                 default:

@@ -18,12 +18,19 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         {
             Console.WriteLine("Starting app");
 
-            // Create main application window
-            MainWindow mainWindow = new MainWindow();
 
+            KinectData kinectData = new KinectData();
+
+            // Create main application window
+            MainWindow mainWindow = new MainWindow(kinectData);
+            
             mainWindow.Show();
 
 
+   
+
+            kinectData.Start();
+            
 
         }
     }
