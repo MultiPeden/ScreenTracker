@@ -46,5 +46,41 @@ namespace Microsoft.Samples.Kinect.InfraredBasics.Properties {
                 this["kernelSize"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int DataIndicatorMinimumArea {
+            get {
+                return ((int)(this["DataIndicatorMinimumArea"]));
+            }
+            set {
+                this["DataIndicatorMinimumArea"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int DataIndicatorThickness {
+            get {
+                return ((int)(this["DataIndicatorThickness"]));
+            }
+            set {
+                this["DataIndicatorThickness"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.98")]
+        public float PercentageThreshold {
+            get {
+                return ((float)(this["PercentageThreshold"]));
+            }
+            set {
+                this["PercentageThreshold"] = value;
+            }
+        }
     }
 }

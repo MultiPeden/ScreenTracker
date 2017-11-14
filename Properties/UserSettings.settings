@@ -8,5 +8,14 @@
     <Setting Name="kernelSize" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
     </Setting>
+    <Setting Name="DataIndicatorMinimumArea" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="DataIndicatorThickness" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="PercentageThreshold" Type="System.Single" Scope="User">
+      <Value Profile="(Default)">0.98</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

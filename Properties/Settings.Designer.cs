@@ -25,10 +25,19 @@ namespace Microsoft.Samples.Kinect.InfraredBasics.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Setting {
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int DataIndicatorPadding {
             get {
-                return ((string)(this["Setting"]));
+                return ((int)(this["DataIndicatorPadding"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("65535")]
+        public int DataIndicatorColor {
+            get {
+                return ((int)(this["DataIndicatorColor"]));
             }
         }
     }
