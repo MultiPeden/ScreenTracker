@@ -75,6 +75,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// Bitmap to display
         /// </summary>
         private WriteableBitmap infraredBitmap = null;
+        private WriteableBitmap infraredThesholdedBitmap = null;
 
         /// <summary>
         /// Current status text to display
@@ -172,7 +173,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             this.infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
 
             // create the bitmap to display
-            this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+
+            // create the bitmap to display
+            this.infraredThesholdedBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
 
             //////////////// added 20/10/2017 
 
@@ -238,7 +242,14 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         {
             get
             {
-                return this.infraredBitmap;
+                if (thresholdedClicked)
+                {
+                    return this.infraredThesholdedBitmap;
+                }
+                else
+                {
+                    return this.infraredBitmap;
+                }
             }
         }
 
@@ -527,7 +538,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
         private unsafe void ProcessInfraredFrameDataEMGU(InfraredFrame infraredFrame)
         {
-            infraredBitmap.Lock();
+           
 
             // create EMGU and copy the Frame Data into it 
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
@@ -542,7 +553,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             mat.ConvertTo(img, DepthType.Cv32F);
             mat.Dispose();
 
-
+    
             // find max val of the 16 bit ir-image
             img.MinMax(out _, out double[] maxVal, out _, out _);
 
@@ -553,9 +564,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
             // nomalize the 16bit vals to 8bit vals (max 255)
-            CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
+            //  CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
+            img.Mat.ConvertTo(img, DepthType.Cv16U);
+
             // convert back to 8 bit for showing as a bitmap
-           // thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv8U);
+            thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv8U);
 
             // perform opening 
             int kernelSize = Properties.UserSettings.Default.kernelSize;
@@ -564,15 +577,34 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             // find controids of reflective surfaces and mark them on the image 
             img = DrawTrackedData(img,  thresholdImg, thresholdedClicked);
+            //Console.WriteLine(img.Mat.Depth);
+           
 
             // copy the processed image back into the backbuffer and dispose the EMGU image
-            CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height ));
-            img.Dispose();
-            thresholdImg.Dispose();
+            if (thresholdedClicked)
+            {
+                infraredThesholdedBitmap.Lock();
+                CopyMemory(infraredThesholdedBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height ));
+                img.Dispose();
+                thresholdImg.Dispose();
 
-            // draw entire image and unlock bitmap
-            infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
-            infraredBitmap.Unlock();
+                // draw entire image and unlock bitmap
+                infraredThesholdedBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
+                infraredThesholdedBitmap.Unlock();
+            }
+            else
+            {
+                infraredBitmap.Lock();
+                CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
+
+                img.Dispose();
+                thresholdImg.Dispose();
+
+                // draw entire image and unlock bitmap
+                infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
+                infraredBitmap.Unlock();
+            }
+
         }
 
 
@@ -626,7 +658,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(65535).MCvScalar, 2); // 2 pixel box thick
+                            CvInvoke.Rectangle(img, rect, new Gray(255).MCvScalar, 2); // 2 pixel box thick
                             //if (i==0)
 
                             newPoints[i - 1] = new MCvPoint2D64f((int)point.X, (int)point.Y);
@@ -655,7 +687,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(150).MCvScalar, 2);
+                            CvInvoke.Rectangle(img, rect, new Gray(255).MCvScalar, 2);
                             //if (i==0)
                             index = IRUtils.LowDist(point, prevPoints);
 
@@ -772,13 +804,15 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             {
                 thresholdedClicked = true;
                 StatusText = "threshold on ";
+                leftImg.Source = this.infraredThesholdedBitmap;
             }
 
             private void CheckBox_threshold_UnChecked(object sender, RoutedEventArgs e)
             {
                 thresholdedClicked = false;
                 StatusText = "threshold off ";
-            }
+                 leftImg.Source = this.infraredBitmap;
+        }
 
 
             public void ResetMesh()

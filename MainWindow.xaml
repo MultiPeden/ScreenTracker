@@ -57,7 +57,7 @@
 
         <Grid Margin="10" Grid.Row="1">
             <Viewbox HorizontalAlignment="Left" Height="467" VerticalAlignment="Top" Width="323">
-                <Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
+                <Image Name="leftImg" Source="{Binding ImageSource}" Stretch="UniformToFill" />
             </Viewbox>
             <Viewbox HorizontalAlignment="Right" Height="467"  VerticalAlignment="Top" Width="323">
                 <Image Name="rightImg" Source="{Binding ImageSourceColor}" Stretch="UniformToFill" />
