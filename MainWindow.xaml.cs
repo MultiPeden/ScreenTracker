@@ -559,8 +559,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             // apply threshold with 98% of maxval || minThreshold
             // to obtain binary image with only 0's & 255
+            float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
             int minThreshold = Properties.UserSettings.Default.minThreshold;
-             CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * 0.98, minThreshold) , 255 , ThresholdType.Binary);
+             CvInvoke.Threshold(img, thresholdImg, Math.Max(maxVal[0] * percentageThreshold, minThreshold) , 255 , ThresholdType.Binary);
 
 
             // nomalize the 16bit vals to 8bit vals (max 255)
@@ -612,8 +613,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thresholdImg, bool showThesholdedImg)
         {
 
-            int minArea = 2;    //user set
-            int padding = 10; //app set
+            int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;  
+            int padding = Properties.Settings.Default.DataIndicatorPadding; 
 
  
             Mat labels = new Mat();
@@ -658,7 +659,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(255).MCvScalar, 2); // 2 pixel box thick
+
+                            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+                            int colorcode = Properties.Settings.Default.DataIndicatorColor;
+                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
                             //if (i==0)
 
                             newPoints[i - 1] = new MCvPoint2D64f((int)point.X, (int)point.Y);
@@ -788,14 +793,14 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             private void Button_Click_Depth(object sender, RoutedEventArgs e)
             {
                 colorClicked = false;
-                StatusText = "Depth clicked";
+                StatusText = Properties.Resources.ButtonClickDepth;
                 rightImg.Source = this.depthBitmap;
             }
 
             private void Button_Click_Color(object sender, RoutedEventArgs e)
             {
                 colorClicked = true;
-                StatusText = "color clicked";
+                StatusText = Properties.Resources.ButtonClickColor;
                 rightImg.Source = this.colorBitmap;
             }
 
@@ -803,16 +808,23 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             private void CheckBox_threshold_Checked(object sender, RoutedEventArgs e)
             {
                 thresholdedClicked = true;
-                StatusText = "threshold on ";
+
                 leftImg.Source = this.infraredThesholdedBitmap;
+
+                StatusText = Properties.Resources.CheckBoxthresholdChecked;
+
             }
 
             private void CheckBox_threshold_UnChecked(object sender, RoutedEventArgs e)
             {
                 thresholdedClicked = false;
-                StatusText = "threshold off ";
+
                  leftImg.Source = this.infraredBitmap;
-        }
+
+
+                StatusText = Properties.Resources.CheckBoxthresholdUnChecked;
+            }
+
 
 
             public void ResetMesh()
