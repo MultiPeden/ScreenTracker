@@ -10,13 +10,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 {
     public class FrameProcessedEventArgs : EventArgs
     {
-
-
         public WriteableBitmap ThresholdBitmap { get; set; }
         public WriteableBitmap InfraredBitmap { get; set; }
         public WriteableBitmap ColorBitmap { get; set; }
         public WriteableBitmap DephtBitmap { get; set; }
-
 
     }
 }

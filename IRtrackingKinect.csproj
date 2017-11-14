@@ -94,7 +94,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>UserSettings.settings</DependentUpon>
     </Compile>
-    <Compile Include="TCPserv2.cs" />
     <Compile Include="TCPserv.cs" />
     <Compile Include="UDPsender.cs" />
     <Compile Include="MainWindow.xaml.cs">

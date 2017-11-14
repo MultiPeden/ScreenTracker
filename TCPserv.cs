@@ -7,21 +7,21 @@ using System.Net.Sockets;
 namespace Microsoft.Samples.Kinect.InfraredBasics
 {
 
-    public class TCPserv2
+    public class TCPserv
     {
         // Incoming data from the client.  
         public static string data = null;
-        private KinectData kinectData;
+        private MainWindow mainWindow;
         private bool running;
         private Socket handler;
         private Socket listener;
 
-        public TCPserv2(KinectData kinectData)
+        public TCPserv()
         {
-           
-            this.kinectData = kinectData;
+
+     
             this.running = true;
-           
+
         }
 
         public void StartListening()
@@ -38,7 +38,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             // Create a TCP/IP socket.  
             listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            
+
 
 
             // Bind the socket to the local endpoint and   
@@ -46,7 +46,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             try
             {
                 listener.Bind(localEndPoint);
-             
+
                 listener.Listen(10);
 
 
@@ -56,7 +56,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 {
                     Console.WriteLine("Waiting for a connection...");
                     // Program is suspended while waiting for an incoming connection.  
-                    
+
                     handler = listener.Accept();
                     data = null;
 
@@ -75,7 +75,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                     data = data.Remove(data.Length - 5);
                     // Show the data on the console.  
                     Console.WriteLine("Text received : {0}", data);
-                    string responce =  ParseCommand(data);
+                    string responce = ParseCommand(data);
 
                     // Echo the data back to the client.  
                     byte[] msg = Encoding.ASCII.GetBytes(responce);
@@ -91,7 +91,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 Console.WriteLine(e.ToString());
             }
 
-  
+
         }
 
         private String ParseCommand(String command)
@@ -101,9 +101,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             {
                 case "resetMesh":
                     Console.WriteLine("resetMesh");
-                    kinectData.ResetMesh();
+                    // mainWindow.ResetMesh();
                     return "Mesh has been recalculated";
-            
+
                 default:
                     Console.WriteLine("Unable to recognize command");
                     return "Unable to recognize command";
@@ -116,13 +116,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         public void StopRunnning()
         {
             this.running = false;
-
-        
-                this.listener.Close();
-           
-
-
-            
+            this.listener.Close();
         }
 
         private IPAddress LocalIPAddress()

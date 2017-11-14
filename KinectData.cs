@@ -130,7 +130,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         UDPsender udpSender;
 
-        TCPserv2 commands;
+        TCPserv commands;
         Thread TCPthread;
 
         private bool colorClicked;
@@ -140,6 +140,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
         public event EventHandler<FrameProcessedEventArgs> IrframeProcessed;
+        public event EventHandler<bool> ChangeStatusText;
+
 
 
         protected virtual void OnIrframeProcessed(FrameProcessedEventArgs e)
@@ -148,19 +150,23 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         }
 
 
+
+
+        protected virtual void OnChangeStatusText(bool e)
+        {
+            ChangeStatusText?.Invoke(this, e);
+        }
+
+
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
-        public void Start()
+        public  KinectData()
         {
             // get the kinectSensor object
             this.kinectSensor = KinectSensor.GetDefault();
 
-
-
-            // open the reader for the depth frames
-            //  this.infraredFrameReader = this.kinectSensor.InfraredFrameSource.OpenReader();
-
+    
             this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Color | FrameSourceTypes.Depth);
 
             // wire handler for frame arrival
@@ -172,20 +178,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             // get FrameDescription from InfraredFrameSource
             this.infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
 
-
-
-  
-            //////////////// added 20/10/2017 
-
             // get FrameDescription from ColorFrameSource
             this.colorFrameDescription = this.kinectSensor.ColorFrameSource.FrameDescription;
 
             // get FrameDescription from DephtFrameSource
-            this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
-
-            // create the colorFrameDescription from the ColorFrameSource using Bgra format
-            // this.colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-
+            this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;       
 
             // allocate space to put the pixels being received and converted
             this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height];
@@ -204,7 +201,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             prevPoints = null;
 
 
-            commands = new TCPserv2(this);
+            commands = new TCPserv();
 
             TCPthread = new Thread(commands.StartListening);
             TCPthread.Start();
@@ -226,14 +223,26 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         }
 
+        public bool SensorAvailable()
+        {
+             return  kinectSensor.IsAvailable;
+        }
 
+
+
+
+        ~KinectData()
+        {
+            Stop_KinectData();
+        }
+        
 
         /// <summary>
         /// Execute shutdown tasks
         /// </summary>
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
-        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        public void Stop_KinectData()
         {
             if (this.reader != null)
             {
@@ -555,14 +564,22 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             centroidPoints = new MCvPoint2D64f[n];
             centroids.CopyTo(centroidPoints);
             int i = 0;
-
+            int colorcode;
             if (showThesholdedImg)
             {
                 img = thresholdImg;
+                colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
+            }
+            else
+            {
+                colorcode = Properties.Settings.Default.DataIndicatorColor;
             }
 
             MCvPoint2D64f[] newPoints;
             int index;
+
+            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+            
 
 
             if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
@@ -586,8 +603,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
 
-                            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
-                            int colorcode = Properties.Settings.Default.DataIndicatorColor;
+
                             CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
                             //if (i==0)
@@ -618,7 +634,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         {
                             Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                            CvInvoke.Rectangle(img, rect, new Gray(255).MCvScalar, 2);
+                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness);
                             //if (i==0)
                             index = IRUtils.LowDist(point, prevPoints);
 
@@ -666,8 +682,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         }
 
 
-
-
         /// <summary>
         /// Directly accesses the underlying image buffer of the DepthFrame to 
         /// create a displayable bitmap.
@@ -696,20 +710,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         }
 
 
-
-        private void Button_Click_Depth(object sender, RoutedEventArgs e)
-        {
-            colorClicked = false;
-
-        }
-
-        private void Button_Click_Color(object sender, RoutedEventArgs e)
-        {
-            colorClicked = true;
-
-        }
-
-
         public void Threshold(bool threshold)
         {
             thresholdedClicked = threshold;
@@ -717,21 +717,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         }
 
-        private void CheckBox_threshold_UnChecked(object sender, RoutedEventArgs e)
-        {
-            thresholdedClicked = false;
-
-
-        }
-
-
-
         public void ResetMesh()
         {
             prevPoints = null;
         }
-
-
 
 
         /// <summary>
@@ -741,9 +730,8 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="e">event arguments</param>
         private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
         {
-            // set the status text
-         //   this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText
-          //                                                  : Properties.Resources.SensorNotAvailableStatusText;
+            
+            OnChangeStatusText(e.IsAvailable);
         }
 
     }
