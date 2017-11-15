@@ -4,59 +4,54 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     using System;
     using System.ComponentModel;
-    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Windows;
-    using System.Windows.Media;
     using System.Windows.Media.Imaging;
-    using Microsoft.Kinect;
-
-    using System.Drawing;
-
-    using Emgu.CV;
-    using Emgu.CV.CvEnum;
-    using Emgu.CV.Structure;
     using System.Runtime.InteropServices;
-    using System.Collections.Generic;
-    using System.Threading;
 
-    using System.Configuration;
 
     /// <summary>
     /// Interaction logic for the MainWindow
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-
-        [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        public static extern void CopyMemory(IntPtr dest, IntPtr src, int count);
-
-
         /// <summary>
         /// Current status text to display
         /// </summary>
         private string statusText = null;
 
-
-
-
-
+        /// <summary>
+        /// Indicates if the color button has been selected
+        /// </summary>
         private bool colorClicked;
+
+        /// <summary>
+        /// Indicates if the threshold button has been selected
+        /// </summary>
         private bool thresholdedClicked;
 
+
+        /// <summary>
+        /// Holds a reference to the kinectData-obejct processesing Kinect-images
+        /// </summary>
         KinectData kinectData;
+
+        /// <summary>
+        /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
         public MainWindow(KinectData kinectData)
         {
-            // get hadle to Kinectdata
+            // get handle to Kinectdata
             this.kinectData = kinectData;
 
             //initialize button values
@@ -67,16 +62,19 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             this.StatusText = kinectData.SensorAvailable() ? Properties.Resources.RunningStatusText
                                                              : Properties.Resources.NoSensorStatusText;
 
-     
             // listen for processed frames from the kinectData object
             kinectData.IrframeProcessed += KinectData_IrframeProcessed;
             // listen for status changes from the kinectData object's kinectSensor
             kinectData.ChangeStatusText += KinectData_ChangeStatusText;
-
             // initialize the components (controls) of the window
             this.InitializeComponent();
         }
 
+        /// <summary>
+        /// Receives availibility updates from the KinectData object and shows it in the MainWindow.XAML
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="IsAvailable"></param>
         private void KinectData_ChangeStatusText(object sender, bool IsAvailable)
         {
             // set the status text
@@ -84,16 +82,18 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                                                             : Properties.Resources.SensorNotAvailableStatusText;
         }
 
+        /// <summary>
+        /// Recives processes frames from the KinectData object and show them in the MainWindow.XAML
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void KinectData_IrframeProcessed(object sender, FrameProcessedEventArgs e)
         {
+            // show images according to the buttons selected in the GUI
             leftImg.Source = this.thresholdedClicked ? e.ThresholdBitmap : e.InfraredBitmap;
             rightImg.Source = this.colorClicked ? e.ColorBitmap : e.DephtBitmap;
         }
 
-        /// <summary>
-        /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
 
 
         /// <summary>
@@ -171,20 +171,33 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
 
-
+        /// <summary>
+        /// Handles events when the depht button in the GUI is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click_Depth(object sender, RoutedEventArgs e)
         {
             colorClicked = false;
             StatusText = Properties.Resources.ButtonClickDepth;
         }
 
+        /// <summary>
+        /// Handles events when the color button in the GUI is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click_Color(object sender, RoutedEventArgs e)
         {
             colorClicked = true;
             StatusText = Properties.Resources.ButtonClickColor;
         }
 
-
+        /// <summary>
+        /// Handles events when the threshold checkbox in the GUI is checked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CheckBox_threshold_Checked(object sender, RoutedEventArgs e)
         {
             thresholdedClicked = true;
@@ -193,15 +206,16 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         }
 
+        /// <summary>
+        /// Handles events when the threshold checkbox in the GUI is un-checked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CheckBox_threshold_UnChecked(object sender, RoutedEventArgs e)
         {
             thresholdedClicked = false;
             StatusText = Properties.Resources.CheckBoxthresholdUnChecked;
             kinectData.Threshold(false);
         }
-
-
-
-
     }
 }

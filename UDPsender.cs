@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     class UDPsender
     {

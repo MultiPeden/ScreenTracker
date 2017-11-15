@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     public class FrameProcessedEventArgs : EventArgs
     {

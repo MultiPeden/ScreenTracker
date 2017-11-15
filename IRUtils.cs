@@ -10,7 +10,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     class IRUtils
     {

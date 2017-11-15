@@ -4,14 +4,13 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
 
     public class TCPserv
     {
         // Incoming data from the client.  
         public static string data = null;
-        private MainWindow mainWindow;
         private bool running;
         private Socket handler;
         private Socket listener;

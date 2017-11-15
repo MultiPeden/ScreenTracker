@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Samples.Kinect.InfraredBasics
+namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     using System;
     using System.ComponentModel;
@@ -30,7 +30,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     /// <summary>
     /// Interaction logic for the MainWindow
     /// </summary>
-    public partial class KinectData 
+    public partial class KinectData
     {
 
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
@@ -46,7 +46,13 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// </summary>
         private const float InfraredSourceScale = 0.75f;
 
-
+        /// <summary>
+        /// WriteableBitmaps for holding the processed frames from the Kinect Sensor
+        /// infraredBitmap - for the infrared sensor
+        /// infraredThesholdedBitmap - For a thresholded version of the infrared sensor
+        /// colorBitmap - for the color sensor
+        /// depthBitmap - for the depht sensor
+        /// </summary>
         private WriteableBitmap infraredThesholdedBitmap = null;
         private WriteableBitmap infraredBitmap = null;
         private WriteableBitmap colorBitmap = null;
@@ -68,24 +74,14 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// </summary>
         private KinectSensor kinectSensor = null;
 
-        /// <summary>
-        /// Reader for infrared frames
-        /// </summary>
-        //private InfraredFrameReader infraredFrameReader = null;
 
         /// <summary>
         /// Description (width, height, etc) of the infrared frame data
         /// </summary>
         private FrameDescription infraredFrameDescription = null;
 
-
-
-
-
-        //// new vars 20/10/2017
-
         /// <summary>
-        /// Reader for depth/color/body index frames
+        /// Reader for depth/color/ir frames
         /// </summary>
         private MultiSourceFrameReader reader;
 
@@ -104,8 +100,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// </summary>
         private FrameDescription depthFrameDescription = null;
 
-
-
         /// <summary>
         /// Map depth range to byte range
         /// </summary>
@@ -123,54 +117,59 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
         /// <summary>
-        /// Internally used variables
+        /// Array for holding points found in the previous frame
         /// </summary>
-
         MCvPoint2D64f[] prevPoints;
 
+        /// <summary>
+        /// Holds referece to the UDPsender object responsible outgoing data(via UDP socket)
+        /// </summary>
         UDPsender udpSender;
 
+        /// <summary>
+        /// Holds referece to the TCPserv object responsible ingoing commands(via TCP socket) 
+        /// </summary>
         TCPserv commands;
+
+        /// <summary>
+        /// Thread for running the TCPserv
+        /// </summary>
         Thread TCPthread;
 
-        private bool colorClicked;
-        private bool thresholdedClicked;
+        /// <summary>
+        /// bool indicating in the MainWindow should be shown
+        /// </summary>
+        private bool showWindow;
 
+        /// <summary>
+        /// bool indicating if the thresholded image should be passed on
+        /// only used if the MainWindow is shown
+        /// </summary>
+        private bool thresholdedClicked = false;
 
-
-
+        /// <summary>
+        /// EventHandler for sending events when a frame has been processed
+        /// </summary>
         public event EventHandler<FrameProcessedEventArgs> IrframeProcessed;
+
+        /// <summary>
+        /// EventHandler for passing on the Kinects availibility status on
+        /// </summary>
         public event EventHandler<bool> ChangeStatusText;
-
-
-
-        protected virtual void OnIrframeProcessed(FrameProcessedEventArgs e)
-        {
-            IrframeProcessed?.Invoke(this, e);
-        }
-
-
-
-
-        protected virtual void OnChangeStatusText(bool e)
-        {
-            ChangeStatusText?.Invoke(this, e);
-        }
 
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
-        public  KinectData()
+        public KinectData(bool showWindow)
         {
+            // bool indicating in the MainWindow should be shown
+            this.showWindow = showWindow;
             // get the kinectSensor object
             this.kinectSensor = KinectSensor.GetDefault();
 
-    
+            // get Reader for depth/color/ir frames
             this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Color | FrameSourceTypes.Depth);
-
-            // wire handler for frame arrival
-            //this.infraredFrameReader.FrameArrived += this.Reader_InfraredFrameArrived;
 
             // Add an event handler to be called whenever depth and color both have new data
             this.reader.MultiSourceFrameArrived += this.Reader_MultiSourceFrameArrived;
@@ -182,60 +181,69 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             this.colorFrameDescription = this.kinectSensor.ColorFrameSource.FrameDescription;
 
             // get FrameDescription from DephtFrameSource
-            this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;       
+            this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
 
             // allocate space to put the pixels being received and converted
             this.depthPixels = new byte[this.depthFrameDescription.Width * this.depthFrameDescription.Height];
 
-            this.colorClicked = true;
-            this.thresholdedClicked = false;
-
             // set IsAvailableChanged event notifier
             this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
 
-            // open the sensor
+            // open the Kinect sensor
             this.kinectSensor.Open();
 
+            // create UDPsender object responsible outgoing data(via UDP socket)
             udpSender = new UDPsender();
 
-            prevPoints = null;
-
-
+            // create TCPserv object responsible ingoing commands(via TCP socket)
             commands = new TCPserv();
 
+            // create Thread for running the TCPserv and start it
             TCPthread = new Thread(commands.StartListening);
             TCPthread.Start();
 
-
-            // create the bitmap to display
+            // Initialize the four bitmaps for processed frames
             this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray16, null);
-
-            // create the bitmap to display
             this.infraredThesholdedBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
-
-
-            // create the bitmap to display
             this.colorBitmap = new WriteableBitmap(this.colorFrameDescription.Width, this.colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
-
-            // create the bitmap to display
             this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
-
-
         }
 
-        public bool SensorAvailable()
-        {
-             return  kinectSensor.IsAvailable;
-        }
-
-
-
-
+        /// <summary>
+        /// Deconstructor
+        /// </summary>
         ~KinectData()
         {
             Stop_KinectData();
         }
-        
+
+        /// <summary>
+        /// Sends an event with FrameProcessedEventArgs when a frame has be processed
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnIrframeProcessed(FrameProcessedEventArgs e)
+        {
+            IrframeProcessed?.Invoke(this, e);
+        }
+
+
+        /// <summary>
+        /// Sends an event if the Kinect's status has changed
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnChangeStatusText(bool e)
+        {
+            ChangeStatusText?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// Getter function to get the sensor availibility
+        /// </summary>
+        /// <returns></returns>
+        public bool SensorAvailable()
+        {
+            return kinectSensor.IsAvailable;
+        }
 
         /// <summary>
         /// Execute shutdown tasks
@@ -251,7 +259,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 this.reader = null;
             }
 
-
             if (this.kinectSensor != null)
             {
                 this.kinectSensor.Close();
@@ -266,7 +273,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
 
         /// <summary>
-        /// Handles the infrared frame data arriving from the sensor
+        /// Handles the multisource frame data arriving from the sensor
         /// </summary>
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
@@ -289,32 +296,14 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
             try
             {
-                ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
                 InfraredFrameReference infraredFrameReference = multiSourceFrame.InfraredFrameReference;
-                DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
-                depthFrame = depthFrameReference.AcquireFrame();
-                colorFrame = colorFrameReference.AcquireFrame();
                 infraredFrame = infraredFrameReference.AcquireFrame();
 
-                if ((colorFrame == null) || (infraredFrame == null || depthFrame == null))
+                if (infraredFrame == null)
                 {
                     return;
                 }
 
-                // color image
-                FrameDescription colorFrameDescription = colorFrame.FrameDescription;
-
-                // the fastest way to process the color frame data is to directly access 
-                // the underlying buffer
-                using (Microsoft.Kinect.KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
-                {
-
-                        this.ProcessColorFrameDataEMGU(colorFrame);
-      
-                }
-                // We're done with the colorFrame 
-                colorFrame.Dispose();
-                colorFrame = null;
 
                 // IR image
                 FrameDescription infraredFrameDescription = infraredFrame.FrameDescription;
@@ -333,70 +322,101 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 infraredFrame.Dispose();
                 infraredFrame = null;
 
-                // Depht image
-                FrameDescription dephtFrameDescription = depthFrame.FrameDescription;
-                bool depthFrameProcessed = false;
-
-                // the fastest way to process the depht frame data is to directly access 
-                // the underlying buffer
-                using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
+                // only get color and dephtframe if the mainwindow is shown 
+                if (this.showWindow)
                 {
-                    // verify data and write the new infrared frame data to the display bitmap
-                    if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
-                    {
-                        // Note: In order to see the full range of depth (including the less reliable far field depth)
-                        // we are setting maxDepth to the extreme potential depth threshold
-                        ushort maxDepth = ushort.MaxValue;
+                    ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
+                    DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
+                    depthFrame = depthFrameReference.AcquireFrame();
+                    colorFrame = colorFrameReference.AcquireFrame();
 
-                        // If you wish to filter by reliable depth distance, uncomment the following line:
-                        //// maxDepth = depthFrame.DepthMaxReliableDistance
-                        this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
-                        depthFrameProcessed = true;
+                    if (colorFrame == null || depthFrame == null)
+                    {
+                        return;
+                    }
+
+
+                    // color image
+                    FrameDescription colorFrameDescription = colorFrame.FrameDescription;
+
+                    // the fastest way to process the color frame data is to directly access 
+                    // the underlying buffer
+                    using (Microsoft.Kinect.KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
+                    {
+
+                        this.ProcessColorFrameDataEMGU(colorFrame);
+
+                    }
+                    // We're done with the colorFrame 
+                    colorFrame.Dispose();
+                    colorFrame = null;
+
+
+
+                    // Depht image
+                    FrameDescription dephtFrameDescription = depthFrame.FrameDescription;
+                    bool depthFrameProcessed = false;
+
+                    // the fastest way to process the depht frame data is to directly access 
+                    // the underlying buffer
+                    using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
+                    {
+                        // verify data and write the new infrared frame data to the display bitmap
+                        if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
+                        {
+                            // Note: In order to see the full range of depth (including the less reliable far field depth)
+                            // we are setting maxDepth to the extreme potential depth threshold
+                            ushort maxDepth = ushort.MaxValue;
+
+                            // If you wish to filter by reliable depth distance, uncomment the following line:
+                            //// maxDepth = depthFrame.DepthMaxReliableDistance
+                            this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
+                            depthFrameProcessed = true;
+                        }
+                    }
+                    if (depthFrameProcessed)
+                    {
+                        this.RenderDepthPixels();
                     }
                 }
-
-                if (depthFrameProcessed)
-                {
-                  this.RenderDepthPixels();
-                }
-
-
-
-
             }
             catch (Exception ex)
             {
                 // ignore if the frame is no longer available
                 Console.WriteLine("FRAME CHRASHED: " + ex.ToString());
-
             }
             finally
             {
+                // generate event at send writeable bitmaps for each frame, and cleanup
 
-                frameProcessedEventArgs.ColorBitmap = this.colorBitmap;
-                frameProcessedEventArgs.InfraredBitmap = this.infraredBitmap;
-                frameProcessedEventArgs.ThresholdBitmap = this.infraredThesholdedBitmap;
-                frameProcessedEventArgs.DephtBitmap = this.depthBitmap;
+                // only generate event if the mainwindow is shown
+                if (this.showWindow)
+                {
+                    frameProcessedEventArgs.ColorBitmap = this.colorBitmap;
+                    frameProcessedEventArgs.InfraredBitmap = this.infraredBitmap;
+                    frameProcessedEventArgs.ThresholdBitmap = this.infraredThesholdedBitmap;
+                    frameProcessedEventArgs.DephtBitmap = this.depthBitmap;
 
-                OnIrframeProcessed(frameProcessedEventArgs);
-                // MultiSourceFrame, DepthFrame, ColorFrame, BodyIndexFrame are IDispoable
+                    OnIrframeProcessed(frameProcessedEventArgs);
+
+                    // DepthFrame, ColorFrame are IDispoable
+                    if (colorFrame != null)
+                    {
+                        colorFrame.Dispose();
+                        colorFrame = null;
+                    }
+                    if (depthFrame != null)
+                    {
+                        depthFrame.Dispose();
+                        depthFrame = null;
+                    }
+                }
+                // infraredFrame is IDispoable
                 if (infraredFrame != null)
                 {
                     infraredFrame.Dispose();
                     infraredFrame = null;
                 }
-
-                if (colorFrame != null)
-                {
-                    colorFrame.Dispose();
-                    colorFrame = null;
-                }
-                if (depthFrame != null)
-                {
-                    depthFrame.Dispose();
-                    depthFrame = null;
-                }
-
                 if (multiSourceFrame != null)
                 {
                     multiSourceFrame = null;
@@ -420,6 +440,21 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 0);
         }
 
+        /// <summary>
+        /// Copies the "data" into the "bitmap" with datasize "dataSize"
+        /// </summary>
+        /// <param name="bitmap"></param>
+        /// <param name="data"></param>
+        /// <param name="dataSize"></param>
+        private void AddToBitmap(WriteableBitmap bitmap, Mat data, int dataSize)
+        {
+            bitmap.Lock();
+            CopyMemory(bitmap.BackBuffer, data.DataPointer, dataSize);
+            bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
+            bitmap.Unlock();
+            data.Dispose();
+        }
+
         /// <summary> EMGU VERSION
         /// Directly accesses the underlying image buffer of the InfraredFrame to 
         /// create a displayable bitmap.
@@ -429,26 +464,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="ColorFrame"> the InfraredFrame image </param>
         private unsafe void ProcessColorFrameDataEMGU(ColorFrame colorFrame)
         {
-
-
-            colorBitmap.Lock();
-
             Mat colorMat = new Mat(colorFrameDescription.Height, colorFrameDescription.Width, DepthType.Cv16U, 4);
             colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height * 4), ColorImageFormat.Bgra);
-
-            //uncomment to gray scale
-            //   CvInvoke.CvtColor(colorMat, colorMat, Emgu.CV.CvEnum.ColorConversion.Bgra2Gray);
-            ////Threshold call
-            //    CvInvoke.Threshold(colorMat, colorMat, 220, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
-
-            // CopyMemory(colorBitmap.BackBuffer, colorMat.DataPointer, (int)(colorFrameDescription.Width * colorFrameDescription.Height));
-
-            //comment out if grayscaled
-            CopyMemory(colorBitmap.BackBuffer, colorMat.DataPointer, (colorFrameDescription.Width * colorFrameDescription.Height * 4));
-
-            colorBitmap.AddDirtyRect(new Int32Rect(0, 0, colorBitmap.PixelWidth, colorBitmap.PixelHeight));
-
-            colorBitmap.Unlock();
+            AddToBitmap(colorBitmap, colorMat, (colorFrameDescription.Width * colorFrameDescription.Height * 4));
             colorMat.Dispose();
         }
 
@@ -462,8 +480,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
         private unsafe void ProcessInfraredFrameDataEMGU(InfraredFrame infraredFrame)
         {
-
-            
 
             // create EMGU and copy the Frame Data into it 
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
@@ -505,46 +521,34 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
             //Console.WriteLine(img.Mat.Depth);
 
-
-
-            // copy the processed image back into the backbuffer and dispose the EMGU image
-            if (thresholdedClicked)
+            // only generate writeable bitmap if the mainwindow is shown
+            if (this.showWindow)
             {
-
-                infraredThesholdedBitmap.Lock();
-                CopyMemory(infraredThesholdedBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height));
-                img.Dispose();
-                thresholdImg.Dispose();
-
-                // draw entire image and unlock bitmap
-                infraredThesholdedBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredThesholdedBitmap.PixelWidth, infraredThesholdedBitmap.PixelHeight));
-                infraredThesholdedBitmap.Unlock();
-
-
-                img.Dispose();
-                thresholdImg.Dispose();
-
-
-            }
-            else
-            {
-
-                infraredBitmap.Lock();
-                CopyMemory(infraredBitmap.BackBuffer, img.Mat.DataPointer, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
-
-                img.Dispose();
-                thresholdImg.Dispose();
-
-                // draw entire image and unlock bitmap
-                infraredBitmap.AddDirtyRect(new Int32Rect(0, 0, infraredBitmap.PixelWidth, infraredBitmap.PixelHeight));
-                infraredBitmap.Unlock();
-
+                // copy the processed image back into a writeable bitmap and dispose the EMGU image
+                if (thresholdedClicked)
+                {
+                    AddToBitmap(infraredThesholdedBitmap, img.Mat, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height));
+                }
+                else
+                {
+                    AddToBitmap(infraredBitmap, img.Mat, (int)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
+                }
             }
 
+            // cleanup
+            thresholdImg.Dispose();
+            img.Dispose();
         }
 
 
-
+        /// <summary>
+        /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
+        /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="thresholdImg"></param>
+        /// <param name="showThesholdedImg"></param>
+        /// <returns></returns>
         private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thresholdImg, bool showThesholdedImg)
         {
 
@@ -579,7 +583,7 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             int index;
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
-            
+
 
 
             if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
@@ -600,11 +604,11 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                         // if the area is more than minArea, discard 
                         if (true) // (area > minArea)
                         {
-                            Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
-
-
-
-                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+                            // only draw rectangles if the MainWindow is shown
+                            if (this.showWindow) {
+                                Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                                CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+                            }
 
                             //if (i==0)
 
@@ -646,18 +650,20 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 }
 
             }
-
+            // send the identified points via UDP in Json format
             if (centroidPoints.Length > 1)
             {
                 SendJson(newPoints);
             }
             prevPoints = newPoints;
-
-
             return img;
-
         }
 
+        /// <summary>
+        /// generates String for point-info in Json format 
+        /// </summary>
+        /// <param name="points"></param>
+        /// <returns></returns>
         private String PointstoJson(MCvPoint2D64f[] points)
         {
             int i = 0;
@@ -674,11 +680,15 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             return jSon;
         }
 
+        /// <summary>
+        /// Converts a list of points to Json and sends it via UDP socket
+        /// </summary>
+        /// <param name="newPoints"></param>
         private void SendJson(MCvPoint2D64f[] newPoints)
         {
             String jSon = PointstoJson(newPoints);
             udpSender.WriteToSocket(jSon);
-           // Console.WriteLine(jSon);
+//            Console.WriteLine(jSon);
         }
 
 
@@ -709,7 +719,10 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
             }
         }
 
-
+        /// <summary>
+        /// setter function for the thresholdedClicked bool
+        /// </summary>
+        /// <param name="threshold"></param>
         public void Threshold(bool threshold)
         {
             thresholdedClicked = threshold;
@@ -717,6 +730,9 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
 
         }
 
+        /// <summary>
+        /// sets prevPoints to null, resetting the point list.
+        /// </summary>
         public void ResetMesh()
         {
             prevPoints = null;
@@ -730,7 +746,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
         /// <param name="e">event arguments</param>
         private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
         {
-            
             OnChangeStatusText(e.IsAvailable);
         }
 

@@ -1,10 +1,4 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="App.xaml.cs" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-namespace Microsoft.Samples.Kinect.InfraredBasics
+﻿namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     using System;
     using System.Windows;
@@ -15,16 +9,16 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
     public partial class App : Application
     {
 
-  
-
         void App_Startup(object sender, StartupEventArgs e)
         {
             Console.WriteLine("Starting app");
+
+            // bool indicating if the program should start a GUI showing Kinect images(true), 
+            //or only send tracked data via UDP(false)
             bool showWindow = true;
 
-
-
-            KinectData kinectData = new KinectData();
+            // create new kinectData object to processes frames from the Kinect camera
+            KinectData kinectData = new KinectData(showWindow);
 
             if (showWindow)
             {
@@ -32,11 +26,6 @@ namespace Microsoft.Samples.Kinect.InfraredBasics
                 MainWindow mainWindow = new MainWindow(kinectData);
                 mainWindow.Show();
             }
-
-
-   
-
-            
 
         }
     }
