@@ -28,7 +28,7 @@
                 }
             }
 
-
+            showWindow = true;
 
 
             // create new kinectData object to processes frames from the Kinect camera

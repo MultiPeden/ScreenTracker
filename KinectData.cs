@@ -7,10 +7,6 @@
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     using System;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.IO;
     using System.Windows;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
@@ -22,10 +18,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
     using System.Runtime.InteropServices;
-    using System.Collections.Generic;
     using System.Threading;
-
-    using System.Configuration;
+    
+    using Accord.Collections;
+    using System.Linq;
 
     /// <summary>
     /// Interaction logic for the MainWindow
@@ -119,7 +115,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <summary>
         /// Array for holding points found in the previous frame
         /// </summary>
-        MCvPoint2D64f[] prevPoints;
+        double[][] prevPoints;
 
         /// <summary>
         /// Holds referece to the UDPsender object responsible outgoing data(via UDP socket)
@@ -519,7 +515,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             // find controids of reflective surfaces and mark them on the image 
             img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
-            //Console.WriteLine(img.Mat.Depth);
+            
 
             // only generate writeable bitmap if the mainwindow is shown
             if (this.showWindow)
@@ -559,15 +555,39 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             Mat labels = new Mat();
             Mat stats = new Mat();
             Mat centroids = new Mat();
+
             MCvPoint2D64f[] centroidPoints;
             int n;
 
             n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
 
+  
 
             centroidPoints = new MCvPoint2D64f[n];
             centroids.CopyTo(centroidPoints);
+
+            double[][] centroidPoints2 = new double[n - 1][];
+
+
             int i = 0;
+            foreach (MCvPoint2D64f point in centroidPoints)
+            {
+                if (i > 0)
+                {
+                    centroidPoints2[i - 1] = new double[2] { point.X, point.Y };
+                }
+                i++;
+            }
+
+
+
+
+
+
+            //            arr = (int[,])ResizeArray(arr, new int[] { 12, 2 });
+
+
+
             int colorcode;
             if (showThesholdedImg)
             {
@@ -579,41 +599,41 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 colorcode = Properties.Settings.Default.DataIndicatorColor;
             }
 
-            MCvPoint2D64f[] newPoints;
+            double[][] newPoints;
             int index;
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
 
-
-
+            i = 0;
             if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
             {
-                newPoints = new MCvPoint2D64f[centroidPoints.Length - 1];
+                newPoints = centroidPoints2;
+
 
                 // initialize points
-                foreach (MCvPoint2D64f point in centroidPoints)
+                foreach (double[] point in centroidPoints2)
                 {
-                    if (i > 0)
+                    int j = i + 1;
+                    //  int cx = stats.GetData(i, 0)[0];
+                    //  int cy = stats.GetData(i, 1)[0];
+                    int width = stats.GetData(j, 2)[0];
+                    int height = stats.GetData(j, 3)[0];
+                    int area = stats.GetData(j, 4)[0];
+
+                    // if the area is more than minArea, discard 
+                    if (true) // (area > minArea)
                     {
-                        //  int cx = stats.GetData(i, 0)[0];
-                        //  int cy = stats.GetData(i, 1)[0];
-                        int width = stats.GetData(i, 2)[0];
-                        int height = stats.GetData(i, 3)[0];
-                        int area = stats.GetData(i, 4)[0];
-
-                        // if the area is more than minArea, discard 
-                        if (true) // (area > minArea)
+                        // only draw rectangles if the MainWindow is shown
+                        if (this.showWindow)
                         {
-                            // only draw rectangles if the MainWindow is shown
-                            if (this.showWindow) {
-                                Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
-                                CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
-                            }
-
-                            //if (i==0)
-
-                            newPoints[i - 1] = new MCvPoint2D64f((int)point.X, (int)point.Y);
+                            Rectangle rect = new Rectangle((int)point[0] - (width / 2) - padding, (int)point[0] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
                         }
+
+                        //if (i==0)
+
+                  //      newPoints[i] = new double[] { (int)point[0], (int)point[1] };
+
                     }
                     i++;
                 }
@@ -623,34 +643,42 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             { // update points
                 newPoints = prevPoints;
 
-                foreach (MCvPoint2D64f point in centroidPoints)
+                KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+
+
+
+
+                foreach (double[] point in centroidPoints2)
                 {
-                    if (i > 0)
+                    int j = i + 1;
+                    //  int cx = stats.GetData(i, 0)[0];
+                    //  int cy = stats.GetData(i, 1)[0];
+                    int width = stats.GetData(j, 2)[0];
+                    int height = stats.GetData(j, 3)[0];
+                    int area = stats.GetData(j, 4)[0];
+
+                    // if the area is more than minArea, discard 
+                    if (true) // (area > minArea)
                     {
-                        //  int cx = stats.GetData(i, 0)[0];
-                        //  int cy = stats.GetData(i, 1)[0];
-                        int width = stats.GetData(i, 2)[0];
-                        int height = stats.GetData(i, 3)[0];
-                        int area = stats.GetData(i, 4)[0];
+                        Rectangle rect = new Rectangle((int)point[0] - (width / 2) - padding, (int)point[1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                        // if the area is more than minArea, discard 
-                        if (true) // (area > minArea)
-                        {
-                            Rectangle rect = new Rectangle((int)point.X - (width / 2) - padding, (int)point.Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                        CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness);
+                        //if (i==0)
+                        index = tree.Nearest(point).Value;
 
-                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness);
-                            //if (i==0)
-                            index = IRUtils.LowDist(point, prevPoints);
+        
+                        newPoints[index] = point;
 
-                            newPoints[index] = point;
-
-                        }
                     }
+
                     i++;
                 }
 
             }
             // send the identified points via UDP in Json format
+
+
+          //  Console.WriteLine(newPoints.Length);
             if (centroidPoints.Length > 1)
             {
                 SendJson(newPoints);
@@ -664,14 +692,16 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         /// <param name="points"></param>
         /// <returns></returns>
-        private String PointstoJson(MCvPoint2D64f[] points)
+        private String PointstoJson(double[][] points)
         {
             int i = 0;
             String jSon = "{\"Items\":[";
-            foreach (MCvPoint2D64f point in points)
+          
+
+            foreach (double[] point in points)
             {
                 // invert y axis
-                jSon += IRUtils.IRPointsJson(i, (int)point.X, this.infraredFrameDescription.Height - (int)point.Y);
+                jSon += IRUtils.IRPointsJson(i, this.infraredFrameDescription.Width - (int)point[0], this.infraredFrameDescription.Height - (int)point[1]);
                 if (i < points.Length - 1)
                     jSon += ",";
                 i++;
@@ -684,11 +714,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// Converts a list of points to Json and sends it via UDP socket
         /// </summary>
         /// <param name="newPoints"></param>
-        private void SendJson(MCvPoint2D64f[] newPoints)
+        private void SendJson(double[][] newPoints)
         {
             String jSon = PointstoJson(newPoints);
             udpSender.WriteToSocket(jSon);
-//            Console.WriteLine(jSon);
+
         }
 
 
