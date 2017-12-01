@@ -121,6 +121,7 @@
     <Compile Include="FrameProcessedEventArgs.cs" />
     <Compile Include="IRUtils.cs" />
     <Compile Include="KinectData.cs" />
+    <Compile Include="MatExtension.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

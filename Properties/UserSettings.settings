@@ -15,7 +15,7 @@
       <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="PercentageThreshold" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.98</Value>
+      <Value Profile="(Default)">0.96</Value>
     </Setting>
   </Settings>
 </SettingsFile>

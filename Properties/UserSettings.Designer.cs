@@ -73,7 +73,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.98")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.96")]
         public float PercentageThreshold {
             get {
                 return ((float)(this["PercentageThreshold"]));

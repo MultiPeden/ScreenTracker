@@ -13,7 +13,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public WriteableBitmap ThresholdBitmap { get; set; }
         public WriteableBitmap InfraredBitmap { get; set; }
         public WriteableBitmap ColorBitmap { get; set; }
-        public WriteableBitmap DephtBitmap { get; set; }
+        public WriteableBitmap DepthBitmap { get; set; }
 
     }
 }

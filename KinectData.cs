@@ -13,13 +13,14 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using Microsoft.Kinect;
 
     using System.Drawing;
+    using System.Xml.Serialization;
 
     using Emgu.CV;
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
     using System.Runtime.InteropServices;
     using System.Threading;
-    
+
     using Accord.Collections;
     using System.Linq;
 
@@ -47,7 +48,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// infraredBitmap - for the infrared sensor
         /// infraredThesholdedBitmap - For a thresholded version of the infrared sensor
         /// colorBitmap - for the color sensor
-        /// depthBitmap - for the depht sensor
+        /// depthBitmap - for the depth sensor
         /// </summary>
         private WriteableBitmap infraredThesholdedBitmap = null;
         private WriteableBitmap infraredBitmap = null;
@@ -92,7 +93,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private FrameDescription colorFrameDescription = null;
 
         /// <summary>
-        /// Description (width, height, etc) of the depht frame data
+        /// Description (width, height, etc) of the depth frame data
         /// </summary>
         private FrameDescription depthFrameDescription = null;
 
@@ -153,12 +154,20 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         public event EventHandler<bool> ChangeStatusText;
 
+        /// <summary>
+        /// Bool indicating if z coordinates should be calculated
+        /// </summary>
+        private bool withZCoodinates;
+
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
         public KinectData(bool showWindow)
         {
+            /// Bool indicating if z coordinates should be calculated
+            this.withZCoodinates = true;
+
             // bool indicating in the MainWindow should be shown
             this.showWindow = showWindow;
             // get the kinectSensor object
@@ -176,7 +185,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // get FrameDescription from ColorFrameSource
             this.colorFrameDescription = this.kinectSensor.ColorFrameSource.FrameDescription;
 
-            // get FrameDescription from DephtFrameSource
+            // get FrameDescription from depthFrameSource
             this.depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
 
             // allocate space to put the pixels being received and converted
@@ -273,7 +282,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
-        private void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
+        private unsafe void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
             FrameProcessedEventArgs frameProcessedEventArgs = new FrameProcessedEventArgs();
 
@@ -311,22 +320,106 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     // verify data and write the new infrared frame data to the display bitmap
                     if (((this.infraredFrameDescription.Width * this.infraredFrameDescription.Height) == (infraredBuffer.Size / this.infraredFrameDescription.BytesPerPixel)))
                     {
-                        //      this.ProcessInfraredFrameData(infraredBuffer.UnderlyingBuffer, infraredBuffer.Size);
+
+                        ushort* frameData = (ushort*)infraredBuffer.UnderlyingBuffer;
+
+                        ushort index = (ushort)(infraredFrameDescription.Width * 100 + 100);
+
+                        Console.Write("raw buffer: " + frameData[index] + " emgu: ");
+
                         this.ProcessInfraredFrameDataEMGU(infraredFrame);
+
+
+
+
+                        if (this.withZCoodinates || this.showWindow)
+                        {
+
+   
+
+                                DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
+                                depthFrame = depthFrameReference.AcquireFrame();
+
+
+                                if (depthFrame == null)
+                                {
+                                    return;
+                                }
+                                bool depthFrameProcessed = false;
+                                // the fastest way to process the depth frame data is to directly access 
+                                // the underlying buffer
+                                using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
+                                {
+                                    // verify data and write the new infrared frame data to the display bitmap
+                                    if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
+                                    {
+
+
+                                    if (this.showWindow)
+                                    {
+                                        // Note: In order to see the full range of depth (including the less reliable far field depth)
+                                        // we are setting maxDepth to the extreme potential depth threshold
+                                        ushort maxDepth = ushort.MaxValue;
+
+                                        // If you wish to filter by reliable depth distance, uncomment the following line:
+                                        //// maxDepth = depthFrame.DepthMaxReliableDistance
+
+                                        this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
+                                        depthFrameProcessed = true;
+
+                                        if (depthFrameProcessed)
+                                        {
+                                            this.RenderDepthPixels();
+                                        }
+                                    }
+                  
+
+                                    if (this.withZCoodinates && this.prevPoints.Length > 1)
+                                    {
+                                        ushort[] zCoodinates = GetZCoordinates(depthBuffer.UnderlyingBuffer);
+                                        foreach( ushort z in zCoodinates)
+                                        {
+                                            Console.Write(z + " ");
+                                        }
+
+                                        Console.Write( "\n");
+                                        SendPoints(this.prevPoints, zCoodinates);
+                                    }
+
+                                    }
+                                depthFrame.Dispose();
+                                depthFrame = null;
+
+
+
+
+                            }
+
+
+                        }
+                        else
+                        {
+
+                            if (this.prevPoints.Length > 1)
+                            {
+                                SendPoints(this.prevPoints);
+                            }
+                        }
+
                     }
+
                 }
+
                 infraredFrame.Dispose();
                 infraredFrame = null;
 
-                // only get color and dephtframe if the mainwindow is shown 
-                if (this.showWindow)
+                // only get color and depthframe if the mainwindow is shown 
+              if (this.showWindow)
                 {
                     ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
-                    DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
-                    depthFrame = depthFrameReference.AcquireFrame();
                     colorFrame = colorFrameReference.AcquireFrame();
 
-                    if (colorFrame == null || depthFrame == null)
+                    if (colorFrame == null)
                     {
                         return;
                     }
@@ -349,31 +442,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-                    // Depht image
-                    FrameDescription dephtFrameDescription = depthFrame.FrameDescription;
-                    bool depthFrameProcessed = false;
+                  
 
-                    // the fastest way to process the depht frame data is to directly access 
-                    // the underlying buffer
-                    using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
-                    {
-                        // verify data and write the new infrared frame data to the display bitmap
-                        if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
-                        {
-                            // Note: In order to see the full range of depth (including the less reliable far field depth)
-                            // we are setting maxDepth to the extreme potential depth threshold
-                            ushort maxDepth = ushort.MaxValue;
 
-                            // If you wish to filter by reliable depth distance, uncomment the following line:
-                            //// maxDepth = depthFrame.DepthMaxReliableDistance
-                            this.ProcessDepthFrameData(depthBuffer.UnderlyingBuffer, depthBuffer.Size, depthFrame.DepthMinReliableDistance, maxDepth);
-                            depthFrameProcessed = true;
-                        }
-                    }
-                    if (depthFrameProcessed)
-                    {
-                        this.RenderDepthPixels();
-                    }
                 }
             }
             catch (Exception ex)
@@ -391,7 +462,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     frameProcessedEventArgs.ColorBitmap = this.colorBitmap;
                     frameProcessedEventArgs.InfraredBitmap = this.infraredBitmap;
                     frameProcessedEventArgs.ThresholdBitmap = this.infraredThesholdedBitmap;
-                    frameProcessedEventArgs.DephtBitmap = this.depthBitmap;
+                    frameProcessedEventArgs.DepthBitmap = this.depthBitmap;
 
                     OnIrframeProcessed(frameProcessedEventArgs);
 
@@ -421,6 +492,52 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             }
 
 
+        }
+        /// <summary>
+        /// The z-coordinate from the depth-camera is almost always 0 for centroids because it can not 
+        /// measure the depth of reflektive surfacres, thus we have to estimate the depth using the 
+        /// surrounding pixels.
+        /// </summary>
+        /// <param name="depthFrameData"></param>
+        /// <returns></returns>
+        private unsafe ushort[] GetZCoordinates(IntPtr depthFrameData)
+        {
+
+
+            ushort[] zCoordinates = new ushort[this.prevPoints.Length];
+
+            // depth frame data is a 16 bit value
+            ushort* frameData = (ushort*)depthFrameData;
+            // Console.WriteLine("hej");
+           // Console.WriteLine(frameData[5]);
+
+            int i = 0;
+            int j = 0;
+            foreach (double[] point in this.prevPoints)
+            {
+                double x = point[0];
+                double y = point[1];
+                while (y>=0)
+                {
+                    ushort index = (ushort)(depthFrameDescription.Width * x + y);
+                    ushort zval = frameData[index];
+                    if (zval > 0)
+                    {
+
+                        if (j > 4)
+                        {
+                            zCoordinates[i] = zval;
+                            break;
+                        }
+                        j++;
+                    }
+                    y--;
+
+                }
+
+                i++;
+            }
+            return zCoordinates;
         }
 
 
@@ -481,6 +598,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
 
+           
+            // only for debugging
+            Console.WriteLine(MatExtension.GetValue(mat, 100, 100));
+
+
 
             // convert to 8bit image
             Image<Gray, Byte> img = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
@@ -515,7 +637,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             // find controids of reflective surfaces and mark them on the image 
             img = DrawTrackedData(img, thresholdImg, thresholdedClicked);
-            
+
 
             // only generate writeable bitmap if the mainwindow is shown
             if (this.showWindow)
@@ -561,7 +683,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
 
-  
+
 
             centroidPoints = new MCvPoint2D64f[n];
             centroids.CopyTo(centroidPoints);
@@ -632,7 +754,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                         //if (i==0)
 
-                  //      newPoints[i] = new double[] { (int)point[0], (int)point[1] };
+                        //      newPoints[i] = new double[] { (int)point[0], (int)point[1] };
 
                     }
                     i++;
@@ -666,7 +788,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         //if (i==0)
                         index = tree.Nearest(point).Value;
 
-        
+
                         newPoints[index] = point;
 
                     }
@@ -675,51 +797,34 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
 
             }
+
+
+
             // send the identified points via UDP in Json format
 
 
-          //  Console.WriteLine(newPoints.Length);
-            if (centroidPoints.Length > 1)
-            {
-                SendJson(newPoints);
-            }
+            //  Console.WriteLine(newPoints.Length);
+
             prevPoints = newPoints;
             return img;
         }
 
-        /// <summary>
-        /// generates String for point-info in Json format 
-        /// </summary>
-        /// <param name="points"></param>
-        /// <returns></returns>
-        private String PointstoJson(double[][] points)
-        {
-            int i = 0;
-            String jSon = "{\"Items\":[";
-          
 
-            foreach (double[] point in points)
-            {
-                // invert y axis
-                jSon += IRUtils.IRPointsJson(i, this.infraredFrameDescription.Width - (int)point[0], this.infraredFrameDescription.Height - (int)point[1]);
-                if (i < points.Length - 1)
-                    jSon += ",";
-                i++;
-            }
-            jSon += "]}";
-            return jSon;
-        }
+
+
+
+
 
         /// <summary>
         /// Converts a list of points to Json and sends it via UDP socket
         /// </summary>
         /// <param name="newPoints"></param>
-        private void SendJson(double[][] newPoints)
+        private void SendPoints(double[][] newPoints, ushort[] zCoordinates = null)
         {
-            String jSon = PointstoJson(newPoints);
+            String jSon = IRUtils.PointstoJson(newPoints, zCoordinates, this.infraredFrameDescription.Width, this.infraredFrameDescription.Width);
             udpSender.WriteToSocket(jSon);
-
         }
+
 
 
         /// <summary>
@@ -736,6 +841,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             // depth frame data is a 16 bit value
             ushort* frameData = (ushort*)depthFrameData;
+
 
             // convert depth to a visual representation
             for (int i = 0; i < (int)(depthFrameDataSize / this.depthFrameDescription.BytesPerPixel); ++i)

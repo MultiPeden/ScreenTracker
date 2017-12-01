@@ -91,7 +91,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             // show images according to the buttons selected in the GUI
             leftImg.Source = this.thresholdedClicked ? e.ThresholdBitmap : e.InfraredBitmap;
-            rightImg.Source = this.colorClicked ? e.ColorBitmap : e.DephtBitmap;
+            rightImg.Source = this.colorClicked ? e.ColorBitmap : e.DepthBitmap;
         }
 
 
