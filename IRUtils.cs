@@ -1,6 +1,6 @@
 ﻿using System;
 using Emgu.CV.Structure;
-
+using Microsoft.Kinect;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
@@ -19,6 +19,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             int i = 0;
             String jSon = "{\"Items\":[";
+
 
             if (zCoordinates == null)
             {

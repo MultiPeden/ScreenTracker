@@ -166,9 +166,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public KinectData(bool showWindow)
         {
             /// Bool indicating if z coordinates should be calculated
-            this.withZCoodinates = true;
+            this.withZCoodinates = false;
 
-            // bool indicating in the MainWindow should be shown
+            //// bool indicating in the MainWindow should be shown
             this.showWindow = showWindow;
             // get the kinectSensor object
             this.kinectSensor = KinectSensor.GetDefault();
@@ -325,12 +325,27 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                         ushort index = (ushort)(infraredFrameDescription.Width * 100 + 100);
 
-                        Console.Write("raw buffer: " + frameData[index] + " emgu: ");
+                        //Console.Write("raw buffer: " + frameData[index] + " emgu: ");
 
                         this.ProcessInfraredFrameDataEMGU(infraredFrame);
 
 
+/*
+                        CameraSpacePoint cameraPoint = new CameraSpacePoint
+                        {
+                            X = 2,
+                            Y = 2,
+                            Z =  100
+                        };
 
+                        DepthSpacePoint depthPoint = kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(cameraPoint);
+                        Console.WriteLine(cameraPoint.X + " converte d  " + depthPoint.X);
+
+                        CameraSpacePoint cameraPoint1 = kinectSensor.CoordinateMapper.MapDepthPointToCameraSpace(depthPoint, 1);
+
+
+                        Console.WriteLine(depthPoint.X + " converte d 2 " + cameraPoint1.X);
+                        */
 
                         if (this.withZCoodinates || this.showWindow)
                         {
@@ -377,13 +392,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                                     if (this.withZCoodinates && this.prevPoints.Length > 1)
                                     {
                                         ushort[] zCoodinates = GetZCoordinates(depthBuffer.UnderlyingBuffer);
-                                        foreach( ushort z in zCoodinates)
-                                        {
-                                            Console.Write(z + " ");
-                                        }
 
-                                        Console.Write( "\n");
                                         SendPoints(this.prevPoints, zCoodinates);
+
+
                                     }
 
                                     }
@@ -402,6 +414,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                             if (this.prevPoints.Length > 1)
                             {
+
+
+
                                 SendPoints(this.prevPoints);
                             }
                         }
@@ -598,11 +613,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
 
-           
-            // only for debugging
-            Console.WriteLine(MatExtension.GetValue(mat, 100, 100));
-
-
+          
 
             // convert to 8bit image
             Image<Gray, Byte> img = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);

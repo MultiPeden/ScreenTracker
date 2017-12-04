@@ -68,6 +68,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             kinectData.ChangeStatusText += KinectData_ChangeStatusText;
             // initialize the components (controls) of the window
             this.InitializeComponent();
+
+            string xmlPath = "C:/Users/MultiPeden/Desktop/kinectcalibration/test.xml";
+            CalibrationData cali = new CalibrationData(xmlPath);
+
         }
 
         /// <summary>
