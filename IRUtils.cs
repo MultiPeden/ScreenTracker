@@ -38,7 +38,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 foreach (double[] point in points)
                 {
                     // invert y axis
-                    jSon += IRUtils.IRPointsJson(i, width - (int)point[0], height - (int)point[1], (int)zCoordinates[i]);
+                  //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
+                    // no invert
+                    jSon += IRUtils.IRPointsJson(i,  (int)point[0] *-1 , (int)point[1], (int)zCoordinates[i]);
                     if (i < points.Length - 1)
                         jSon += ",";
                     i++;

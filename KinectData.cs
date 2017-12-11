@@ -23,6 +23,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
     using Accord.Collections;
     using System.Linq;
+    using System.Collections.Generic;
+    using Accord.Statistics;
 
     /// <summary>
     /// Interaction logic for the MainWindow
@@ -160,13 +162,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private bool withZCoodinates;
 
 
+        private PointInfo[] pointInfo;
+
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
         public KinectData(bool showWindow)
         {
             /// Bool indicating if z coordinates should be calculated
-            this.withZCoodinates = false;
+            this.withZCoodinates = true;
 
             //// bool indicating in the MainWindow should be shown
             this.showWindow = showWindow;
@@ -330,44 +334,29 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         this.ProcessInfraredFrameDataEMGU(infraredFrame);
 
 
-/*
-                        CameraSpacePoint cameraPoint = new CameraSpacePoint
-                        {
-                            X = 2,
-                            Y = 2,
-                            Z =  100
-                        };
-
-                        DepthSpacePoint depthPoint = kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(cameraPoint);
-                        Console.WriteLine(cameraPoint.X + " converte d  " + depthPoint.X);
-
-                        CameraSpacePoint cameraPoint1 = kinectSensor.CoordinateMapper.MapDepthPointToCameraSpace(depthPoint, 1);
-
-
-                        Console.WriteLine(depthPoint.X + " converte d 2 " + cameraPoint1.X);
-                        */
 
                         if (this.withZCoodinates || this.showWindow)
                         {
 
-   
-
-                                DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
-                                depthFrame = depthFrameReference.AcquireFrame();
 
 
-                                if (depthFrame == null)
+                            DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
+                            depthFrame = depthFrameReference.AcquireFrame();
+
+
+                            if (depthFrame == null)
+                            {
+                                return;
+                            }
+                            bool depthFrameProcessed = false;
+                            // the fastest way to process the depth frame data is to directly access 
+                            // the underlying buffer
+                            using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
+                            {
+                                // verify data and write the new infrared frame data to the display bitmap
+                                if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) ==
+                                    (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
                                 {
-                                    return;
-                                }
-                                bool depthFrameProcessed = false;
-                                // the fastest way to process the depth frame data is to directly access 
-                                // the underlying buffer
-                                using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
-                                {
-                                    // verify data and write the new infrared frame data to the display bitmap
-                                    if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) == (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
-                                    {
 
 
                                     if (this.showWindow)
@@ -387,18 +376,18 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                                             this.RenderDepthPixels();
                                         }
                                     }
-                  
+
 
                                     if (this.withZCoodinates && this.prevPoints.Length > 1)
                                     {
-                                        ushort[] zCoodinates = GetZCoordinates(depthBuffer.UnderlyingBuffer);
+                                        ushort[] zCoodinates = GetZCoordinates2(depthBuffer.UnderlyingBuffer);
 
                                         SendPoints(this.prevPoints, zCoodinates);
 
 
                                     }
 
-                                    }
+                                }
                                 depthFrame.Dispose();
                                 depthFrame = null;
 
@@ -429,7 +418,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 infraredFrame = null;
 
                 // only get color and depthframe if the mainwindow is shown 
-              if (this.showWindow)
+                if (this.showWindow)
                 {
                     ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
                     colorFrame = colorFrameReference.AcquireFrame();
@@ -457,7 +446,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-                  
+
 
 
                 }
@@ -524,7 +513,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // depth frame data is a 16 bit value
             ushort* frameData = (ushort*)depthFrameData;
             // Console.WriteLine("hej");
-           // Console.WriteLine(frameData[5]);
+            // Console.WriteLine(frameData[5]);
 
             int i = 0;
             int j = 0;
@@ -532,7 +521,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 double x = point[0];
                 double y = point[1];
-                while (y>=0)
+                while (y >= 0)
                 {
                     ushort index = (ushort)(depthFrameDescription.Width * x + y);
                     ushort zval = frameData[index];
@@ -555,6 +544,103 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             return zCoordinates;
         }
 
+
+        /// <summary>
+        /// The z-coordinate from the depth-camera is almost always 0 for centroids because it can not 
+        /// measure the depth of reflektive surfacres, thus we have to estimate the depth using the 
+        /// surrounding pixels.
+        /// </summary>
+        /// <param name="depthFrameData"></param>
+        /// <returns></returns>
+        private unsafe ushort[] GetZCoordinates2(IntPtr depthFrameData)
+        {
+
+
+            ushort[] zCoordinates = new ushort[this.prevPoints.Length];
+
+            // depth frame data is a 16 bit value
+            ushort* frameData = (ushort*)depthFrameData;
+            // Console.WriteLine("hej");
+            // Console.WriteLine(frameData[5]);
+
+            double imgwidth = infraredBitmap.Width;
+
+            List<double> zCoords = new List < double >();
+
+            for (int i = 0; i < prevPoints.Length; i++)
+            {
+                PointInfo p = pointInfo[i];
+
+                double x = Math.Round( prevPoints[i][0]);
+                double y = Math.Round(prevPoints[i][1]);
+                int width = (p.Width / 2) +5;
+              //  width = +5;
+                int height = (p.Height / 2) +5;
+               // height = +5;
+                int frameWidth = depthFrameDescription.Width;
+
+
+  
+                AddDephtPixel(x+width, y, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x - width, y, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x, y + height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x, y - height, imgwidth, ref frameData, ref zCoords);
+
+
+                AddDephtPixel(x + width, y + height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x - width, y - height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x + width, y - height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x - width, y + height, imgwidth, ref frameData, ref zCoords);
+
+
+                   Console.WriteLine("center: " + frameData[(frameWidth * (frameWidth/2 +30) + (depthFrameDescription.Height /2 +30))]);
+
+              ///  Console.WriteLine(width);
+
+                if (zCoords.Count != 0)
+                {
+
+                   
+                    double zval = Measures.Median(zCoords.ToArray());
+                    //     Console.WriteLine("p: " + i + "  X: " + x + "   ----- Y: " + y  + "   ----- z: " + zval) ;
+                    //    zCoordinates[i] = (ushort)zval;
+                    zCoordinates[i] = 1500;
+//                    zCoordinates[i] = frameData[(frameWidth * (frameWidth / 2 + 30) + (depthFrameDescription.Height / 2 + 30))];
+//  Console.WriteLine(zval);
+                }
+                else
+                {
+                    zCoordinates[i] = 0;
+                }
+
+            }
+
+
+            return zCoordinates;
+        }
+
+
+        private unsafe void AddDephtPixel(double x, double y, double width, ref ushort* frameData, ref List<double> zCoords)
+        {
+            try
+            {
+                zCoords.Add( frameData[(ushort)(width * x + y)]);
+                
+            }
+            catch (Exception)
+            {
+
+                // do nothing
+            }
+
+
+        }
+
+        
+        private ushort From2DTo1DArray(double x, double y, int width )
+        {
+            return (ushort)(width * x + y);
+        }
 
         /// <summary>
         /// Renders color pixels into the writeableBitmap.
@@ -613,7 +699,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
 
-          
+
 
             // convert to 8bit image
             Image<Gray, Byte> img = new Image<Gray, Byte>(infraredFrameDescription.Width, infraredFrameDescription.Height);
@@ -700,6 +786,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             centroids.CopyTo(centroidPoints);
 
             double[][] centroidPoints2 = new double[n - 1][];
+            pointInfo = new PointInfo[n - 1];
 
 
             int i = 0;
@@ -753,6 +840,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
 
+                    pointInfo[i] = new PointInfo(width, height);
+
                     // if the area is more than minArea, discard 
                     if (true) // (area > minArea)
                     {
@@ -799,6 +888,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         //if (i==0)
                         index = tree.Nearest(point).Value;
 
+                        pointInfo[index] = new PointInfo(width, height);
+
+
+
 
                         newPoints[index] = point;
 
@@ -832,8 +925,123 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="newPoints"></param>
         private void SendPoints(double[][] newPoints, ushort[] zCoordinates = null)
         {
-            String jSon = IRUtils.PointstoJson(newPoints, zCoordinates, this.infraredFrameDescription.Width, this.infraredFrameDescription.Width);
+
+
+            double[][] newPointsTest = ConvertPoints( newPoints, zCoordinates);
+
+            String jSon = IRUtils.PointstoJson(newPointsTest, zCoordinates, this.infraredFrameDescription.Width, this.infraredFrameDescription.Width);
             udpSender.WriteToSocket(jSon);
+        }
+
+        private double[][] ConvertPoints( double[][] newPoints, ushort[] zCoordinates )
+        {
+            CameraSpacePoint cameraPoint;
+            DepthSpacePoint depthPoint;
+            CoordinateMapper mapper = kinectSensor.CoordinateMapper;
+
+            Microsoft.Kinect.PointF[] cameraSpaceTable =  mapper.GetDepthFrameToCameraSpaceTable();
+            double[][] newPointsTest = new double[newPoints.Length][];
+
+            for (int i = 0; i < newPoints.Length; i++)
+            {
+
+                /*
+                cameraPoint = new CameraSpacePoint
+                {
+                    X = (float) newPoints[i][0],
+                    Y = (float) newPoints[i][1],
+                    Z = zCoordinates[i]
+
+                };
+                */
+                // Get the value from the x/y table
+
+                int x = (int)newPoints[i][0];
+                int y = (int)newPoints[i][1];
+
+              //  Microsoft.Kinect.PointF lutValue = cameraSpaceTable[y * depthFrameDescription.Height + x];
+      
+
+                Microsoft.Kinect.PointF lutValue = cameraSpaceTable[depthFrameDescription.Width * y + x];
+
+                // Get the depth for this pixel
+                ushort depth = zCoordinates[i];
+
+
+                newPointsTest[i] = new double[2]{ lutValue.X * depth , lutValue.Y * depth };
+               
+            }
+
+            return newPointsTest;
+
+        }
+
+
+        private double[][] ConvertPoints2(double[][] newPoints, ushort[] zCoordinates)
+        {
+            CameraSpacePoint cameraPoint;
+            DepthSpacePoint depthPoint;
+            CoordinateMapper mapper = kinectSensor.CoordinateMapper;
+            double[][] newPointsTest = new double[newPoints.Length][];
+
+            for (int i = 0; i < newPoints.Length; i++)
+            {
+
+                /*
+                cameraPoint = new CameraSpacePoint
+                {
+                    X = (float) newPoints[i][0],
+                    Y = (float) newPoints[i][1],
+                    Z = zCoordinates[i]
+
+                };
+                */
+                depthPoint = new DepthSpacePoint
+                {
+                    X = (float)newPoints[i][0],
+                    Y = (float)newPoints[i][1]
+                };
+                //       depthPoint = mapper.MapCameraPointToDepthSpace(cameraPoint);
+                cameraPoint = mapper.MapDepthPointToCameraSpace(depthPoint, zCoordinates[i]);
+
+                newPointsTest[i] = new double[2] { cameraPoint.X, cameraPoint.Y };
+
+            }
+
+            return newPointsTest;
+
+        }
+
+
+
+        private double[][] ConvertPoints1(double[][] newPoints, ushort[] zCoordinates)
+        {
+            CameraSpacePoint cameraPoint;
+            DepthSpacePoint depthPoint;
+            CoordinateMapper mapper = kinectSensor.CoordinateMapper;
+            double[][] newPointsTest = new double[newPoints.Length][];
+
+            for (int i = 0; i < newPoints.Length; i++)
+            {
+
+       
+                cameraPoint = new CameraSpacePoint
+                {
+                    X = (float) newPoints[i][0],
+                    Y = (float) newPoints[i][1],
+                    Z = zCoordinates[i]
+
+                };
+     
+
+                       depthPoint = mapper.MapCameraPointToDepthSpace(cameraPoint);
+
+                newPointsTest[i] = new double[2] { depthPoint.X, depthPoint.Y };
+
+            }
+
+            return newPointsTest;
+
         }
 
 
