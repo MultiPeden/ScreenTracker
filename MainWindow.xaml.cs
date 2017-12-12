@@ -69,8 +69,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // initialize the components (controls) of the window
             this.InitializeComponent();
 
-            string xmlPath = "C:/Users/MultiPeden/Desktop/kinectcalibration/test.xml";
-            CalibrationData cali = new CalibrationData(xmlPath);
+         //   string xmlPath = "C:/Users/MultiPeden/Desktop/kinectcalibration/test.xml";
+         //   CalibrationData cali = new CalibrationData(xmlPath);
 
         }
 

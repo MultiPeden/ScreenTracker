@@ -325,9 +325,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     if (((this.infraredFrameDescription.Width * this.infraredFrameDescription.Height) == (infraredBuffer.Size / this.infraredFrameDescription.BytesPerPixel)))
                     {
 
-                        ushort* frameData = (ushort*)infraredBuffer.UnderlyingBuffer;
+                      //  ushort* frameData = (ushort*)infraredBuffer.UnderlyingBuffer;
 
-                        ushort index = (ushort)(infraredFrameDescription.Width * 100 + 100);
+                      //  ushort index = (ushort)(infraredFrameDescription.Width * 100 + 100);
 
                         //Console.Write("raw buffer: " + frameData[index] + " emgu: ");
 
@@ -573,9 +573,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 double x = Math.Round( prevPoints[i][0]);
                 double y = Math.Round(prevPoints[i][1]);
-                int width = (p.Width / 2) +5;
+                int width = (p.Width / 2) +1;
               //  width = +5;
-                int height = (p.Height / 2) +5;
+                int height = (p.Height / 2) +1;
                // height = +5;
                 int frameWidth = depthFrameDescription.Width;
 
@@ -593,7 +593,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 AddDephtPixel(x - width, y + height, imgwidth, ref frameData, ref zCoords);
 
 
-                   Console.WriteLine("center: " + frameData[(frameWidth * (frameWidth/2 +30) + (depthFrameDescription.Height /2 +30))]);
+              //     Console.WriteLine("center: " + frameData[(frameWidth * (frameWidth/2 +30) + (depthFrameDescription.Height /2 +30))]);
 
               ///  Console.WriteLine(width);
 
@@ -602,11 +602,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                    
                     double zval = Measures.Median(zCoords.ToArray());
-                    //     Console.WriteLine("p: " + i + "  X: " + x + "   ----- Y: " + y  + "   ----- z: " + zval) ;
-                    //    zCoordinates[i] = (ushort)zval;
-                    zCoordinates[i] = 1500;
-//                    zCoordinates[i] = frameData[(frameWidth * (frameWidth / 2 + 30) + (depthFrameDescription.Height / 2 + 30))];
-//  Console.WriteLine(zval);
+                         Console.WriteLine("p: " + i + "  X: " + x + "   ----- Y: " + y  + "   ----- z: " + zval) ;
+                       zCoordinates[i] = (ushort)zval;
+                    //   zCoordinates[i] = 1500;
+                    //                    zCoordinates[i] = frameData[(frameWidth * (frameWidth / 2 + 30) + (depthFrameDescription.Height / 2 + 30))];
+                    //  Console.WriteLine(zval);
+                
+
                 }
                 else
                 {
@@ -624,8 +626,30 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             try
             {
-                zCoords.Add( frameData[(ushort)(width * x + y)]);
                 
+                zCoords.Add( frameData[(int)(width * y + x)]);
+
+                /*
+                this.depthPixels[(int) (width * x + y)] = 255;
+                this.depthPixels[(int)(width * (x+1) + y)] = 255;
+                this.depthPixels[(int)(width * x + y+1)] = 255;
+                this.depthPixels[(int)(width * (x-1) + y)] = 255;
+                this.depthPixels[(int)(width * x + y-1)] = 255;
+                */
+
+                this.depthPixels[(int)(width * y + x)] = 255;
+                this.depthPixels[(int)(width * (y + 1) + x)] = 255;
+                this.depthPixels[(int)(width * y + x + 1)] = 255;
+                this.depthPixels[(int)(width * (y - 1) + x)] = 255;
+                this.depthPixels[(int)(width * y + x - 1)] = 255;
+
+
+                //  zCoords.Add(frameData[(ushort)(width * y + x)]);
+
+                // WRONG  zCoords.Add(frameData[(ushort)(depthFrameDescription.Height * x + y)]);
+                   Console.WriteLine(frameData[(int)(width * y + x)]);
+
+
             }
             catch (Exception)
             {
@@ -931,6 +955,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             String jSon = IRUtils.PointstoJson(newPointsTest, zCoordinates, this.infraredFrameDescription.Width, this.infraredFrameDescription.Width);
             udpSender.WriteToSocket(jSon);
+
+            RenderDepthPixels();
         }
 
         private double[][] ConvertPoints( double[][] newPoints, ushort[] zCoordinates )
