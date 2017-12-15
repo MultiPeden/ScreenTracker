@@ -123,6 +123,7 @@
     <Compile Include="IRUtils.cs" />
     <Compile Include="KinectData.cs" />
     <Compile Include="MatExtension.cs" />
+    <Compile Include="OneEuroFilter.cs" />
     <Compile Include="PointInfo.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>

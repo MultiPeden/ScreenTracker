@@ -167,7 +167,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         CoordinateMapper mapper;
 
-  
+        OneEuroFilter[] oneEuroFilters;
+
+
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
@@ -224,8 +226,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             // get conversiontable between depthframe to cameraspace
              mapper = kinectSensor.CoordinateMapper;
-          
 
+            
+
+            
         }
 
         /// <summary>
@@ -595,7 +599,17 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 {
                     //
                     double zval = Measures.Median(zCoords.ToArray());
-                    zCoordinates[i] = (ushort)zval;
+         
+
+                    // non filtered z-val
+                   // zCoordinates[i] = (ushort)zval;
+                    // filtered z val
+                    zCoordinates[i] = (ushort)oneEuroFilters[i].Filter(zval, 60);
+
+
+
+
+
                 }
                 else
                 {
@@ -826,7 +840,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 newPoints = centroidPoints2;
 
-
+                // add z filters
+                oneEuroFilters = new OneEuroFilter[centroidPoints2.Length];
                 // initialize points
                 foreach (double[] point in centroidPoints2)
                 {
@@ -838,6 +853,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int area = stats.GetData(j, 4)[0];
 
                     pointInfo[i] = new PointInfo(width, height);
+                    oneEuroFilters[i] = new OneEuroFilter(1,0);
+
 
                     // if the area is more than minArea, discard 
                     if (true) // (area > minArea)
