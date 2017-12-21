@@ -167,9 +167,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         CoordinateMapper mapper;
 
-        OneEuroFilter[] oneEuroFilters;
-
-
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
@@ -561,6 +558,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private unsafe ushort[] GetZCoordinatesSurroundingBox(IntPtr depthFrameData)
         {
 
+            // init array to the size of the array with tracked points
             ushort[] zCoordinates = new ushort[this.prevPoints.Length];
 
             // depth frame data is a 16 bit value
@@ -568,10 +566,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             double imgwidth = infraredBitmap.Width;
 
-            List<double> zCoords = new List<double>();
+            // list for each point's depth sample points
+            List<double> zCoords;
 
             for (int i = 0; i < prevPoints.Length; i++)
             {
+                zCoords = new List<double>();
                 PointInfo p = pointInfo[i];
 
                 double x = Math.Round(prevPoints[i][0]);
@@ -589,7 +589,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 AddDephtPixel(x, y + height, imgwidth, ref frameData, ref zCoords);
                 AddDephtPixel(x, y - height, imgwidth, ref frameData, ref zCoords);
 
-                // add itercardinal points (NE,SE,SW,NW)
+                // add inter-cardinal points (NE,SE,SW,NW)
                 AddDephtPixel(x + width, y + height, imgwidth, ref frameData, ref zCoords);
                 AddDephtPixel(x - width, y - height, imgwidth, ref frameData, ref zCoords);
                 AddDephtPixel(x + width, y - height, imgwidth, ref frameData, ref zCoords);
@@ -597,19 +597,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 if (zCoords.Count != 0)
                 {
-                    //
+                    
+                    // find the z-val by calc the median of the cardinal and inter-cardinal points
                     double zval = Measures.Median(zCoords.ToArray());
-         
-
-                    // non filtered z-val
-                   // zCoordinates[i] = (ushort)zval;
-                    // filtered z val
-                    zCoordinates[i] = (ushort)oneEuroFilters[i].Filter(zval, 60);
-
-
-
-
-
+                    // apply one-euro-filter
+                    zCoordinates[i] = (ushort) p.Filter(zval);
+                    
                 }
                 else
                 {
@@ -629,7 +622,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 zCoords.Add(frameData[(int)(width * y + x)]);
 
-
+                // draw dot where we mesure the z-coordinate 
                 this.depthPixels[(int)(width * y + x)] = 255;
                 this.depthPixels[(int)(width * (y + 1) + x)] = 255;
                 this.depthPixels[(int)(width * y + x + 1)] = 255;
@@ -797,7 +790,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             centroids.CopyTo(centroidPoints);
 
             double[][] centroidPoints2 = new double[n - 1][];
-            pointInfo = new PointInfo[n - 1];
+
 
 
             int i = 0;
@@ -809,14 +802,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
                 i++;
             }
-
-
-
-
-
-
-            //            arr = (int[,])ResizeArray(arr, new int[] { 12, 2 });
-
 
 
             int colorcode;
@@ -836,12 +821,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
 
             i = 0;
-            if (prevPoints == null) //|| prevPoints.Length != newPoints.Length) 
+            if (prevPoints == null )// || prevPoints.Length != centroidPoints2.Length) 
             {
                 newPoints = centroidPoints2;
 
-                // add z filters
-                oneEuroFilters = new OneEuroFilter[centroidPoints2.Length];
+                pointInfo = new PointInfo[n - 1];
+
+
                 // initialize points
                 foreach (double[] point in centroidPoints2)
                 {
@@ -853,7 +839,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int area = stats.GetData(j, 4)[0];
 
                     pointInfo[i] = new PointInfo(width, height);
-                    oneEuroFilters[i] = new OneEuroFilter(1,0);
+                    
 
 
                     // if the area is more than minArea, discard 
@@ -882,7 +868,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
 
 
-
+                List<int> indexList = new List<int>();
 
                 foreach (double[] point in centroidPoints2)
                 {
@@ -893,6 +879,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
 
+                    int[] indexArray;
+
                     // if the area is more than minArea, discard 
                     if (true) // (area > minArea)
                     {
@@ -900,12 +888,28 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                         CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness);
                         //if (i==0)
-                        index = tree.Nearest(point).Value;
+                       KDTreeNode<int> nearest = tree.Nearest(point);
+                        index = nearest.Value;
 
-                        pointInfo[index] = new PointInfo(width, height);
+                        /*
+                        nearest = tree.Nearest(point).Value;
+                        tree.re
 
 
+                        if (indexList.Contains(index))
+                        {
+                            indexArray = tree.Nearest(point, 2);
+                        }
+                        else
+                        {
+                            indexList.Add(index);
+                        }
+                        */
 
+                        // update info for the point
+                        PointInfo pInfo = pointInfo[index];
+                        pInfo.Width = width;
+                        pInfo.Height = height;
 
                         newPoints[index] = point;
 
