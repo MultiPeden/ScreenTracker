@@ -119,7 +119,11 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CalibrationData.cs" />
+    <Compile Include="CameraInterface.cs" />
+    <Compile Include="EMGUargs.cs" />
+    <Compile Include="FrameDimension.cs" />
     <Compile Include="FrameProcessedEventArgs.cs" />
+    <Compile Include="ImageProcessing.cs" />
     <Compile Include="IRUtils.cs" />
     <Compile Include="KinectData.cs" />
     <Compile Include="MatExtension.cs" />

@@ -28,12 +28,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <summary>
         /// Indicates if the color button has been selected
         /// </summary>
-        private bool colorClicked;
+        public bool colorClicked { get; set; }
 
         /// <summary>
         /// Indicates if the threshold button has been selected
         /// </summary>
-        private bool thresholdedClicked;
+        public bool thresholdedClicked { get; set; }
 
 
         /// <summary>
@@ -46,26 +46,26 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        public ImageProcessing imageProcessing;
+
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
-        public MainWindow(KinectData kinectData)
+        public MainWindow()
         {
-            // get handle to Kinectdata
-            this.kinectData = kinectData;
 
             //initialize button values
             this.colorClicked = true;
             this.thresholdedClicked = false;
+            this.imageProcessing = null;
 
-            // set the status text
-            this.StatusText = kinectData.SensorAvailable() ? Properties.Resources.RunningStatusText
-                                                             : Properties.Resources.NoSensorStatusText;
+
+
 
             // listen for processed frames from the kinectData object
-            kinectData.IrframeProcessed += KinectData_IrframeProcessed;
+            // TODO   kinectData.IrframeProcessed += KinectData_IrframeProcessed;
             // listen for status changes from the kinectData object's kinectSensor
-            kinectData.ChangeStatusText += KinectData_ChangeStatusText;
+            // TODO  kinectData.ChangeStatusText += KinectData_ChangeStatusText;
             // initialize the components (controls) of the window
             this.InitializeComponent();
 
@@ -73,6 +73,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
          //   CalibrationData cali = new CalibrationData(xmlPath);
 
         }
+
+        public void SetProcessor(ImageProcessing imageProcessing)
+        {
+            this.imageProcessing = imageProcessing;
+        }
+
 
         /// <summary>
         /// Receives availibility updates from the KinectData object and shows it in the MainWindow.XAML
@@ -86,16 +92,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                                                             : Properties.Resources.SensorNotAvailableStatusText;
         }
 
-        /// <summary>
-        /// Recives processes frames from the KinectData object and show them in the MainWindow.XAML
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void KinectData_IrframeProcessed(object sender, FrameProcessedEventArgs e)
+        
+        public void SetRightImage(WriteableBitmap bitmap)
         {
-            // show images according to the buttons selected in the GUI
-            leftImg.Source = this.thresholdedClicked ? e.ThresholdBitmap : e.InfraredBitmap;
-            rightImg.Source = this.colorClicked ? e.ColorBitmap : e.DepthBitmap;
+            rightImg.Source = bitmap;
+        }
+
+        public void SetLeftImage(WriteableBitmap bitmap)
+        {
+            leftImg.Source = bitmap;
         }
 
 
@@ -131,7 +136,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            kinectData.Stop_KinectData();
+           // kinectData.Stop_KinectData();
         }
 
         /// <summary>
@@ -195,6 +200,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             colorClicked = true;
             StatusText = Properties.Resources.ButtonClickColor;
+
         }
 
         /// <summary>
@@ -206,7 +212,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             thresholdedClicked = true;
             StatusText = Properties.Resources.CheckBoxthresholdChecked;
-            kinectData.Threshold(true);
+          // TODO  kinectData.Threshold(true);
 
         }
 
@@ -219,7 +225,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             thresholdedClicked = false;
             StatusText = Properties.Resources.CheckBoxthresholdUnChecked;
-            kinectData.Threshold(false);
+            // TODO kinectData.Threshold(false);
         }
     }
 }

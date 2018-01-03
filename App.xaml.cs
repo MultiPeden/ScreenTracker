@@ -31,14 +31,21 @@
             showWindow = true;
 
 
-            // create new kinectData object to processes frames from the Kinect camera
-            KinectData kinectData = new KinectData(showWindow);
+            // create new cameraData object to processes frames from the Kinect camera
+            ICameraInterface cameraData = new KinectData();
+
+
+
 
             if (showWindow)
             {
                 // Create main application window
-                MainWindow mainWindow = new MainWindow(kinectData);
+                MainWindow mainWindow = new MainWindow();
+                ImageProcessing imgProc = new ImageProcessing(cameraData, null);
+                mainWindow.SetProcessor(imgProc);
                 mainWindow.Show();
+
+
             }
 
         }
