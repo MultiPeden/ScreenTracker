@@ -41,7 +41,7 @@
             {
                 // Create main application window
                 MainWindow mainWindow = new MainWindow();
-                ImageProcessing imgProc = new ImageProcessing(cameraData, null);
+                ImageProcessing imgProc = new ImageProcessing(cameraData, mainWindow);
                 mainWindow.SetProcessor(imgProc);
                 mainWindow.Show();
 

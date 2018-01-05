@@ -212,7 +212,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             thresholdedClicked = true;
             StatusText = Properties.Resources.CheckBoxthresholdChecked;
-          // TODO  kinectData.Threshold(true);
+            imageProcessing.Threshold(true);
 
         }
 
@@ -225,7 +225,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             thresholdedClicked = false;
             StatusText = Properties.Resources.CheckBoxthresholdUnChecked;
-            // TODO kinectData.Threshold(false);
+            imageProcessing.Threshold(false);
         }
     }
 }

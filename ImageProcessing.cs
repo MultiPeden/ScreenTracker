@@ -7,6 +7,11 @@ using System.Windows;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using Emgu.CV.CvEnum;
+using Accord.Collections;
+using System.Drawing;
+using System.Collections.Generic;
+using System.Linq;
+using Accord.Statistics;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
@@ -88,12 +93,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private MainWindow mainWindow;
 
 
-        public ImageProcessing(ICameraInterface cameraData,  MainWindow mainWindow)
+        public ImageProcessing(ICameraInterface cameraData, MainWindow mainWindow)
         {
 
-            if(mainWindow != null && mainWindow.colorClicked)
+            if (mainWindow != null && mainWindow.colorClicked)
             {
-                
+
                 cameraData.GenerateColorImage(true);
             }
 
@@ -118,7 +123,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // create Thread for running the TCPserv and start it
             TCPthread = new Thread(commands.StartListening);
             TCPthread.Start();
-            
+
             cameraData.emguArgsProcessed += KinectData_EmguImageReceived;
 
             // get handle to Kinectdata
@@ -130,18 +135,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                                                              : Properties.Resources.NoSensorStatusText;
                                                              */
 
-
-
-
-            /*
-            // Initialize the four bitmaps for processed frames
-            this.infraredBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray16, null);
-            this.infraredThesholdedBitmap = new WriteableBitmap(this.infraredFrameDescription.Width, this.infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
-            this.colorBitmap = new WriteableBitmap(this.colorFrameDescription.Width, this.colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
-            this.depthBitmap = new WriteableBitmap(this.depthFrameDescription.Width, this.depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray8, null);
-            */
-
-
+            showWindow = true;
 
         }
 
@@ -164,7 +158,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="e"></param>
         private void KinectData_EmguImageReceived(object sender, EMGUargs e)
         {
-            Console.WriteLine("godaw");
+
+            // Process infrared image and track points
+            this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
+            // get z-coordinates
+            ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
+            // Send point via UDP
+            SendPoints(prevPoints, zCoordinates);
+
+
 
             if (mainWindow != null)
             {
@@ -179,19 +181,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     this.SetDepthImage(e.DepthImage, e.DepthFrameDimension);
                 }
 
-                if (mainWindow.thresholdedClicked)
-                {
-
-                }
-                else
-                {
-                    this.SetInfraredImage(e.InfraredImage, e.InfraredFrameDimension);
-                }
             }
-           
 
 
-            
+
+
             // show images according to the buttons selected in the GUI
             //    leftImg.Source = this.thresholdedClicked ? e.ThresholdBitmap : e.InfraredBitmap;
             //   rightImg.Source = this.colorClicked ? e.ColorBitmap : e.DepthBitmap;
@@ -211,8 +205,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 this.colorBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
             }
 
-   
-            AddToBitmap(this.colorBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 4 ));
+
+            AddToBitmap(this.colorBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 4));
 
             mainWindow.SetRightImage(this.colorBitmap);
         }
@@ -232,6 +226,20 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         }
 
 
+        private void SetThresholdedInfraredImage(Image<Gray, Byte> img, FrameDimension frameDimension)
+        {
+            if (this.infraredThesholdedBitmap == null)
+            {
+                this.infraredThesholdedBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            }
+
+            AddToBitmap(this.infraredThesholdedBitmap, img.Mat, (frameDimension.Width * frameDimension.Height));
+
+            mainWindow.SetLeftImage(this.infraredThesholdedBitmap);
+
+        }
+
+
         private void SetDepthImage(Image<Gray, UInt16> img, FrameDimension frameDimension)
         {
             if (this.depthBitmap == null)
@@ -239,11 +247,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 this.depthBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray16, null);
             }
 
-          ///  img = img.Mul(10);
+            ///  img = img.Mul(10);
 
 
-             CvInvoke.Normalize(img.Mat, img.Mat,0, 65535, NormType.MinMax);
-           // CvInvoke.Normalize(_histogram, _histogram, 0, 255, NormType.MinMax);
+            CvInvoke.Normalize(img.Mat, img.Mat, 0, 65535, NormType.MinMax);
+            // CvInvoke.Normalize(_histogram, _histogram, 0, 255, NormType.MinMax);
 
             AddToBitmap(this.depthBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 2));
 
@@ -253,55 +261,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-        /// <summary>
-        /// The z-coordinate from the depth-camera is almost always 0 for centroids because it can not 
-        /// measure the depth of reflektive surfacres, thus we have to estimate the depth using the 
-        /// surrounding pixels.
-        /// </summary>
-        /// <param name="depthFrameData"></param>
-        /// <returns></returns>
-        private unsafe ushort[] GetZCoordinatesStep(IntPtr depthFrameData, FrameDimension depthFrameDimension)
-        {
 
 
-            ushort[] zCoordinates = new ushort[this.prevPoints.Length];
-
-            // depth frame data is a 16 bit value
-            ushort* frameData = (ushort*)depthFrameData;
-            // Console.WriteLine("hej");
-            // Console.WriteLine(frameData[5]);
-
-            int i = 0;
-            int j = 0;
-            foreach (double[] point in this.prevPoints)
-            {
-                double x = point[0];
-                double y = point[1];
-                while (y >= 0)
-                {
-                    ushort index = (ushort)(depthFrameDimension.Width * x + y);
-                    ushort zval = frameData[index];
-                    if (zval > 0)
-                    {
-
-                        if (j > 4)
-                        {
-                            zCoordinates[i] = zval;
-                            break;
-                        }
-                        j++;
-                    }
-                    y--;
-
-                }
-
-                i++;
-            }
-            return zCoordinates;
-        }
-
-
-        /*
 
         /// <summary>
         /// The z-coordinate from the depth-camera is almost always 0 for centroids because it can not 
@@ -310,16 +271,14 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         /// <param name="depthFrameData"></param>
         /// <returns></returns>
-        private unsafe ushort[] GetZCoordinatesSurroundingBox(IntPtr depthFrameData, FrameDimension depthFrameDimension)
+        private unsafe ushort[] GetZCoordinatesSurroundingBox(Image<Gray, UInt16> depthImage)
         {
 
             // init array to the size of the array with tracked points
             ushort[] zCoordinates = new ushort[this.prevPoints.Length];
 
-            // depth frame data is a 16 bit value
-            ushort* frameData = (ushort*)depthFrameData;
 
-            double imgwidth = infraredBitmap.Width;
+            //double imgwidth = infraredBitmap.Width;
 
             // list for each point's depth sample points
             List<double> zCoords;
@@ -329,26 +288,29 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 zCoords = new List<double>();
                 PointInfo p = pointInfo[i];
 
-                double x = Math.Round(prevPoints[i][0]);
-                double y = Math.Round(prevPoints[i][1]);
+                int x = (int)prevPoints[i][0];
+                int y = (int)prevPoints[i][1];
+
                 int width = (p.Width / 2) + 1;
                 //  width = +5;
                 int height = (p.Height / 2) + 1;
                 // height = +5;
-                int frameWidth = depthFrameDimension.Width;
+                // int frameWidth = depthFrameDimension.Width;
 
+
+                zCoords.Add(depthImage.Data[(x + width), y, 0]);
 
                 // add cardinal points (N,E,S,W)
-                AddDephtPixel(x + width, y, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x - width, y, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x, y + height, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x, y - height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x + width, y, ref depthImage, ref zCoords);
+                AddDephtPixel(x - width, y, ref depthImage, ref zCoords);
+                AddDephtPixel(x, y + height, ref depthImage, ref zCoords);
+                AddDephtPixel(x, y - height, ref depthImage, ref zCoords);
 
                 // add inter-cardinal points (NE,SE,SW,NW)
-                AddDephtPixel(x + width, y + height, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x - width, y - height, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x + width, y - height, imgwidth, ref frameData, ref zCoords);
-                AddDephtPixel(x - width, y + height, imgwidth, ref frameData, ref zCoords);
+                AddDephtPixel(x + width, y + height, ref depthImage, ref zCoords);
+                AddDephtPixel(x - width, y - height, ref depthImage, ref zCoords);
+                AddDephtPixel(x + width, y - height, ref depthImage, ref zCoords);
+                AddDephtPixel(x - width, y + height, ref depthImage, ref zCoords);
 
                 if (zCoords.Count != 0)
                 {
@@ -369,34 +331,31 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             return zCoordinates;
         }
 
-            /*
 
-        /*
-         *  draw surrounding box for z pixels
-        private unsafe void AddDephtPixel(double x, double y, double width, ref ushort* frameData, ref List<double> zCoords)
+        private void AddDephtPixel(int x, int y, ref Image<Gray, UInt16> depthImage, ref List<double> zCoords)
         {
+
             try
             {
-
-                zCoords.Add(frameData[(int)(width * y + x)]);
-
-                // draw dot where we mesure the z-coordinate 
-                this.depthPixels[(int)(width * y + x)] = 255;
-                this.depthPixels[(int)(width * (y + 1) + x)] = 255;
-                this.depthPixels[(int)(width * y + x + 1)] = 255;
-                this.depthPixels[(int)(width * (y - 1) + x)] = 255;
-                this.depthPixels[(int)(width * y + x - 1)] = 255;
-
-
+                if (x >= 0 && y >= 0)
+                {
+                    ushort zCoord = depthImage.Data[x, y, 0];
+                    if(zCoord > 0)
+                    {
+                        zCoords.Add(zCoord);
+                    }
+                    
+                }
             }
             catch (Exception)
             {
 
-                // do nothing
+                // do nothing - out of frame
             }
 
         }
-        */
+
+
 
         /// <summary>
         /// Copies the "data" into the "bitmap" with datasize "dataSize"
@@ -414,7 +373,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         }
 
 
-        /*
+
         /// <summary>
         /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
         /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
@@ -423,11 +382,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="thresholdImg"></param>
         /// <param name="showThesholdedImg"></param>
         /// <returns></returns>
-        private Image<Gray, Byte> DrawTrackedData(Image<Gray, Byte> img, Image<Gray, Byte> thresholdImg, bool showThesholdedImg)
+        private void TrackedData(Image<Gray, Byte> thresholdImg)
         {
 
             int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;
-            int padding = Properties.Settings.Default.DataIndicatorPadding;
 
 
             Mat labels = new Mat();
@@ -459,21 +417,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             }
 
 
-            int colorcode;
-            if (showThesholdedImg)
-            {
-                img = thresholdImg;
-                colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
-            }
-            else
-            {
-                colorcode = Properties.Settings.Default.DataIndicatorColor;
-            }
+
 
             double[][] newPoints;
             int index;
 
-            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+
 
             i = 0;
             if (prevPoints == null)// || prevPoints.Length != centroidPoints2.Length) 
@@ -497,21 +446,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-                    // if the area is more than minArea, discard 
-                    if (true) // (area > minArea)
-                    {
-                        // only draw rectangles if the MainWindow is shown
-                        if (this.showWindow)
-                        {
-                            Rectangle rect = new Rectangle((int)point[0] - (width / 2) - padding, (int)point[0] - (height / 2) - padding, width + padding * 2, height + padding * 2);
-                            CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
-                        }
-
-                        //if (i==0)
-
-                        //      newPoints[i] = new double[] { (int)point[0], (int)point[1] };
-
-                    }
                     i++;
                 }
 
@@ -523,7 +457,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
 
 
-                List<int> indexList = new List<int>();
+                // List<int> indexList = new List<int>();
 
                 foreach (double[] point in centroidPoints2)
                 {
@@ -534,15 +468,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
 
-                    int[] indexArray;
+                    //  int[] indexArray;
 
                     // if the area is more than minArea, discard 
                     if (true) // (area > minArea)
                     {
-                        Rectangle rect = new Rectangle((int)point[0] - (width / 2) - padding, (int)point[1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
 
-                        CvInvoke.Rectangle(img, rect, new Gray(colorcode).MCvScalar, thickness);
-                        //if (i==0)
                         KDTreeNode<int> nearest = tree.Nearest(point);
                         index = nearest.Value;
 
@@ -570,120 +501,32 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             //  Console.WriteLine(newPoints.Length);
 
             prevPoints = newPoints;
-            return img;
         }
 
-*/
 
 
-/*
+
 
         /// <summary>
         /// Converts a list of points to Json and sends it via UDP socket
         /// </summary>
         /// <param name="newPoints"></param>
-        private void SendPoints(double[][] newPoints, ushort[] zCoordinates = null)
+        private void SendPoints(double[][] newPoints, ushort[] zCoordinates)
         {
 
 
-            double[][] newPointsTest = ConvertPoints(newPoints, zCoordinates);
+            double[][] worldCoordinates = cameraData.ScreenToWorldCoordinates(newPoints, zCoordinates);
 
-            String jSon = IRUtils.PointstoJson(newPointsTest, zCoordinates, this.infraredFrameDescription.Width, this.infraredFrameDescription.Width);
+            String jSon = IRUtils.PointstoJson(worldCoordinates, zCoordinates);
             udpSender.WriteToSocket(jSon);
 
-            RenderDepthPixels();
-        }
-*/
-
-            /*
-        private double[][] ConvertPoints(double[][] newPoints, ushort[] zCoordinates)
-        {
-
-            double[][] newPointsTest = new double[newPoints.Length][];
-
-            for (int i = 0; i < newPoints.Length; i++)
-            {
-
-
-
-                DepthSpacePoint depthSpacePoint = new DepthSpacePoint
-                {
-                    X = (float)newPoints[i][0],
-                    Y = (float)newPoints[i][1]
-                };
-                CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
-
-
-                newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
-            }
-
-            return newPointsTest;
-
-        }
-        */
-
-            /*
-        private double[][] ConvertPoints2(double[][] newPoints, ushort[] zCoordinates)
-        {
-            CameraSpacePoint cameraPoint;
-            DepthSpacePoint depthPoint;
-            CoordinateMapper mapper = kinectSensor.CoordinateMapper;
-            double[][] newPointsTest = new double[newPoints.Length][];
-
-            for (int i = 0; i < newPoints.Length; i++)
-            {
-
-        
-                depthPoint = new DepthSpacePoint
-                {
-                    X = (float)newPoints[i][0],
-                    Y = (float)newPoints[i][1]
-                };
-                //       depthPoint = mapper.MapCameraPointToDepthSpace(cameraPoint);
-                cameraPoint = mapper.MapDepthPointToCameraSpace(depthPoint, zCoordinates[i]);
-
-                newPointsTest[i] = new double[2] { cameraPoint.X, cameraPoint.Y };
-
-            }
-
-            return newPointsTest;
 
         }
 
-    */
-
-            /*
-
-        private double[][] ConvertPoints1(double[][] newPoints, int[] zCoordinates)
-        {
-            CameraSpacePoint cameraPoint;
-            DepthSpacePoint depthPoint;
-            CoordinateMapper mapper = kinectSensor.CoordinateMapper;
-            double[][] newPointsTest = new double[newPoints.Length][];
-
-            for (int i = 0; i < newPoints.Length; i++)
-            {
 
 
-                cameraPoint = new CameraSpacePoint
-                {
-                    X = (float)newPoints[i][0],
-                    Y = (float)newPoints[i][1],
-                    Z = zCoordinates[i]
 
-                };
-
-
-                depthPoint = mapper.MapCameraPointToDepthSpace(cameraPoint);
-
-                newPointsTest[i] = new double[2] { depthPoint.X, depthPoint.Y };
-
-            }
-
-            return newPointsTest;
-
-        }
-        */
+       
 
 
         /// <summary>
@@ -730,6 +573,115 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
             bitmap.Unlock();
             data.Dispose();
+        }
+
+
+
+
+        /// <summary> EMGU VERSION
+        /// Directly accesses the underlying image buffer of the InfraredFrame to 
+        /// create a displayable bitmap.
+        /// This function requires the /unsafe compiler option as we make use of direct
+        /// access to the native memory pointed to by the infraredFrameData pointer.
+        /// </summary>
+        /// <param name="infraredFrame"> the InfraredFrame image </param>
+        /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
+        private void ProcessInfraredFrame(Image<Gray, UInt16> infraredFrame, FrameDimension infraredFrameDimension)
+        {
+
+            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDimension.Width, infraredFrameDimension.Height);
+
+            // nessesary for calling  CvInvoke.Threshold because it only supports 8 and 32-bit datatypes  
+            infraredFrame.Mat.ConvertTo(infraredFrame, DepthType.Cv32F);
+
+
+
+            // find max val of the 16 bit ir-image
+            infraredFrame.MinMax(out _, out double[] maxVal, out _, out _);
+
+            // apply threshold with 98% of maxval || minThreshold
+            // to obtain binary image with only 0's & 255
+            float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
+            int minThreshold = Properties.UserSettings.Default.minThreshold;
+            CvInvoke.Threshold(infraredFrame, thresholdImg, Math.Max(maxVal[0] * percentageThreshold, minThreshold), 255, ThresholdType.Binary);
+
+
+            // nomalize the 16bit vals to 8bit vals (max 255)
+            //  CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
+            infraredFrame.Mat.ConvertTo(infraredFrame, DepthType.Cv16U);
+
+            // convert back to 8 bit for showing as a bitmap
+            thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv8U);
+
+            // perform opening 
+            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
+            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+
+            // find controids of reflective surfaces and mark them on the image 
+            TrackedData(thresholdImg);
+
+
+
+
+
+            // only generate writeable bitmap if the mainwindow is shown
+            if (this.showWindow)
+            {
+
+                // copy the processed image back into a writeable bitmap and dispose the EMGU image
+                if (thresholdedClicked)
+                {
+                    DrawTrackedData(thresholdImg);
+                    SetThresholdedInfraredImage(thresholdImg, infraredFrameDimension);
+
+                }
+                else
+                {
+                    DrawTrackedData(infraredFrame);
+                    SetInfraredImage(infraredFrame, infraredFrameDimension);
+                }
+            }
+
+            // cleanup
+            thresholdImg.Dispose();
+            infraredFrame.Dispose();
+        }
+
+        private void DrawTrackedData(Image<Gray, UInt16> infraredImage)
+        {
+
+            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+            int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
+            int padding = Properties.Settings.Default.DataIndicatorPadding;
+
+            for (int i = 0; i < prevPoints.Length; i++)
+            {
+                int width = pointInfo[i].Width;
+                int height = pointInfo[i].Height;
+                Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
+            }
+
+        }
+
+        private void DrawTrackedData(Image<Gray, Byte> ThresholdedInfraredImage)
+        {
+
+            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+            int colorcode = Properties.Settings.Default.DataIndicatorColor;
+            int padding = Properties.Settings.Default.DataIndicatorPadding;
+
+            for (int i = 0; i < prevPoints.Length; i++)
+            {
+                int width = pointInfo[i].Width;
+                int height = pointInfo[i].Height;
+                Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                CvInvoke.Rectangle(ThresholdedInfraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
+            }
+
         }
 
 

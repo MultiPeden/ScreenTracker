@@ -20,8 +20,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     public class KinectData : ICameraInterface
     {
 
-
-
         /// <summary>
         /// Maximum value (as a float) that can be returned by the InfraredFrame
         /// </summary>
@@ -357,11 +355,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 // generate event at send writeable bitmaps for each frame, and cleanup
 
-                // only generate event if the mainwindow is shown
-
-
-
-                
+                // only generate event if the mainwindow is shown           
 
                 // DepthFrame, ColorFrame are IDispoable
                 if (colorFrame != null)
@@ -390,33 +384,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
         }
-
-
-
-
-
-
-        /*
-            private ushort From2DTo1DArray(double x, double y, int width)
-            {
-                return (ushort)(width * x + y);
-            }
-            */
-
-        /*
-
-    /// <summary>
-    /// Renders color pixels into the writeableBitmap.
-    /// </summary>
-    private void RenderDepthPixels()
-    {
-        this.depthBitmap.WritePixels(
-            new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
-            this.depthPixels,
-            this.depthBitmap.PixelWidth,
-            0);
-    }
-    */
 
 
         /// <summary> EMGU VERSION
@@ -458,11 +425,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-
-
-
-
-
         /// <summary>
         /// Directly accesses the underlying image buffer of the DepthFrame to 
         /// create a displayable bitmap.
@@ -500,5 +462,30 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
           //  OnChangeStatusText(e.IsAvailable);
         }
 
+
+
+
+
+        /// <summary>
+        ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="zCoordinates"></param>
+        /// <returns></returns>
+        public double[][] ScreenToWorldCoordinates(double[][] points, ushort[] zCoordinates)
+        {
+            double[][] newPointsTest = new double[points.Length][];
+            for (int i = 0; i < points.Length; i++)
+            {
+                DepthSpacePoint depthSpacePoint = new DepthSpacePoint
+                {
+                    X = (float)points[i][0],
+                    Y = (float)points[i][1]
+                };
+                CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
+                newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
+            }
+            return newPointsTest;
+        }
     }
 }
