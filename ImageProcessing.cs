@@ -15,9 +15,10 @@ using Accord.Statistics;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
+    [CLSCompliant(false)]
     public class ImageProcessing
     {
-
+        
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
         public static extern void CopyMemory(IntPtr dest, IntPtr src, int count);
 
@@ -69,23 +70,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private bool thresholdedClicked = false;
 
 
-        /// <summary>
-        /// EventHandler for passing on the Kinects availibility status on
-        /// </summary>
-        public event EventHandler<bool> ChangeStatusText;
 
         /// <summary>
-        /// Bool indicating if z coordinates should be calculated
+        /// Info for each detected point i the frame.
         /// </summary>
-        private bool withZCoodinates;
-
-        /// <summary>
-        /// EventHandler for sending events when a frame has been processed
-        /// </summary>
-        public event EventHandler<FrameProcessedEventArgs> framesProcessed;
-
-
-
         private PointInfo[] pointInfo;
 
         private ICameraInterface cameraData;
@@ -107,8 +95,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             this.cameraData = cameraData;
 
-            /// Bool indicating if z coordinates should be calculated
-            this.withZCoodinates = true;
+
 
             //// bool indicating in the MainWindow should be shown
             //this.showWindow = showWindow;
@@ -125,6 +112,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             TCPthread.Start();
 
             cameraData.emguArgsProcessed += KinectData_EmguImageReceived;
+
+            // listen for status changes from the camera object's kinectSensor
+            cameraData.ChangeStatusText += KinectData_ChangeStatusText;
 
             // get handle to Kinectdata
             this.cameraData = cameraData;
@@ -652,7 +642,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
-            int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
+            int colorcode = Properties.Settings.Default.DataIndicatorColor;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
             for (int i = 0; i < prevPoints.Length; i++)
@@ -670,7 +660,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
-            int colorcode = Properties.Settings.Default.DataIndicatorColor;
+            int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
             for (int i = 0; i < prevPoints.Length; i++)
@@ -682,6 +672,29 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             }
 
+        }
+
+
+        /// <summary>
+        /// Receives availibility updates from the KinectData object and shows it in the MainWindow.XAML
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="IsAvailable"></param>
+        private void KinectData_ChangeStatusText(object sender, bool IsAvailable)
+        {
+
+
+            String statusText = "Kinect Status: ";
+            statusText += IsAvailable ? Properties.Resources.RunningStatusText
+                                                            : Properties.Resources.SensorNotAvailableStatusText;
+            if (showWindow)
+            {
+                // set the status text in the mainwindow
+                mainWindow.StatusText = statusText;
+            }
+           
+
+            Console.WriteLine(statusText);
         }
 
 

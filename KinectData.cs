@@ -13,7 +13,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
 
-
+    [CLSCompliant(false)]
     /// <summary>
     /// Interaction logic for the MainWindow
     /// </summary>
@@ -89,6 +89,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         int minThreshold = Properties.UserSettings.Default.minThreshold;
 
 
+        /// <summary>
+        /// EventHandler for passing on the Kinects availibility status on
+        /// </summary>
+        public event EventHandler<bool> ChangeStatusText;
 
 
 
@@ -459,11 +463,18 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="e">event arguments</param>
         private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
         {
-          //  OnChangeStatusText(e.IsAvailable);
+            OnChangeStatusText(e.IsAvailable);
         }
 
 
-
+        /// <summary>
+        /// Sends an event if the Kinect's status has changed
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnChangeStatusText(bool e)
+        {
+            ChangeStatusText?.Invoke(this, e);
+        }
 
 
         /// <summary>

@@ -14,7 +14,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using System.Windows.Media.Imaging;
     using System.Runtime.InteropServices;
 
-
+    [CLSCompliant(false)]
     /// <summary>
     /// Interaction logic for the MainWindow
     /// </summary>
@@ -36,10 +36,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public bool thresholdedClicked { get; set; }
 
 
-        /// <summary>
-        /// Holds a reference to the kinectData-obejct processesing Kinect-images
-        /// </summary>
-        KinectData kinectData;
 
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
@@ -60,17 +56,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             this.imageProcessing = null;
 
 
-
-
-            // listen for processed frames from the kinectData object
-            // TODO   kinectData.IrframeProcessed += KinectData_IrframeProcessed;
-            // listen for status changes from the kinectData object's kinectSensor
-            // TODO  kinectData.ChangeStatusText += KinectData_ChangeStatusText;
+            // use the window object as the view model
+            this.DataContext = this;
+            
             // initialize the components (controls) of the window
             this.InitializeComponent();
-
-         //   string xmlPath = "C:/Users/MultiPeden/Desktop/kinectcalibration/test.xml";
-         //   CalibrationData cali = new CalibrationData(xmlPath);
+            
 
         }
 
@@ -80,17 +71,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         }
 
 
-        /// <summary>
-        /// Receives availibility updates from the KinectData object and shows it in the MainWindow.XAML
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="IsAvailable"></param>
-        private void KinectData_ChangeStatusText(object sender, bool IsAvailable)
-        {
-            // set the status text
-            this.StatusText = IsAvailable ? Properties.Resources.RunningStatusText
-                                                            : Properties.Resources.SensorNotAvailableStatusText;
-        }
+
 
         
         public void SetRightImage(WriteableBitmap bitmap)
@@ -123,7 +104,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     // notify any bound elements that the text has changed
                     if (this.PropertyChanged != null)
                     {
-                        PropertyChanged(this, new PropertyChangedEventArgs("StatusText"));
+                        this.PropertyChanged(this, new PropertyChangedEventArgs("StatusText"));
                     }
                 }
             }

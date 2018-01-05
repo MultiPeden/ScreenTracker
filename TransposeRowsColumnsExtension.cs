@@ -8,6 +8,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     public static class TransposeRowsColumnsExtension
     {
+        [CLSCompliant(false)]
         /// <summary>
         /// Transposes the rows and columns of a two-dimensional array
         /// </summary>

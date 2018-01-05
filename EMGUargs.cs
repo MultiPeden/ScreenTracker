@@ -6,10 +6,11 @@ using System.Windows.Media.Imaging;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
+    [CLSCompliant(false)]
+
     public class EMGUargs : EventArgs
     {
-
-
+       
         public Image<Bgr, UInt16> Colorimage { get; set; }
         public FrameDimension ColorFrameDimension { get; set; }
 

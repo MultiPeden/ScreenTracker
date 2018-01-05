@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
+    [CLSCompliant(false)]
     public class OneEuroFilter
     {
+        
         public OneEuroFilter(double minCutoff, double beta)
         {
             firstTime = true;

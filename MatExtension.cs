@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
+    [CLSCompliant(false)]
     public static class MatExtension
     {
+       
         public static dynamic GetValue(this Mat mat, int row, int col)
         {
             var value = CreateElement(mat.Depth);
