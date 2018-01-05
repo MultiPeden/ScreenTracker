@@ -17,10 +17,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         public TCPserv()
         {
-
-     
             this.running = true;
-
         }
 
         public void StartListening()
@@ -38,18 +35,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // Create a TCP/IP socket.  
             listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-
-
             // Bind the socket to the local endpoint and   
             // listen for incoming connections.  
             try
             {
                 listener.Bind(localEndPoint);
-
                 listener.Listen(10);
-
-
-
+                
                 // Start listening for connections.  
                 while (running)
                 {
@@ -89,13 +81,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 Console.WriteLine(e.ToString());
             }
-
-
         }
 
         private String ParseCommand(String command)
         {
-
             switch (command)
             {
                 case "resetMesh":
@@ -106,10 +95,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 default:
                     Console.WriteLine("Unable to recognize command");
                     return "Unable to recognize command";
-
             }
-
-
         }
 
         public void StopRunnning()

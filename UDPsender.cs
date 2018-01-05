@@ -10,7 +10,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     class UDPsender
     {
-
         Boolean exception_thrown = false;
         Socket sending_socket;
         IPEndPoint sending_end_point;
@@ -18,56 +17,34 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         public UDPsender()
         {
-
             this.sending_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPAddress send_to_address = IPAddress.Parse(localIPAddress());
             this.sending_end_point = new IPEndPoint(send_to_address, 11000);
 
             if (debug) { 
-            Console.WriteLine("Enter text to broadcast via UDP.");
-            Console.WriteLine("Enter a blank line to exit the program.");
-        }
-
+                Console.WriteLine("Enter text to broadcast via UDP.");
+                Console.WriteLine("Enter a blank line to exit the program.");
+            }
         }
 
         ~UDPsender()
         {
-
             if (sending_socket != null)
             {
                 sending_socket.Dispose();
                 sending_socket = null;
             }
-
         }
-
-
-
-
-
-
+        
         public void WriteToSocket(String text_to_send)
         {
-
-     
-
-
             // the socket object must have an array of bytes to send.
             // this loads the string entered by the user into an array of bytes.
             byte[] send_buffer = Encoding.ASCII.GetBytes(text_to_send);
-
-
+            
             // Remind the user of where this is going.
             if (debug)
                 Console.WriteLine("sending to address: {0} port: {1}", sending_end_point.Address, sending_end_point.Port);
-/*
-            IRPoints iRPoints = new IRPoints(2);
-            iRPoints.insert(new IRPoint(1, 2, 3), 0);
-            iRPoints.insert(new IRPoint(3, 4, 5), 1);
-            String jSonString = iRPoints.toJson();
-            Console.WriteLine(jSonString);
-            */
-
             try
             {
                 sending_socket.SendTo(send_buffer, sending_end_point);
@@ -89,11 +66,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 if (debug)
                     Console.WriteLine("The exception indicates the message was not sent.");
             }
-
         }
-
-  
-
+        
         private static string localIPAddress()
         {
             IPHostEntry host;
@@ -115,13 +89,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     localIP = null;
                 }
             }
-
             return localIP;
         }
-
-
     }
-
-
-
 }

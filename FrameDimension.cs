@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
-
-    // class for holding information about frame dimensions
+    /// <summary>
+    /// class for holding information about frame dimensions
+    /// (Width and Height)
+    /// </summary>
     public class FrameDimension
     {
         private int width;

@@ -6,13 +6,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
-
+    /// <summary>
+    /// Holds information for tracking points
+    /// both for visual representation and track filtering
+    /// </summary>
     class PointInfo
     {
-
+        // Bounding box dimensions
         private int height;
         private int width;
+
+        // zFilter for completing OneEuroFilter
         private OneEuroFilter zFilter;
+        // Chosen Rate for Filtering
         private double rate = 60;
 
         public PointInfo(int height, int width)
