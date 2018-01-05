@@ -15,6 +15,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using System.Runtime.InteropServices;
 
     [CLSCompliant(false)]
+
     /// <summary>
     /// Interaction logic for the MainWindow
     /// </summary>
@@ -22,6 +23,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     {
         /// <summary>
         /// Current status text to display
+        /// Init null to check for changes
         /// </summary>
         private string statusText = null;
 
@@ -35,13 +37,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         public bool thresholdedClicked { get; set; }
 
-
-
         /// <summary>
         /// INotifyPropertyChangedPropertyChanged event to allow window controls to bind to changeable data
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Object which is used for image proccessing
+        /// Provides images shown in main window
+        /// </summary>
         public ImageProcessing imageProcessing;
 
         /// <summary>
@@ -49,42 +53,43 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         public MainWindow()
         {
-
             //initialize button values
             this.colorClicked = true;
             this.thresholdedClicked = false;
-            this.imageProcessing = null;
-
 
             // use the window object as the view model
             this.DataContext = this;
             
             // initialize the components (controls) of the window
             this.InitializeComponent();
-            
-
         }
 
+        /// <summary>
+        /// set function for choosing correct imageproccessor
+        /// </summary>
+        /// <param name="imageProcessing"></param>
         public void SetProcessor(ImageProcessing imageProcessing)
         {
             this.imageProcessing = imageProcessing;
         }
 
-
-
-
-        
+        /// <summary>
+        /// Set function for showing the right most image on the main window
+        /// </summary>
+        /// <param name="bitmap"></param>
         public void SetRightImage(WriteableBitmap bitmap)
         {
             rightImg.Source = bitmap;
         }
 
+        /// <summary>
+        /// Set function for showing the left most image on the main window
+        /// </summary>
+        /// <param name="bitmap"></param>
         public void SetLeftImage(WriteableBitmap bitmap)
         {
             leftImg.Source = bitmap;
         }
-
-
 
         /// <summary>
         /// Gets or sets the current status text to display
@@ -117,7 +122,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-           // kinectData.Stop_KinectData();
+           //TODO kinectData.Stop_KinectData(); - CALL DESTRUCTOR
         }
 
         /// <summary>
@@ -134,11 +139,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 // create frame from the writable bitmap and add to encoder
                 encoder.Frames.Add(BitmapFrame.Create((WriteableBitmap)this.leftImg.Source));
-
                 string time = System.DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-
                 string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-
                 string path = Path.Combine(myPhotos, "KinectScreenshot-Infrared-" + time + ".png");
 
                 // write the new file to disk
@@ -158,8 +160,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
             }
         }
-
-
 
         /// <summary>
         /// Handles events when the depht button in the GUI is clicked
@@ -181,7 +181,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             colorClicked = true;
             StatusText = Properties.Resources.ButtonClickColor;
-
         }
 
         /// <summary>
@@ -194,7 +193,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             thresholdedClicked = true;
             StatusText = Properties.Resources.CheckBoxthresholdChecked;
             imageProcessing.Threshold(true);
-
         }
 
         /// <summary>
