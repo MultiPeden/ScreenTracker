@@ -115,7 +115,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             udpSender = new UDPsender();
 
             // create TCPserv object responsible ingoing commands(via TCP socket)
-            commands = new TCPserv();
+            commands = new TCPserv(this);
 
             // create Thread for running the TCPserv and start it
             TCPthread = new Thread(commands.StartListening);
@@ -177,6 +177,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     this.SetDepthImage(e.DepthImage, e.DepthFrameDimension);
                 }
             }
+
+            e.Colorimage.Dispose();
+            e.DepthImage.Dispose();
+            e.InfraredImage.Dispose();
 
 
         }
@@ -339,21 +343,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="zCoords"></param>
         private void AddDephtPixel(int x, int y, ref Image<Gray, UInt16> depthImage, ref List<double> zCoords)
         {
-            try
+            if (x >= 0 && x < depthImage.Width && y >= 0 && y < depthImage.Height)
             {
-                if (x >= 0 && y >= 0)
+                ushort zCoord = depthImage.Data[y, x, 0];
+                if (zCoord > 0)
                 {
-                    ushort zCoord = depthImage.Data[x, y, 0];
-                    if (zCoord > 0)
-                    {
-                        zCoords.Add(zCoord);
-                    }
+                    zCoords.Add(zCoord);
                 }
             }
-            catch (Exception)
-            {
-                // do nothing - out of frame
-            }
+
         }
 
 
@@ -488,7 +486,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 if (i > 0)
                 {
-                    centroidPoints2[i - 1] = new double[2] { point.X, point.Y};
+                    centroidPoints2[i - 1] = new double[2] { point.X, point.Y };
                 }
                 i++;
             }
@@ -600,7 +598,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             // find controids of reflective surfaces and mark them on the image 
             TrackedData(thresholdImg);
-            
+
             // only generate writeable bitmap if the mainwindow is shown
             if (this.showWindow)
             {

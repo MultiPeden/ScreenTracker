@@ -14,9 +14,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private bool running;
         private Socket handler;
         private Socket listener;
+        private ImageProcessing imageProcessing;
 
-        public TCPserv()
+        public TCPserv(ImageProcessing imageProcessing)
         {
+            this.imageProcessing = imageProcessing;
             this.running = true;
         }
 
@@ -89,7 +91,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 case "resetMesh":
                     Console.WriteLine("resetMesh");
-                    // mainWindow.ResetMesh();
+                    imageProcessing.ResetMesh();
                     return "Mesh has been recalculated";
 
                 default:
