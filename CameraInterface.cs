@@ -9,10 +9,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     [CLSCompliant(false)]
     public interface ICameraInterface
     {
-     
-
-        // eventhandler for sending frames as EMGU images when they are
-        // received from the camera
+        /// <summary>
+        /// eventhandler for sending frames as EMGU images when they are
+        /// received from the camera
+        /// </summary>
         event EventHandler<EMGUargs> emguArgsProcessed;
 
         /// <summary>
@@ -20,11 +20,21 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         event EventHandler<bool> ChangeStatusText;
 
-        // enable/disable colorimage. The colorimage is only nessesary 
-        // when the mainwindow is visible and the color option is selected 
+        /// <summary>
+        /// enable/disable colorimage. The colorimage is only nessesary 
+        /// when the mainwindow is visible and the color option is selected 
+        /// </summary>
+        /// <param name="enable"></param>
         void GenerateColorImage(bool enable);
 
-
+        /// <summary>
+        /// ScreenToWorldCoordinates takes the reference points in the image coordinate system
+        /// and converts them to the WorldCoordinate system using the cameras mapper containing DepthSpacePoint.
+        /// return the new coordinates
+        /// </summary>
+        /// <param name="newPoints"></param>
+        /// <param name="zCoordinates"></param>
+        /// <returns></returns>
         double[][] ScreenToWorldCoordinates(double[][] newPoints, ushort[] zCoordinates);
 
 

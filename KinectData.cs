@@ -8,18 +8,19 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     using System;
     using Microsoft.Kinect;
-
     using Emgu.CV;
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
 
     [CLSCompliant(false)]
+
     /// <summary>
-    /// Interaction logic for the MainWindow
+    /// KinectData is the class that upholds the ICameraInterface
+    /// This allows for retrival of information from the camera
+    /// Aswell as conversion from camera output to EMGU images for further processing
     /// </summary>
     public class KinectData : ICameraInterface
     {
-
         /// <summary>
         /// Maximum value (as a float) that can be returned by the InfraredFrame
         /// </summary>
@@ -29,9 +30,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// The value by which the infrared source data will be scaled
         /// </summary>
         private const float InfraredSourceScale = 0.75f;
-
-
-
+        
         /// <summary>
         /// Smallest value to display when the infrared data is normalized
         /// </summary>
@@ -46,7 +45,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// Active Kinect sensor
         /// </summary>
         private KinectSensor kinectSensor = null;
-
 
         /// <summary>
         /// Description (width, height, etc) of the infrared frame data
@@ -87,38 +85,34 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// Settings changable by user at runtime
         /// </summary>
         int minThreshold = Properties.UserSettings.Default.minThreshold;
-
-
+        
         /// <summary>
         /// EventHandler for passing on the Kinects availibility status on
         /// </summary>
         public event EventHandler<bool> ChangeStatusText;
-
-
-
+        
         /// <summary>
         /// EventHandler for sending events when a frame has been processed
         /// </summary>
         public event EventHandler<EMGUargs> emguArgsProcessed;
-
-
-
-
+        
+        /// <summary>
+        /// generateColorImage determines wether the color image should be created
+        /// color image is only for the debugging window
+        /// </summary>
         private bool generateColorImage;
 
-
-
+        /// <summary>
+        /// CoordinateMapper holds the information that allows image coordinates to
+        /// be converted to worldcoordinates
+        /// </summary>
         CoordinateMapper mapper;
-
-
-
 
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
         public KinectData()
         {
-
             // get the kinectSensor object
             this.kinectSensor = KinectSensor.GetDefault();
 
@@ -145,24 +139,24 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             // open the Kinect sensor
             this.kinectSensor.Open();
-
-
+            
             // get conversiontable between depthframe to cameraspace
             this.mapper = kinectSensor.CoordinateMapper;
 
             // do not genrate color images if the debug window is not shown
             this.generateColorImage = false;
-
         }
-
+        /// <summary>
+        /// GenerateColorImage is a set function for the generateColorImage boolean 
+        /// </summary>
+        /// <param name="enable"></param>
         public void GenerateColorImage(bool enable)
         {
             this.generateColorImage = enable;
         }
 
-
         /// <summary>
-        /// Deconstructor
+        /// Deconstructor for the KinectData class
         /// </summary>
         ~KinectData()
         {
@@ -178,19 +172,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             emguArgsProcessed?.Invoke(this, e);
         }
 
-
-        /*
-        /// <summary>
-        /// Sends an event if the Kinect's status has changed
-        /// </summary>
-        /// <param name="e"></param>
-        protected virtual void OnChangeStatusText(bool e)
-        {
-            ChangeStatusText?.Invoke(this, e);
-        }
-
-            */
-
         /// <summary>
         /// Getter function to get the sensor availibility
         /// </summary>
@@ -201,7 +182,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         }
 
         /// <summary>
-        /// Execute shutdown tasks
+        /// Execute shutdown tasks for the KinectData class
         /// </summary>
         /// <param name="sender">object sending the event</param>
         /// <param name="e">event arguments</param>
@@ -209,7 +190,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             if (this.reader != null)
             {
-                // InfraredFrameReader is IDisposable
+                // InfraredFrameReader is Disposable
                 this.reader.Dispose();
                 this.reader = null;
             }
@@ -222,8 +203,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         }
 
-
-
         /// <summary>
         /// Handles the multisource frame data arriving from the sensor
         /// </summary>
@@ -231,13 +210,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="e">event arguments</param>
         private unsafe void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
+            // Create instance of EMGUargs which holds the output of data from the kinect
             EMGUargs emguArgs = new EMGUargs();
-
             MultiSourceFrameReference frameReference = e.FrameReference;
+            // Variables initialized to null for easy check of camera failures
             MultiSourceFrame multiSourceFrame = null;
             InfraredFrame infraredFrame = null;
             ColorFrame colorFrame = null;
             DepthFrame depthFrame = null;
+            // Acquire frame from the Kinect
             multiSourceFrame = frameReference.AcquireFrame();
 
             // If the Frame has expired by the time we process this event, return.
@@ -245,51 +226,37 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 return;
             }
-
             try
             {
                 InfraredFrameReference infraredFrameReference = multiSourceFrame.InfraredFrameReference;
                 infraredFrame = infraredFrameReference.AcquireFrame();
 
-
                 DepthFrameReference depthFrameReference = multiSourceFrame.DepthFrameReference;
                 depthFrame = depthFrameReference.AcquireFrame();
 
-
-
-
-
+                // Check whether needed frames are avaliable
                 if (infraredFrame == null || depthFrame == null )
                 {
                     return;
                 }
 
-
-
                 // the fastest way to process the depth frame data is to directly access 
                 // the underlying buffer
                 using (Microsoft.Kinect.KinectBuffer depthBuffer = depthFrame.LockImageBuffer())
                 {
-                    // verify data and write the new infrared frame data to the display bitmap
+                    // verify data and write the new depth frame data to the display bitmap
                     if (((this.depthFrameDescription.Width * this.depthFrameDescription.Height) ==
                         (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
                     {
-
-
+                        // Conversion to needed EMGU image
                         Image<Gray, UInt16> depthImage = this.ProcessDepthFrameData(depthFrame);
                         emguArgs.DepthImage = depthImage;
                         emguArgs.DepthFrameDimension = new FrameDimension(depthFrameDescription.Width, depthFrameDescription.Height);
-                //        depthImage.Dispose();
-
-
                     }
                     depthFrame.Dispose();
                     depthFrame = null;
 
                 }
-
-
-
 
                 // IR image
                 FrameDescription infraredFrameDescription = infraredFrame.FrameDescription;
@@ -301,18 +268,16 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     // verify data and write the new infrared frame data to the display bitmap
                     if (((this.infraredFrameDescription.Width * this.infraredFrameDescription.Height) == (infraredBuffer.Size / this.infraredFrameDescription.BytesPerPixel)))
                     {
-                        Image<Gray, UInt16> infraredImage = this.ProcessInfraredFrameDataEMGU(infraredFrame);
+                        // Conversion to needed EMGU image
+                        Image<Gray, UInt16> infraredImage = this.ProcessInfaredFrameData(infraredFrame);
                         emguArgs.InfraredImage = infraredImage;
                         emguArgs.InfraredFrameDimension = new FrameDimension(infraredFrameDescription.Width, infraredFrameDescription.Height);
                       //  infraredImage.Dispose();
                     }
-
                     infraredFrame.Dispose();
                     infraredFrame = null;
 
-
-
-
+                    // Check as to whether or not the color image is needed for mainwindow view
                     if (generateColorImage)
                     {
                         ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
@@ -321,7 +286,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                             return;
                                 }
 
-
                         // color image
                         FrameDescription colorFrameDescription = colorFrame.FrameDescription;
 
@@ -329,26 +293,18 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         // the underlying buffer
                         using (Microsoft.Kinect.KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
                         {
-
-
-                            Image<Bgr, UInt16> colorImage = this.ProcessColorFrameDataEMGU(colorFrame);
+                            // Conversion to needed EMGU image
+                            Image<Bgr, UInt16> colorImage = this.ProcessColorFrameData(colorFrame);
                             emguArgs.Colorimage = colorImage;
                             emguArgs.ColorFrameDimension = new FrameDimension(colorFrameDescription.Width, colorFrameDescription.Height);
-                            //   colorImage.Dispose();
                         }
                         // We're done with the colorFrame 
                         colorFrame.Dispose();
                         colorFrame = null;
-
-
                     }
-
-
-
                 }
-
+                // Call the processing finished event for the conversion to EMGU images
                           OnEmguArgsProcessed(emguArgs);
-
             }
             catch (Exception ex)
             {
@@ -357,11 +313,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             }
             finally
             {
-                // generate event at send writeable bitmaps for each frame, and cleanup
+                // generate event at send writeable bitmaps for each frame, and cleanup.
+                // only generate event if the mainwindow is shown.
 
-                // only generate event if the mainwindow is shown           
-
-                // DepthFrame, ColorFrame are IDispoable
+                // DepthFrame, ColorFrame are Disposable.
                 if (colorFrame != null)
                 {
                     colorFrame.Dispose();
@@ -372,8 +327,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     depthFrame.Dispose();
                     depthFrame = null;
                 }
-
-                // infraredFrame is IDispoable
+                // infraredFrame is Disposable
                 if (infraredFrame != null)
                 {
                     infraredFrame.Dispose();
@@ -389,7 +343,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         }
 
-
         /// <summary> EMGU VERSION
         /// Directly accesses the underlying image buffer of the InfraredFrame to 
         /// create a displayable bitmap.
@@ -397,11 +350,14 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// access to the native memory pointed to by the infraredFrameData pointer.
         /// </summary>
         /// <param name="ColorFrame"> the InfraredFrame image </param>
-        private unsafe Image<Bgr, UInt16> ProcessColorFrameDataEMGU(ColorFrame colorFrame)
+        private unsafe Image<Bgr, UInt16> ProcessColorFrameData(ColorFrame colorFrame)
         {
+            // create EMGU and copy the Frame Data into it 
+
+            // Generate Mat used for EMGU images
             Mat colorMat = new Mat(colorFrameDescription.Width, colorFrameDescription.Height, DepthType.Cv16U, 3);
+            // Move data to new Mat
             colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height * 4), ColorImageFormat.Bgra);
-            //    AddToBitmap(colorBitmap, colorMat, (colorFrameDescription.Width * colorFrameDescription.Height * 4));
             Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
             colorMat.Dispose();
             return EmguImg;
@@ -415,10 +371,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         /// <param name="infraredFrame"> the InfraredFrame image </param>
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private unsafe Image<Gray, UInt16> ProcessInfraredFrameDataEMGU(InfraredFrame infraredFrame)
+        private unsafe Image<Gray, UInt16> ProcessInfaredFrameData(InfraredFrame infraredFrame)
         {
             // create EMGU and copy the Frame Data into it 
+
+            // Generate Mat used for EMGU images
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
+            // Move data to new Mat
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
             Image<Gray, UInt16> EmguImg = mat.ToImage<Gray, UInt16>();
 
@@ -426,8 +385,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             return EmguImg;
         }
-
-
 
         /// <summary>
         /// Directly accesses the underlying image buffer of the DepthFrame to 
@@ -441,20 +398,18 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="maxDepth">The maximum reliable depth value for the frame</param>
         private unsafe Image<Gray, UInt16> ProcessDepthFrameData(DepthFrame depthFrame)
         {
-
             // create EMGU and copy the Frame Data into it 
+
+            // Generate Mat used for EMGU images
             Mat mat = new Mat(depthFrameDescription.Height, depthFrameDescription.Width, DepthType.Cv16U, 1);
+            // Move data to new Mat
             depthFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(depthFrameDescription.Width * depthFrameDescription.Height * 2));
             Image<Gray, UInt16> EmguImg = mat.ToImage<Gray, UInt16>();
 
             mat.Dispose();
 
             return EmguImg;
-
         }
-
-
-
 
         /// <summary>
         /// Handles the event which the sensor becomes unavailable (E.g. paused, closed, unplugged).
@@ -466,7 +421,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             OnChangeStatusText(e.IsAvailable);
         }
 
-
         /// <summary>
         /// Sends an event if the Kinect's status has changed
         /// </summary>
@@ -475,7 +429,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
             ChangeStatusText?.Invoke(this, e);
         }
-
 
         /// <summary>
         ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
@@ -493,7 +446,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     X = (float)points[i][0],
                     Y = (float)points[i][1]
                 };
+                // Find the lutValue for the given set of coordinates
                 CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
+                // Convert coordinates using the found lutValue
                 newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
             }
             return newPointsTest;
