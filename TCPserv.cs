@@ -6,7 +6,7 @@ using System.Net.Sockets;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
-
+    [CLSCompliant(false)]
     public class TCPserv
     {
         // Incoming data from the client.  

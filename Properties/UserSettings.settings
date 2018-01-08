@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="minThreshold" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">65000</Value>
+      <Value Profile="(Default)">40000</Value>
     </Setting>
     <Setting Name="kernelSize" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
@@ -15,7 +15,7 @@
       <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="PercentageThreshold" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.96</Value>
+      <Value Profile="(Default)">0.8</Value>
     </Setting>
   </Settings>
 </SettingsFile>

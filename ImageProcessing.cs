@@ -611,6 +611,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
                 else
                 {
+
                     DrawTrackedData(infraredFrame);
                     SetInfraredImage(infraredFrame, infraredFrameDimension);
                 }
