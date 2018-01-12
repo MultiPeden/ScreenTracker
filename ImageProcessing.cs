@@ -83,7 +83,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <summary>
         /// Info for each detected point i the frame.
         /// </summary>
-        private PointInfo[] pointInfo;
+        private PointInfoKalman[] pointInfo;
 
         /// <summary>
         /// Holds a reference to the camera
@@ -157,12 +157,16 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private void KinectData_EmguImageReceived(object sender, EMGUargs e)
         {
 
+
+           // new PointInfoKalman(1,2,3);
+
+
             // Process infrared image and track points
             this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
             // get z-coordinates
-            ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
+         //   ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
             // Send point via UDP
-            SendPoints(prevPoints, zCoordinates);
+          //  SendPoints(prevPoints, zCoordinates);
 
             // only show images if mainwindow is present
             if (mainWindow != null)
@@ -381,6 +385,131 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="thresholdImg"></param>
         /// <param name="showThesholdedImg"></param>
         /// <returns></returns>
+        private void TrackedDataKalman(Image<Gray, Byte> thresholdImg)
+        {
+            // Get Connected component in the frame
+            Mat labels = new Mat();
+            Mat stats = new Mat();
+            Mat centroids = new Mat();
+            MCvPoint2D64f[] centroidPointsEmgu;
+            int n;
+            n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
+
+            // Copy centroid points to point array
+            centroidPointsEmgu = new MCvPoint2D64f[n];
+            centroids.CopyTo(centroidPointsEmgu);
+
+            // Convert to jagged array
+            double[][] centroidPoints = PointArrayToJaggedArray(centroidPointsEmgu, n);
+
+
+
+
+            // Jagged array for new points
+            double[][] newPoints;
+            // index for array
+            int index;
+
+            newPoints = centroidPoints;
+         
+
+            if (centroidPoints.Length != 0)
+            {
+    
+       
+
+               
+            }
+            
+
+
+            if (prevPoints == null)
+            {
+                pointInfo = new PointInfoKalman[1];
+                int width = stats.GetData(0, 2)[0];
+                int height = stats.GetData(0, 3)[0];
+                int area = stats.GetData(0, 4)[0];
+                // set info for each point, used later to get z-coordinate
+                pointInfo[0] = new PointInfoKalman(width, height, newPoints[0][0], newPoints[0][1]);
+
+            }
+            else if(prevPoints.Length !=0 && centroidPoints.Length != 0)
+            {
+
+                newPoints = new double[][] { centroidPoints[0] };
+                //  newPoints = new double[][] { new double[] {predPoint.X , predPoint.Y } };
+              //  PointF[] predPoint = pointInfo[0].filterPoints(new PointF((float)prevPoints[0][0], (float)prevPoints[0][1]));
+
+                PointF[] predPoint = pointInfo[0].filterPoints(new PointF((float)centroidPoints[0][0], (float)centroidPoints[0][1]));
+
+                // newPoints = new double[][] { new double[] { predPoint[0].X, predPoint[0].Y } };
+
+            }
+            else
+            {
+                PointF predPoint = pointInfo[0].PredictUntracked();
+
+                //newPoints = new double[][] { new double[] { predPoint.X, predPoint.Y } };prevPoints[0]
+            
+                newPoints = prevPoints;
+
+
+            }
+
+
+            prevPoints = newPoints;
+            /*
+             * 
+             *  int i = 0;
+            if (prevPoints == null || 1 != newPoints.Length)
+            {
+
+                pointInfo = new PointInfoKalman[n - 1];
+                // initialize points
+                foreach (double[] point in centroidPoints)
+                {
+                    int j = i + 1;
+                    int width = stats.GetData(j, 2)[0];
+                    int height = stats.GetData(j, 3)[0];
+                    int area = stats.GetData(j, 4)[0];
+                    // set info for each point, used later to get z-coordinate
+                    pointInfo[i] = new PointInfoKalman(width, height, point[0], point[1]);
+                    i++;
+
+                }
+            }
+            else
+            {
+
+                if (newPoints.Length == 0)
+                {
+
+                    for (int j = 0; j < prevPoints.Length; j++)
+                    {
+                        prevPoints[j] = new double[2] { 1, 1 };
+                    }
+
+
+
+                }
+            }
+            */
+
+            // Update the previous points
+
+
+        }
+
+
+
+        /// <summary>
+        /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
+        /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="thresholdImg"></param>
+        /// <param name="showThesholdedImg"></param>
+        /// <returns></returns>
         private void TrackedData(Image<Gray, Byte> thresholdImg)
         {
 
@@ -416,7 +545,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             if (prevPoints == null)
             {
                 newPoints = centroidPoints;
-                pointInfo = new PointInfo[n - 1];
+                pointInfo = new PointInfoKalman[n - 1];
 
                 // initialize points
                 foreach (double[] point in centroidPoints)
@@ -426,7 +555,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
                     // set info for each point, used later to get z-coordinate
-                    pointInfo[i] = new PointInfo(width, height);
+                    //pointInfo[i] = new PointInfoKalman(width, height);
                     i++;
                 }
 
@@ -597,7 +726,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
-            TrackedData(thresholdImg);
+            TrackedDataKalman(thresholdImg);
 
             // only generate writeable bitmap if the mainwindow is shown
             if (this.showWindow)
@@ -633,13 +762,19 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             int colorcode = Properties.Settings.Default.DataIndicatorColor;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
+
             for (int i = 0; i < prevPoints.Length; i++)
             {
                 int width = pointInfo[i].Width;
                 int height = pointInfo[i].Height;
+
+             
+                Rectangle rectest = new Rectangle((int)pointInfo[i].Px - (width / 2) - padding +25, (int)pointInfo[i].Py - (height / 2) - padding -5, width + padding * 2 -50, height + padding * 2 + 10);
+                CvInvoke.Rectangle(infraredImage, rectest, new Gray(colorcode).MCvScalar, 5); // 2 pixel box thick
+
                 Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
                 CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
-
+                break;
             }
 
         }
