@@ -77,13 +77,6 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-
-
-
-
-
-
-
         }
 
         public bool Tracked { get => visible; set => visible = value; }
