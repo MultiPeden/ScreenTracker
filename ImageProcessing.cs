@@ -83,7 +83,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <summary>
         /// Info for each detected point i the frame.
         /// </summary>
-        private PointInfo[] pointInfo;
+        private PointInfoRelation[] pointInfo;
 
         /// <summary>
         /// Holds a reference to the camera
@@ -231,6 +231,25 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
         }
 
+
+        /// <summary>
+        /// Sets the Infrared in the MainWindow
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="frameDimension"></param>
+        private void SetInfraredImage(Image<Bgr, Byte> img, FrameDimension frameDimension)
+        {
+            if (this.infraredBitmap == null)
+            {
+                this.infraredBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgr24, null);
+            }
+            // Convert to writablebitmao
+            AddToBitmap(this.infraredBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 3));
+            // Send to Mainwindow
+            mainWindow.SetLeftImage(this.infraredBitmap);
+
+        }
+
         /// <summary>
         /// Sets the Thresholded image in the MainWindow
         /// </summary>
@@ -294,7 +313,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             for (int i = 0; i < prevPoints.Length; i++)
             {
                 zCoords = new List<double>();
-                PointInfo p = pointInfo[i];
+                PointInfoRelation p = pointInfo[i];
 
                 int x = (int)prevPoints[i][0];
                 int y = (int)prevPoints[i][1];
@@ -373,6 +392,25 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
+
+        private double GetAvgY(double[][] centroidPoints, int from, int to)
+        {
+            if (from == to)
+            {
+                return centroidPoints[from][1];
+            }
+
+            int numbElem = 0;
+            double acc = 0;
+            for (int i = from; i < to; i++)
+            {
+                acc = +centroidPoints[i][1];
+                numbElem++;
+            }
+            return acc / numbElem;
+        }
+
+
         /// <summary>
         /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
         /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
@@ -415,27 +453,80 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // if we have no previous points we add the conneted components as the tracked points
             if (prevPoints == null)
             {
-                newPoints = centroidPoints;
-                pointInfo = new PointInfo[n - 1];
+             
+                
+
+                /*
+                Array.Sort(centroidPoints,
+                    (left, right) => left[1].CompareTo(right[1]) != 0
+                                ? left[1].CompareTo(right[1])
+                                : left[0].CompareTo(right[0]));
+                                */
+
+
+                int cols = Properties.UserSettings.Default.GridColums;
+                int rows = Properties.UserSettings.Default.GridRows;
+
+                double[][] orderedCentroidPoints = new double[rows*cols][];
+                pointInfo = new PointInfoRelation[rows * cols];
+
+                Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
+
+                int count = 0;
+
+                for (int k = 0; k < rows; k++)
+                {
+
+
+
+                    double[][] colArray = centroidPoints.Skip(k * cols).Take(cols).ToArray();
+                    Array.Sort(colArray, (left, right) => left[0].CompareTo(right[0]));
+
+                    foreach (double[] p in colArray)
+                    {
+                        orderedCentroidPoints[count] = p;
+                        count++;
+                    }
+
+
+
+                }
+                newPoints = orderedCentroidPoints;
+                //Console.WriteLine("cat: " + cat);
+
+
+
 
                 // initialize points
-                foreach (double[] point in centroidPoints)
+                foreach (double[] point in orderedCentroidPoints)
                 {
                     int j = i + 1;
                     int width = stats.GetData(j, 2)[0];
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
                     // set info for each point, used later to get z-coordinate
-                    pointInfo[i] = new PointInfo(width, height);
+                    pointInfo[i] = new PointInfoRelation(width, height,i);
                     i++;
+                    Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
                 }
+
+                // assign kardinal points to pointInfo
+                for (int k = 0; k < pointInfo.Length; k++)
+                {
+                    pointInfo[k].AssignCardinalPoints(pointInfo, k, cols, rows);
+                }
+
+
+
 
             }
             else
             { // If we have previous points, we search for their nearest neighbours in the new frame.
 
                 // copy previous points to new point to avoid loosing any points
-                newPoints = prevPoints;
+                // newPoints = prevPoints;
+                 double[][] newPointsSparse = new double[prevPoints.Length][]; 
+
 
                 // build KD-tree for nearest neighbour search
                 KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
@@ -458,14 +549,28 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         index = nearest.Value;
 
                         // update info for the point
-                        PointInfo pInfo = pointInfo[index];
+                        PointInfoRelation pInfo = pointInfo[index];
                         pInfo.Width = width;
                         pInfo.Height = height;
-                        newPoints[index] = point;
+                        pInfo.Visible = true;
+                        newPointsSparse[index] = point;
                     }
 
                     i++;
                 }
+                newPoints = newPointsSparse;
+
+                for (int k = 0; k < newPointsSparse.Length; k++)
+                {
+                    if (newPoints[k] == null)
+                    {
+                        newPoints[k] = pointInfo[k].EstimatePostition(newPointsSparse);
+                        pointInfo[k].Visible = false;
+                    }
+
+                }
+
+
 
             }
             // Update the previous points
@@ -594,6 +699,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // perform opening 
             int kernelSize = Properties.UserSettings.Default.kernelSize;
             Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
+
+
             thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
             // find controids of reflective surfaces and mark them on the image 
@@ -612,8 +719,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 else
                 {
 
-                    DrawTrackedData(infraredFrame);
-                    SetInfraredImage(infraredFrame, infraredFrameDimension);
+                    Image<Bgr, Byte> colImg = DrawTrackedData(infraredFrame);
+                    SetInfraredImage(colImg, infraredFrameDimension);
+                    colImg.Dispose();
                 }
             }
 
@@ -626,21 +734,53 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// Draws tracked data on a Uint16 infraredImage
         /// </summary>
         /// <param name="infraredImage"></param>
-        private void DrawTrackedData(Image<Gray, UInt16> infraredImage)
+        private Image<Bgr, Byte> DrawTrackedData(Image<Gray, UInt16> infraredImage)
         {
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
             int colorcode = Properties.Settings.Default.DataIndicatorColor;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
+          //  Image<Bgr, ushort> colImg = new Image<Bgr, Byte>(infraredImage.Width, infraredImage.Height);
+
+            //  CvInvoke.CvtColor(infraredImage, colImg, ColorConversion.Gray2Bgr,3);
+
+            Image<Bgr, Byte> colImg = infraredImage.Convert<Bgr, Byte>();
+
+
             for (int i = 0; i < prevPoints.Length; i++)
             {
                 int width = pointInfo[i].Width;
                 int height = pointInfo[i].Height;
                 Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                /*
                 CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
+                CvInvoke.PutText(infraredImage,
+                                i.ToString(),
+                                new System.Drawing.Point((int)prevPoints[i][0], (int)prevPoints[i][1]),
+                                FontFace.HersheyComplex,
+                                1.0,
+                                new Gray(colorcode).MCvScalar);
+*/
+                if (pointInfo[i].Visible)
+                {
+                    CvInvoke.Rectangle(colImg, rect, new Bgr(0, 255, 0).MCvScalar, thickness); // 2 pixel box thick
+                }
+                else
+                {
+                    CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
+                }
+
+                CvInvoke.PutText(colImg,
+                i.ToString(),
+                new System.Drawing.Point((int)prevPoints[i][0] -width, (int)prevPoints[i][1] + height),
+                FontFace.HersheyComplex,
+                .6,
+                new Bgr(255, 255, 0).MCvScalar);
+
             }
+            return colImg;
 
         }
 
@@ -661,6 +801,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 int height = pointInfo[i].Height;
                 Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
                 CvInvoke.Rectangle(ThresholdedInfraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
+
+
             }
 
         }
@@ -682,6 +825,18 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 mainWindow.StatusText = statusText;
             }
             Console.WriteLine(statusText);
+        }
+
+        /// <summary>
+        /// row-major order
+        /// </summary>
+        /// <param name="rowIndex"></param>
+        /// <param name="columnIndex"></param>
+        /// <param name="numberOfColumns"></param>
+        /// <returns></returns>
+        private int From2Dto1D(int rowIndex, int columnIndex, int numberOfColumns)
+        {
+            return rowIndex * numberOfColumns + columnIndex;
         }
 
 

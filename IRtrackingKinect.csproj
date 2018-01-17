@@ -126,6 +126,8 @@
     <Compile Include="KinectData.cs" />
     <Compile Include="OneEuroFilter.cs" />
     <Compile Include="PointInfo.cs" />
+    <Compile Include="PointInfoRelation.cs" />
+    <Compile Include="PointsConnected.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

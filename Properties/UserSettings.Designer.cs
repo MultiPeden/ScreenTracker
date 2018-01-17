@@ -82,5 +82,29 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData.Properties {
                 this["PercentageThreshold"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public int GridRows {
+            get {
+                return ((int)(this["GridRows"]));
+            }
+            set {
+                this["GridRows"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
+        public int GridColums {
+            get {
+                return ((int)(this["GridColums"]));
+            }
+            set {
+                this["GridColums"] = value;
+            }
+        }
     }
 }
