@@ -567,7 +567,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
               //  hung.ShowMaskMatrix();
                 // Create a new Hungarian algorithm
                 // Munkres m = new Munkres(costMatrix);
-                int[] minInd = hung.GetMinimizedIndiciesorg();
+                int[] minInd = hung.GetMinimizedIndicies();
 
                 /*
                 Console.Write("\n");
@@ -577,7 +577,12 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
                 */
 
-                double[][] rearranged = IRUtils.RearrangeArray3(centroidPoints, minInd, prevPoints.Length);
+                if (prevPoints.Length != centroidPoints.Length)
+                {
+
+                }
+
+                double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, prevPoints.Length);
 
 
 
@@ -588,7 +593,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                    // index = minInd[i] +1;
                     if (point != null)
                     {
-                        index = i +1;
+                        index = minInd[i] + 1;
 
                       //  ArrangedPoints[indices[i]] = points[i];
 
@@ -622,10 +627,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
                 newPoints = newPointsSparse;
 
-                if (prevPoints.Length != centroidPoints.Length)
-                {
 
-                }
 
                 for (int k = 0; k < newPointsSparse.Length; k++)
                 {

@@ -22,20 +22,20 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-                foreach (double[] point in points)
-                {
-                    // invert y axis
-                  //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
-                    // no invert
-                    jSon += IRUtils.IRPointsJson(i,  (int)point[0] *-1 , (int)point[1], (int)zCoordinates[i]);
-                    if (i < points.Length - 1)
-                        jSon += ",";
-                    i++;
-                }
+            foreach (double[] point in points)
+            {
+                // invert y axis
+                //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
+                // no invert
+                jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1], (int)zCoordinates[i]);
+                if (i < points.Length - 1)
+                    jSon += ",";
+                i++;
+            }
 
-            
+
             jSon += "]}";
-   
+
 
             return jSon;
         }
@@ -104,7 +104,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 }
                 costMatrix[i] = costRow;
             }
-       
+
             return costMatrix;
         }
 
@@ -134,19 +134,23 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public static int[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
         {
 
-            int[,] costMatrix = new int[prevPoints.Length,newpoints.Length];
+            int[,] costMatrix = new int[prevPoints.Length, newpoints.Length];
 
             for (int i = 0; i < prevPoints.Length; i++)
             {
-                
+
                 for (int j = 0; j < newpoints.Length; j++)
                 {
-                    costMatrix[i,j] = (int) Math.Round( UnsqrtDist(prevPoints[i], newpoints[j]));
+                    costMatrix[i, j] = (int)Math.Round(UnsqrtDist(prevPoints[i], newpoints[j]));
                 }
             }
 
             return costMatrix;
         }
+
+
+
+
 
 
 
@@ -186,10 +190,16 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
 
                 for (int i = 0; i < indices.Length; i++)
-            {
-                if (indices[i] != -1)
-                    ArrangedPoints[i] = points[indices[i]];
-            }
+                {
+                    if (indices[i] != -1)
+                    {
+                        ArrangedPoints[i] = points[indices[i]];
+                    }
+                    else
+                    {
+
+                    }
+                }
 
             }
             catch (Exception)
@@ -230,6 +240,47 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             return ArrangedPoints;
         }
 
+
+
+
+
+        public static double[][] RearrangeArray4(double[][] points, int[] indices, int n)
+        {
+
+
+
+
+            double[][] ArrangedPoints = new double[n][];
+
+            int index = 0;
+            double[] point;
+            int mappedindex;
+
+            try
+            {
+
+                for (int i = 0; i < indices.Length; i++)
+                {
+
+                    index = i;
+                    if (indices[i] != -1)
+                    {
+                        point = points[i];
+                        mappedindex = indices[i];
+
+                        ArrangedPoints[mappedindex] = point;
+                    }
+                }
+
+            }
+            catch (Exception)
+            {
+
+
+            }
+
+            return ArrangedPoints;
+        }
 
     }
 

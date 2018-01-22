@@ -399,28 +399,35 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         {
 
 
-                int len = M.GetLength(0);
-            int[] money = new int[len];
+            int len = M.GetLength(0);
+            int[] money = new int[M.GetLength(1)];
+
+            for (int i = 0; i < money.Length; i++)
+            {
+                money[i] = -1;
+            }
 
 
             try
             {
-                for (int j = 0; j < len; j++)
-            {
-                money[j] = -1;
-                for (int i = 0; i < M.GetLength(1); i++)
+                for (int j = 0; j < M.GetLength(1); j++)
                 {
+                    for (int i = 0; i < M.GetLength(0); i++)
+                    {
+
+
 
                         if (M[i, j] == 1)
                         {
 
                             money[j] = i;
+                            continue;
                         }
-   
-                       
-                    
+
+
+
+                    }
                 }
-            }
 
             }
             catch (Exception)
