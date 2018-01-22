@@ -67,8 +67,15 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             if (count != 0)
             {
-                estPoint[0] = accX / count;
-                estPoint[1] = accY / count;
+              //  estPoint[0] = accX / count;
+              //  estPoint[1] = accY / count;
+
+                estPoint = new double[2]
+                {
+                    accX / count,
+                    accY / count
+                };
+
                 return estPoint;
             }
             else {

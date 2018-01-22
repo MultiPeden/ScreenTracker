@@ -121,6 +121,7 @@
     <Compile Include="CameraInterface.cs" />
     <Compile Include="EMGUargs.cs" />
     <Compile Include="FrameDimension.cs" />
+    <Compile Include="Hungarian.cs" />
     <Compile Include="ImageProcessing.cs" />
     <Compile Include="IRUtils.cs" />
     <Compile Include="KinectData.cs" />

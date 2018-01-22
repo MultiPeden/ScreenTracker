@@ -77,10 +77,157 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         }
 
 
+
+
+
+
         private static double Dist(MCvPoint2D64f a, MCvPoint2D64f b)
         {
 
             return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
+        }
+
+
+
+
+        public static double[][] GetCostMatrix(double[][] prevPoints, double[][] newpoints)
+        {
+
+            double[][] costMatrix = new double[prevPoints.Length][];
+
+            for (int i = 0; i < prevPoints.Length; i++)
+            {
+                double[] costRow = new double[newpoints.Length];
+                for (int j = 0; j < newpoints.Length; j++)
+                {
+                    costRow[j] = UnsqrtDist(prevPoints[i], newpoints[j]);
+                }
+                costMatrix[i] = costRow;
+            }
+       
+            return costMatrix;
+        }
+
+
+        public static double[][] GetCostMatrix2(double[][] prevPoints, double[][] newpoints)
+        {
+
+            double[][] costMatrix = new double[newpoints.Length][];
+
+            for (int i = 0; i < newpoints.Length; i++)
+            {
+                double[] costRow = new double[prevPoints.Length];
+                for (int j = 0; j < prevPoints.Length; j++)
+                {
+                    costRow[j] = UnsqrtDist(newpoints[i], prevPoints[j]);
+                }
+                costMatrix[i] = costRow;
+            }
+
+            return costMatrix;
+        }
+
+
+
+
+
+        public static int[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
+        {
+
+            int[,] costMatrix = new int[prevPoints.Length,newpoints.Length];
+
+            for (int i = 0; i < prevPoints.Length; i++)
+            {
+                
+                for (int j = 0; j < newpoints.Length; j++)
+                {
+                    costMatrix[i,j] = (int) Math.Round( UnsqrtDist(prevPoints[i], newpoints[j]));
+                }
+            }
+
+            return costMatrix;
+        }
+
+
+
+
+        private static double UnsqrtDist(double[] a, double[] b)
+        {
+
+            return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2);
+        }
+
+
+        public static double[][] RearrangeArray(double[][] points, int[] indices)
+        {
+
+            double[][] ArrangedPoints = new double[indices.Length][];
+
+            for (int i = 0; i < indices.Length; i++)
+            {
+                if (indices[i] != -1)
+                    ArrangedPoints[i] = points[indices[i]];
+            }
+
+            return ArrangedPoints;
+        }
+
+
+
+        public static double[][] RearrangeArray2(double[][] points, int[] indices, int n)
+        {
+
+
+
+
+            double[][] ArrangedPoints = new double[n][];
+
+            try
+            {
+
+                for (int i = 0; i < indices.Length; i++)
+            {
+                if (indices[i] != -1)
+                    ArrangedPoints[i] = points[indices[i]];
+            }
+
+            }
+            catch (Exception)
+            {
+
+
+            }
+
+            return ArrangedPoints;
+        }
+
+
+
+        public static double[][] RearrangeArray3(double[][] points, int[] indices, int n)
+        {
+
+
+
+
+            double[][] ArrangedPoints = new double[n][];
+
+            try
+            {
+
+                for (int i = 0; i < indices.Length; i++)
+                {
+                    if (indices[i] != -1)
+                        ArrangedPoints[indices[i]] = points[i];
+                }
+
+            }
+            catch (Exception)
+            {
+
+
+            }
+
+            return ArrangedPoints;
         }
 
 

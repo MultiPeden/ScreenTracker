@@ -12,6 +12,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using Accord.Statistics;
+using Accord.Math.Optimization;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
@@ -525,40 +526,106 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 // copy previous points to new point to avoid loosing any points
                 // newPoints = prevPoints;
-                 double[][] newPointsSparse = new double[prevPoints.Length][]; 
+                 double[][] newPointsSparse = new double[prevPoints.Length][];
 
+
+                if(prevPoints.Length != centroidPoints.Length )
+                {
+                 
+                }
 
                 // build KD-tree for nearest neighbour search
-                KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+                //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+
+
+
+                /*
+                if (prevPoints.Length <= centroidPoints.Length)
+                {
+                    costMatrix = IRUtils.GetCostMatrix2(prevPoints, centroidPoints);
+                }
+                else
+                {
+                     costMatrix = IRUtils.GetCostMatrix(prevPoints, centroidPoints);
+                }
+                */
+
+                //  costMatrix = IRUtils.GetCostMatrix3(prevPoints, centroidPoints);
+
+
+
+                // int[,] costMatrix = IRUtils.GetCostMatrixArray(prevPoints, centroidPoints);
+
+
+
+
+                    int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, prevPoints);
+
+                Hungarian hung = new Hungarian(costMatrix);
+                int[,] M = hung.M;
+              //  hung.ShowCostMatrix();
+              //  hung.ShowMaskMatrix();
+                // Create a new Hungarian algorithm
+                // Munkres m = new Munkres(costMatrix);
+                int[] minInd = hung.GetMinimizedIndiciesorg();
+
+                /*
+                Console.Write("\n");
+                foreach (int mini in minInd)
+                {
+                    Console.Write(mini + " "); 
+                }
+                */
+
+                double[][] rearranged = IRUtils.RearrangeArray3(centroidPoints, minInd, prevPoints.Length);
+
+
 
                 //Update points
-                foreach (double[] point in centroidPoints)
+                foreach (double[] point in rearranged)
                 {
-                    int j = i + 1;
-                    int width = stats.GetData(j, 2)[0];
-                    int height = stats.GetData(j, 3)[0];
-                    int area = stats.GetData(j, 4)[0];
-
-                    // if the area is more than minArea, discard 
-                    if (true) // (area > minArea)
+                  
+                   // index = minInd[i] +1;
+                    if (point != null)
                     {
+                        index = i +1;
 
-                        // find nearest neighbour
-                        KDTreeNode<int> nearest = tree.Nearest(point);
-                        // get its index
-                        index = nearest.Value;
+                      //  ArrangedPoints[indices[i]] = points[i];
 
-                        // update info for the point
-                        PointInfoRelation pInfo = pointInfo[index];
-                        pInfo.Width = width;
-                        pInfo.Height = height;
-                        pInfo.Visible = true;
-                        newPointsSparse[index] = point;
+
+                        int width = stats.GetData(index, 2)[0];
+                        int height = stats.GetData(index , 3)[0];
+                        int area = stats.GetData(index, 4)[0];
+
+                        // if the area is more than minArea, discard 
+                        if (true) // (area > minArea)
+                        {
+
+                            // find nearest neighbour
+                            //         KDTreeNode<int> nearest = tree.Nearest(point);
+
+
+
+                            // get its index
+                            //   index = nearest.Value;
+
+                            // update info for the point
+                            PointInfoRelation pInfo = pointInfo[i];
+                            pInfo.Width = width;
+                            pInfo.Height = height;
+                            pInfo.Visible = true;
+                            newPointsSparse[i] = point;
+                        }
                     }
 
                     i++;
                 }
                 newPoints = newPointsSparse;
+
+                if (prevPoints.Length != centroidPoints.Length)
+                {
+
+                }
 
                 for (int k = 0; k < newPointsSparse.Length; k++)
                 {
@@ -570,9 +637,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 }
 
+   
 
 
             }
+
+
+
             // Update the previous points
             prevPoints = newPoints;
         }
