@@ -517,7 +517,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
                     // set info for each point, used later to get z-coordinate
-                    pointInfo[i] = new PointInfoRelation(width, height, i);
+                    pointInfo[i] = new PointInfoRelation(width, height, i, point);
                     i++;
                     Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
                 }
@@ -612,7 +612,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     if (newPoints[k] == null)
                     {
 
-                        double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
+                        //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
+
+                        double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPointsSparse);
+                        
 
                         // if we can get an estimate using extrapolation, update with the estimated point
                         if (estPoint != null)

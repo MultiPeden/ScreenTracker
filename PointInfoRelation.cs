@@ -10,14 +10,21 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     {
         int id;
         PointInfoRelation pN, pE, pS, pW, p2N, p2E, p2S, p2W;
+      //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
+        
         private bool visible;
 
         public bool Visible { get => visible; set => visible = value; }
 
-        public PointInfoRelation(int height, int width, int id) : base(height, width)
+
+        //for displacement calculations 
+        double[] orignalPos;
+
+        public PointInfoRelation(int height, int width, int id, double[] position) : base(height, width)
         {
             this.id = id;
             this.visible = true;
+            this.orignalPos = position;
 
         }
 
@@ -187,6 +194,131 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     this.p2W = points[pos];
                 }
             }
+        }
+
+        /// <summary>
+        /// retuns the displacement of the point.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private double[] Displacement(double[] position)
+        {
+            return new double[] 
+            {
+                position[0] - this.orignalPos[0] ,
+                position[1] - this.orignalPos[1]
+            };
+        }
+
+
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="points"></param>
+        /// <returns></returns>
+        public double[] EstimatePostitionDisplacement(double[][] points)
+        {
+            double[] estPoint;
+            double accX = 0;
+            double accY = 0;
+            int count = 0;
+
+
+            estPoint = ExtrapolateDisplacement(pN, points);
+            if (estPoint != null)
+            {
+                accX += estPoint[0];
+                accY += estPoint[1];
+                count++;
+            }
+
+            estPoint = ExtrapolateDisplacement(pE, points);
+            if (estPoint != null)
+            {
+                accX += estPoint[0];
+                accY += estPoint[1];
+                count++;
+            }
+
+            estPoint = ExtrapolateDisplacement(pS, points);
+            if (estPoint != null)
+            {
+                accX += estPoint[0];
+                accY += estPoint[1];
+                count++;
+            }
+
+            estPoint = ExtrapolateDisplacement(pW, points);
+            if (estPoint != null)
+            {
+                accX += estPoint[0];
+                accY += estPoint[1];
+                count++;
+            }
+
+            if (count != 0)
+            {
+                //  estPoint[0] = accX / count;
+                //  estPoint[1] = accY / count;
+
+                estPoint = new double[2]
+                {
+                   this.orignalPos[0] + (accX / count),
+                   this.orignalPos[1] + (accY / count)
+                };
+
+                return estPoint;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cardinal"></param>
+        /// <param name="cardinal2"></param>
+        /// <param name="points"></param>
+        /// <returns></returns>
+        private double[] ExtrapolateDisplacement(PointInfoRelation cardinal, double[][] points)
+        {
+
+
+
+            if (cardinal != null  && cardinal.visible)
+            {
+
+
+                int cardinalId = cardinal.id;
+
+
+
+                double[] p = points[cardinalId];
+
+
+                if (p == null )
+                {
+                    return null;
+                }
+                else
+                {
+  
+                    return cardinal.Displacement(p);
+                }
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
 
