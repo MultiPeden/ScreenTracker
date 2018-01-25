@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Accord.Statistics;
 using Accord.Math.Optimization;
+using System.Diagnostics;
 
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
@@ -96,6 +97,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// </summary>
         private MainWindow mainWindow;
 
+
+
         /// <summary>
         ///  Constructor for the ImageProcessing class
         /// </summary>
@@ -135,6 +138,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // show the window
             showWindow = true;
 
+
+
+
         }
 
 
@@ -158,12 +164,17 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         private void KinectData_EmguImageReceived(object sender, EMGUargs e)
         {
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             // Process infrared image and track points
             this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
             // get z-coordinates
             ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
             // Send point via UDP
             SendPoints(prevPoints, zCoordinates);
+
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
             // only show images if mainwindow is present
             if (mainWindow != null)
@@ -454,8 +465,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             // if we have no previous points we add the conneted components as the tracked points
             if (prevPoints == null)
             {
-             
-                
+
+
 
                 /*
                 Array.Sort(centroidPoints,
@@ -468,7 +479,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 int cols = Properties.UserSettings.Default.GridColums;
                 int rows = Properties.UserSettings.Default.GridRows;
 
-                double[][] orderedCentroidPoints = new double[rows*cols][];
+                double[][] orderedCentroidPoints = new double[rows * cols][];
                 pointInfo = new PointInfoRelation[rows * cols];
 
                 Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
@@ -506,7 +517,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
                     // set info for each point, used later to get z-coordinate
-                    pointInfo[i] = new PointInfoRelation(width, height,i);
+                    pointInfo[i] = new PointInfoRelation(width, height, i);
                     i++;
                     Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
                 }
@@ -526,61 +537,28 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 // copy previous points to new point to avoid loosing any points
                 // newPoints = prevPoints;
-                 double[][] newPointsSparse = new double[prevPoints.Length][];
+                double[][] newPointsSparse = new double[prevPoints.Length][];
 
 
-                if(prevPoints.Length != centroidPoints.Length )
-                {
-                 
-                }
 
                 // build KD-tree for nearest neighbour search
                 //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
 
 
 
-                /*
-                if (prevPoints.Length <= centroidPoints.Length)
-                {
-                    costMatrix = IRUtils.GetCostMatrix2(prevPoints, centroidPoints);
-                }
-                else
-                {
-                     costMatrix = IRUtils.GetCostMatrix(prevPoints, centroidPoints);
-                }
-                */
 
-                //  costMatrix = IRUtils.GetCostMatrix3(prevPoints, centroidPoints);
-
-
-
-                // int[,] costMatrix = IRUtils.GetCostMatrixArray(prevPoints, centroidPoints);
-
-
-
-
-                    int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, prevPoints);
+                int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, prevPoints);
 
                 Hungarian hung = new Hungarian(costMatrix);
                 int[,] M = hung.M;
-              //  hung.ShowCostMatrix();
-              //  hung.ShowMaskMatrix();
+                // hung.ShowCostMatrix();
+                //  hung.ShowMaskMatrix();
                 // Create a new Hungarian algorithm
                 // Munkres m = new Munkres(costMatrix);
                 int[] minInd = hung.GetMinimizedIndicies();
 
-                /*
-                Console.Write("\n");
-                foreach (int mini in minInd)
-                {
-                    Console.Write(mini + " "); 
-                }
-                */
 
-                if (prevPoints.Length != centroidPoints.Length)
-                {
 
-                }
 
                 double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, prevPoints.Length);
 
@@ -589,17 +567,17 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 //Update points
                 foreach (double[] point in rearranged)
                 {
-                  
-                   // index = minInd[i] +1;
+
+                    // index = minInd[i] +1;
                     if (point != null)
                     {
                         index = minInd[i] + 1;
 
-                      //  ArrangedPoints[indices[i]] = points[i];
+                        //  ArrangedPoints[indices[i]] = points[i];
 
 
                         int width = stats.GetData(index, 2)[0];
-                        int height = stats.GetData(index , 3)[0];
+                        int height = stats.GetData(index, 3)[0];
                         int area = stats.GetData(index, 4)[0];
 
                         // if the area is more than minArea, discard 
@@ -633,13 +611,28 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 {
                     if (newPoints[k] == null)
                     {
-                        newPoints[k] = pointInfo[k].EstimatePostition(newPointsSparse);
+
+                        double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
+
+                        // if we can get an estimate using extrapolation, update with the estimated point
+                        if (estPoint != null)
+                        {
+                            newPoints[k] = estPoint;
+                        }
+                        else
+                        {
+                               newPoints[k] = prevPoints[k];
+
+                        }
+
+
+
                         pointInfo[k].Visible = false;
                     }
 
                 }
 
-   
+
 
 
             }
@@ -814,7 +807,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             int colorcode = Properties.Settings.Default.DataIndicatorColor;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
-          //  Image<Bgr, ushort> colImg = new Image<Bgr, Byte>(infraredImage.Width, infraredImage.Height);
+            //  Image<Bgr, ushort> colImg = new Image<Bgr, Byte>(infraredImage.Width, infraredImage.Height);
 
             //  CvInvoke.CvtColor(infraredImage, colImg, ColorConversion.Gray2Bgr,3);
 
@@ -825,7 +818,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             {
                 int width = pointInfo[i].Width;
                 int height = pointInfo[i].Height;
-                Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                int x = (int)prevPoints[i][0];
+                int y = (int)prevPoints[i][1];
+
+                Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
                 /*
                 CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
@@ -847,7 +843,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 CvInvoke.PutText(colImg,
                 i.ToString(),
-                new System.Drawing.Point((int)prevPoints[i][0] -width, (int)prevPoints[i][1] + height),
+                new System.Drawing.Point((int)prevPoints[i][0] - width, (int)prevPoints[i][1] + height),
                 FontFace.HersheyComplex,
                 .6,
                 new Bgr(255, 255, 0).MCvScalar);

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Samples.Kinect.InfraredKinectData
 {
     class PointInfoRelation : PointInfo
-    {        
+    {
         int id;
         PointInfoRelation pN, pE, pS, pW, p2N, p2E, p2S, p2W;
         private bool visible;
@@ -17,7 +17,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public PointInfoRelation(int height, int width, int id) : base(height, width)
         {
             this.id = id;
-            this.visible= true;
+            this.visible = true;
 
         }
 
@@ -33,8 +33,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             double accY = 0;
             int count = 0;
 
-            estPoint  = Extrapolate(pN, p2N, points);
-            if(estPoint != null)
+            estPoint = Extrapolate(pN, p2N, points);
+            if (estPoint != null)
             {
                 accX += estPoint[0];
                 accY += estPoint[1];
@@ -67,8 +67,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
             if (count != 0)
             {
-              //  estPoint[0] = accX / count;
-              //  estPoint[1] = accY / count;
+                //  estPoint[0] = accX / count;
+                //  estPoint[1] = accY / count;
 
                 estPoint = new double[2]
                 {
@@ -78,8 +78,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 return estPoint;
             }
-            else {
-                return points[this.id];
+            else
+            {
+                return null;
             }
 
         }
@@ -94,11 +95,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         public double[] Extrapolate(PointInfoRelation cardinal, PointInfoRelation cardinal2, double[][] points)
         {
 
-            
 
-            if (cardinal != null && cardinal2 != null) //&& cardinal.visible && cardinal2.visible)
+
+            if (cardinal != null && cardinal2 != null && cardinal.visible && cardinal2.visible)
             {
-               
+
 
                 int cardinalId = cardinal.id;
                 int cardinalId2 = cardinal2.id;
@@ -123,7 +124,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             }
             else
             {
-                 return null;
+                return null;
             }
 
         }
