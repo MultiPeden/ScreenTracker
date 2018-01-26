@@ -17,27 +17,34 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <returns></returns>
         public static String PointstoJson(double[][] points, ushort[] zCoordinates)
         {
-            int i = 0;
-            String jSon = "{\"Items\":[";
-
-
-
-            foreach (double[] point in points)
+            if (points != null)
             {
-                // invert y axis
-                //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
-                // no invert
-                jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1], (int)zCoordinates[i]);
-                if (i < points.Length - 1)
-                    jSon += ",";
-                i++;
+                int i = 0;
+                String jSon = "{\"Items\":[";
+
+
+
+                foreach (double[] point in points)
+                {
+                    // invert y axis
+                    //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
+                    // no invert
+                    jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1], (int)zCoordinates[i]);
+                    if (i < points.Length - 1)
+                        jSon += ",";
+                    i++;
+                }
+
+
+                jSon += "]}";
+
+
+                return jSon;
             }
-
-
-            jSon += "]}";
-
-
-            return jSon;
+            else
+            {
+                return null;
+            }
         }
 
 

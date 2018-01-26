@@ -18,7 +18,7 @@
       <Value Profile="(Default)">0.8</Value>
     </Setting>
     <Setting Name="GridRows" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">3</Value>
+      <Value Profile="(Default)">5</Value>
     </Setting>
     <Setting Name="GridColums" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>

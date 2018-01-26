@@ -311,56 +311,63 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <returns> The estimated z-coodinates </returns>
         private unsafe ushort[] GetZCoordinatesSurroundingBox(Image<Gray, UInt16> depthImage)
         {
-
-            // init array to the size of the array with tracked points
-            ushort[] zCoordinates = new ushort[this.prevPoints.Length];
-
-
-
-            // list for each point's depth sample points
-            List<double> zCoords;
-
-            // find the cardinal and inter-candinal points and their values
-            // to the list zCoords.
-            for (int i = 0; i < prevPoints.Length; i++)
+            if (prevPoints != null)
             {
-                zCoords = new List<double>();
-                PointInfoRelation p = pointInfo[i];
+                // init array to the size of the array with tracked points
+                ushort[] zCoordinates = new ushort[this.prevPoints.Length];
 
-                int x = (int)prevPoints[i][0];
-                int y = (int)prevPoints[i][1];
 
-                // We want to go half the with and hight(+ padding) 
-                // in each direction to get the estimate
-                int width = (p.Width / 2) + 1;
-                int height = (p.Height / 2) + 1;
 
-                // add cardinal points (N,E,S,W)
-                AddDephtPixel(x + width, y, ref depthImage, ref zCoords);
-                AddDephtPixel(x - width, y, ref depthImage, ref zCoords);
-                AddDephtPixel(x, y + height, ref depthImage, ref zCoords);
-                AddDephtPixel(x, y - height, ref depthImage, ref zCoords);
+                // list for each point's depth sample points
+                List<double> zCoords;
 
-                // add inter-cardinal points (NE,SE,SW,NW)
-                AddDephtPixel(x + width, y + height, ref depthImage, ref zCoords);
-                AddDephtPixel(x - width, y - height, ref depthImage, ref zCoords);
-                AddDephtPixel(x + width, y - height, ref depthImage, ref zCoords);
-                AddDephtPixel(x - width, y + height, ref depthImage, ref zCoords);
-
-                // if we did not find any valid estimate the z-coordinate is set to 0
-                if (zCoords.Count != 0)
+                // find the cardinal and inter-candinal points and their values
+                // to the list zCoords.
+                for (int i = 0; i < prevPoints.Length; i++)
                 {
-                    // find the z-val by calc the median of the cardinal and inter-cardinal points
-                    double zval = Measures.Median(zCoords.ToArray());
-                    // apply one-euro-filter 
-                    zCoordinates[i] = (ushort)p.Filter(zval);
+                    zCoords = new List<double>();
+                    PointInfoRelation p = pointInfo[i];
+
+                    int x = (int)prevPoints[i][0];
+                    int y = (int)prevPoints[i][1];
+
+                    // We want to go half the with and hight(+ padding) 
+                    // in each direction to get the estimate
+                    int width = (p.Width / 2) + 1;
+                    int height = (p.Height / 2) + 1;
+
+                    // add cardinal points (N,E,S,W)
+                    AddDephtPixel(x + width, y, ref depthImage, ref zCoords);
+                    AddDephtPixel(x - width, y, ref depthImage, ref zCoords);
+                    AddDephtPixel(x, y + height, ref depthImage, ref zCoords);
+                    AddDephtPixel(x, y - height, ref depthImage, ref zCoords);
+
+                    // add inter-cardinal points (NE,SE,SW,NW)
+                    AddDephtPixel(x + width, y + height, ref depthImage, ref zCoords);
+                    AddDephtPixel(x - width, y - height, ref depthImage, ref zCoords);
+                    AddDephtPixel(x + width, y - height, ref depthImage, ref zCoords);
+                    AddDephtPixel(x - width, y + height, ref depthImage, ref zCoords);
+
+                    // if we did not find any valid estimate the z-coordinate is set to 0
+                    if (zCoords.Count != 0)
+                    {
+                        // find the z-val by calc the median of the cardinal and inter-cardinal points
+                        double zval = Measures.Median(zCoords.ToArray());
+                        // apply one-euro-filter 
+                        zCoordinates[i] = (ushort)p.Filter(zval);
+                    }
+                    else
+                    {
+                        zCoordinates[i] = 0;
+                    }
                 }
-                else
-                {
-                    zCoordinates[i] = 0;
-                }
+                return zCoordinates;
             }
-            return zCoordinates;
+            else
+            {
+                return null;
+            }
+
         }
 
         /// <summary>
@@ -478,6 +485,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                 int cols = Properties.UserSettings.Default.GridColums;
                 int rows = Properties.UserSettings.Default.GridRows;
+
+                if (rows * cols != n - 1)
+                {
+                    mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image" ;
+
+                    return;
+                }
 
                 double[][] orderedCentroidPoints = new double[rows * cols][];
                 pointInfo = new PointInfoRelation[rows * cols];
@@ -615,7 +629,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
 
                         double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPointsSparse);
-                        
+
 
                         // if we can get an estimate using extrapolation, update with the estimated point
                         if (estPoint != null)
@@ -624,7 +638,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                         }
                         else
                         {
-                               newPoints[k] = prevPoints[k];
+                            newPoints[k] = prevPoints[k];
 
                         }
 
@@ -679,8 +693,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             double[][] worldCoordinates = cameraData.ScreenToWorldCoordinates(newPoints, zCoordinates);
             // Convert to Json
             String jSon = IRUtils.PointstoJson(worldCoordinates, zCoordinates);
-            // Send to socket via.
-            udpSender.WriteToSocket(jSon);
+            if (jSon != null)
+            {
+                // Send to socket via.
+                udpSender.WriteToSocket(jSon);
+            }
         }
 
 
@@ -817,40 +834,45 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             Image<Bgr, Byte> colImg = infraredImage.Convert<Bgr, Byte>();
 
 
-            for (int i = 0; i < prevPoints.Length; i++)
+            if (prevPoints != null)
             {
-                int width = pointInfo[i].Width;
-                int height = pointInfo[i].Height;
-                int x = (int)prevPoints[i][0];
-                int y = (int)prevPoints[i][1];
 
-                Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
-                /*
-                CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
-                CvInvoke.PutText(infraredImage,
-                                i.ToString(),
-                                new System.Drawing.Point((int)prevPoints[i][0], (int)prevPoints[i][1]),
-                                FontFace.HersheyComplex,
-                                1.0,
-                                new Gray(colorcode).MCvScalar);
-*/
-                if (pointInfo[i].Visible)
+                for (int i = 0; i < prevPoints.Length; i++)
                 {
-                    CvInvoke.Rectangle(colImg, rect, new Bgr(0, 255, 0).MCvScalar, thickness); // 2 pixel box thick
-                }
-                else
-                {
-                    CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
-                }
+                    int width = pointInfo[i].Width;
+                    int height = pointInfo[i].Height;
+                    int x = (int)prevPoints[i][0];
+                    int y = (int)prevPoints[i][1];
 
-                CvInvoke.PutText(colImg,
-                i.ToString(),
-                new System.Drawing.Point((int)prevPoints[i][0] - width, (int)prevPoints[i][1] + height),
-                FontFace.HersheyComplex,
-                .6,
-                new Bgr(255, 255, 0).MCvScalar);
+                    Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                    /*
+                    CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
+                    CvInvoke.PutText(infraredImage,
+                                    i.ToString(),
+                                    new System.Drawing.Point((int)prevPoints[i][0], (int)prevPoints[i][1]),
+                                    FontFace.HersheyComplex,
+                                    1.0,
+                                    new Gray(colorcode).MCvScalar);
+    */
+                    if (pointInfo[i].Visible)
+                    {
+                        CvInvoke.Rectangle(colImg, rect, new Bgr(0, 255, 0).MCvScalar, thickness); // 2 pixel box thick
+                    }
+                    else
+                    {
+                        CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
+                    }
+
+                    CvInvoke.PutText(colImg,
+                    i.ToString(),
+                    new System.Drawing.Point((int)prevPoints[i][0] - width, (int)prevPoints[i][1] + height),
+                    FontFace.HersheyComplex,
+                    .6,
+                    new Bgr(255, 255, 0).MCvScalar);
+
+                }
             }
             return colImg;
 
@@ -862,20 +884,24 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <param name="ThresholdedInfraredImage"></param>
         private void DrawTrackedData(Image<Gray, Byte> ThresholdedInfraredImage)
         {
-
-            int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
-            int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
-            int padding = Properties.Settings.Default.DataIndicatorPadding;
-
-            for (int i = 0; i < prevPoints.Length; i++)
+            if (prevPoints != null)
             {
-                int width = pointInfo[i].Width;
-                int height = pointInfo[i].Height;
-                Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
-                CvInvoke.Rectangle(ThresholdedInfraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
+
+                int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
+                int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
+                int padding = Properties.Settings.Default.DataIndicatorPadding;
+
+                for (int i = 0; i < prevPoints.Length; i++)
+                {
+                    int width = pointInfo[i].Width;
+                    int height = pointInfo[i].Height;
+                    Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                    CvInvoke.Rectangle(ThresholdedInfraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
 
 
+                }
             }
 
         }

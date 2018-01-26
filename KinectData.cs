@@ -438,20 +438,26 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <returns></returns>
         public double[][] ScreenToWorldCoordinates(double[][] points, ushort[] zCoordinates)
         {
-            double[][] newPointsTest = new double[points.Length][];
-            for (int i = 0; i < points.Length; i++)
+            if (points != null && zCoordinates != null)
             {
-                DepthSpacePoint depthSpacePoint = new DepthSpacePoint
+                double[][] newPointsTest = new double[points.Length][];
+                for (int i = 0; i < points.Length; i++)
                 {
-                    X = (float)points[i][0],
-                    Y = (float)points[i][1]
-                };
-                // Find the lutValue for the given set of coordinates
-                CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
-                // Convert coordinates using the found lutValue
-                newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
+                    DepthSpacePoint depthSpacePoint = new DepthSpacePoint
+                    {
+                        X = (float)points[i][0],
+                        Y = (float)points[i][1]
+                    };
+                    // Find the lutValue for the given set of coordinates
+                    CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
+                    // Convert coordinates using the found lutValue
+                    newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
+                }
+                return newPointsTest;
+            }else
+            {
+                return null;
             }
-            return newPointsTest;
         }
     }
 }
