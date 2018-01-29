@@ -10,8 +10,11 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     {
         int id;
         PointInfoRelation pN, pE, pS, pW, p2N, p2E, p2S, p2W;
-      //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
-        
+        PointInfoRelation pNE, pSE, pSW, pNW;
+
+
+        //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
+
         private bool visible;
 
         public bool Visible { get => visible; set => visible = value; }
@@ -150,11 +153,31 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             int n = (numOfCols * numOfRows) - 1;
             int idModCols = id % numOfCols;
 
-            // north and 2nd north
+
+            //         PointInfoRelation pNE, pSE, pSW, pNW;
+
+            // north, north east and 2nd north
             pos = id - numOfCols;
             if (pos >= 0)
             {
+                // north
                 this.pN = points[pos];
+
+                // north east
+                int posNE = pos + 1;
+                if (posNE <= n && posNE % numOfCols >= idModCols)
+                {
+                    this.pNE = points[pos];
+                }
+
+                // north west
+                int posNW = pos - 1;
+                if (posNW >= 0 && posNW % numOfCols <= idModCols)
+                {
+                    this.pNW = points[pos];
+                }
+
+                // second north
                 pos -= numOfCols;
                 if (pos >= 0)
                 {
@@ -177,6 +200,23 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
             if (pos <= n)
             {
                 this.pS = points[pos];
+
+
+                // south east
+                int posSE = pos + 1;
+                if (posSE <= n && posSE % numOfCols >= idModCols)
+                {
+                    this.pSE = points[pos];
+                }
+
+                // north west
+                int posSw = pos - 1;
+                if (posSw >= 0 && posSw % numOfCols <= idModCols)
+                {
+                    this.pSW = points[pos];
+                }
+
+
                 pos += numOfCols;
                 if (pos <= n)
                 {
@@ -203,7 +243,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// <returns></returns>
         private double[] Displacement(double[] position)
         {
-            return new double[] 
+            return new double[]
             {
                 position[0] - this.orignalPos[0] ,
                 position[1] - this.orignalPos[1]
@@ -218,8 +258,9 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
         /// 
         /// </summary>
         /// <param name="points"></param>
+        /// <param name="mode"></param>
         /// <returns></returns>
-        public double[] EstimatePostitionDisplacement(double[][] points)
+        public double[] EstimatePostitionDisplacement(double[][] points, int mode)
         {
             double[] estPoint;
             double accX = 0;
@@ -233,7 +274,10 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 accX += estPoint[0];
                 accY += estPoint[1];
                 count++;
+
             }
+
+
 
             estPoint = ExtrapolateDisplacement(pE, points);
             if (estPoint != null)
@@ -243,13 +287,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 count++;
             }
 
-            estPoint = ExtrapolateDisplacement(pS, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+
 
             estPoint = ExtrapolateDisplacement(pW, points);
             if (estPoint != null)
@@ -258,6 +296,48 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 accY += estPoint[1];
                 count++;
             }
+
+
+            if(mode == 1)
+            {
+
+
+                estPoint = ExtrapolateDisplacement(pNE, points);
+                if (estPoint != null)
+                {
+                    accX += estPoint[0];
+                    accY += estPoint[1];
+                    count++;
+                }
+
+
+                estPoint = ExtrapolateDisplacement(pSE, points);
+                if (estPoint != null)
+                {
+                    accX += estPoint[0];
+                    accY += estPoint[1];
+                    count++;
+                }
+
+                estPoint = ExtrapolateDisplacement(pSW, points);
+                if (estPoint != null)
+                {
+                    accX += estPoint[0];
+                    accY += estPoint[1];
+                    count++;
+                }
+
+
+                estPoint = ExtrapolateDisplacement(pNW, points);
+                if (estPoint != null)
+                {
+                    accX += estPoint[0];
+                    accY += estPoint[1];
+                    count++;
+                }
+
+            }
+
 
             if (count != 0)
             {
@@ -293,7 +373,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
 
 
-            if (cardinal != null  && cardinal.visible)
+            if (cardinal != null && cardinal.visible)
             {
 
 
@@ -304,13 +384,13 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
                 double[] p = points[cardinalId];
 
 
-                if (p == null )
+                if (p == null)
                 {
                     return null;
                 }
                 else
                 {
-  
+
                     return cardinal.Displacement(p);
                 }
             }

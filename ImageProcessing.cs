@@ -628,7 +628,7 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
 
                         //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
 
-                        double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPointsSparse);
+                        double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPointsSparse,1);
 
 
                         // if we can get an estimate using extrapolation, update with the estimated point
