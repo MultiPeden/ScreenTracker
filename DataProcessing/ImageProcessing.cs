@@ -14,8 +14,11 @@ using System.Linq;
 using Accord.Statistics;
 using Accord.Math.Optimization;
 using System.Diagnostics;
+using InfraredKinectData.GUI;
+using InfraredKinectData.Communication;
+using InfraredKinectData.DataReceiver;
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.DataProcessing
 {
     [CLSCompliant(false)]
     /// <summary>

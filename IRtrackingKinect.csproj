@@ -7,7 +7,7 @@
     <ProjectGuid>{DEB27987-B434-4541-A170-61D21D7A9379}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.Samples.Kinect.InfraredKinectData</RootNamespace>
+    <RootNamespace>InfraredKinectData</RootNamespace>
     <AssemblyName>InfraredKinectData-WPF</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -56,10 +56,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Microsoft.Samples.Kinect.InfraredKinectData.App</StartupObject>
+    <StartupObject>InfraredKinectData.App</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Images\Kinect.ico</ApplicationIcon>
+    <ApplicationIcon>GUI\Images\Kinect.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
@@ -111,7 +111,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainWindow.xaml">
+    <Page Include="GUI\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -119,25 +119,25 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CameraInterface.cs" />
-    <Compile Include="EMGUargs.cs" />
-    <Compile Include="FrameDimension.cs" />
-    <Compile Include="Hungarian.cs" />
-    <Compile Include="ImageProcessing.cs" />
-    <Compile Include="IRUtils.cs" />
-    <Compile Include="KinectData.cs" />
-    <Compile Include="OneEuroFilter.cs" />
-    <Compile Include="PointInfo.cs" />
-    <Compile Include="PointInfoRelation.cs" />
+    <Compile Include="DataReceiver\CameraInterface.cs" />
+    <Compile Include="DataReceiver\EMGUargs.cs" />
+    <Compile Include="DataReceiver\FrameDimension.cs" />
+    <Compile Include="DataProcessing\Hungarian.cs" />
+    <Compile Include="DataProcessing\ImageProcessing.cs" />
+    <Compile Include="DataProcessing\IRUtils.cs" />
+    <Compile Include="DataReceiver\KinectData.cs" />
+    <Compile Include="DataProcessing\OneEuroFilter.cs" />
+    <Compile Include="DataProcessing\PointInfo.cs" />
+    <Compile Include="DataProcessing\PointInfoRelation.cs" />
     <Compile Include="PointsConnected.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>UserSettings.settings</DependentUpon>
     </Compile>
-    <Compile Include="TCPserv.cs" />
-    <Compile Include="UDPsender.cs" />
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Communication\TCPserv.cs" />
+    <Compile Include="Communication\UDPsender.cs" />
+    <Compile Include="GUI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
@@ -177,11 +177,11 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\Kinect.ico" />
-    <Resource Include="Images\Logo.png" />
-    <Resource Include="Images\ScreenshotHover.png" />
-    <Resource Include="Images\ScreenshotNormal.png" />
-    <Resource Include="Images\Status.png" />
+    <Resource Include="GUI\Images\Kinect.ico" />
+    <Resource Include="GUI\Images\Logo.png" />
+    <Resource Include="GUI\Images\ScreenshotHover.png" />
+    <Resource Include="GUI\Images\ScreenshotNormal.png" />
+    <Resource Include="GUI\Images\Status.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="concrt140.dll">

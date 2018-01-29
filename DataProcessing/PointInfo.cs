@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.DataProcessing
 {
     /// <summary>
     /// Holds information for tracking points

@@ -1,5 +1,8 @@
-﻿namespace Microsoft.Samples.Kinect.InfraredKinectData
+﻿namespace InfraredKinectData
 {
+    using InfraredKinectData.DataProcessing;
+    using InfraredKinectData.DataReceiver;
+    using InfraredKinectData.GUI;
     using System;
     using System.Windows;
 

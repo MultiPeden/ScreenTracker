@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData.Properties {
+namespace InfraredKinectData.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

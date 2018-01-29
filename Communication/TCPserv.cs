@@ -3,8 +3,9 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using InfraredKinectData.DataProcessing;
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.Communication
 {
     [CLSCompliant(false)]
     public class TCPserv

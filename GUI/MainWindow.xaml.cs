@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.GUI
 {
     using System;
     using System.ComponentModel;
@@ -12,7 +12,8 @@ namespace Microsoft.Samples.Kinect.InfraredKinectData
     using System.IO;
     using System.Windows;
     using System.Windows.Media.Imaging;
-    using System.Runtime.InteropServices;
+    using InfraredKinectData;
+    using InfraredKinectData.DataProcessing;
 
     [CLSCompliant(false)]
 

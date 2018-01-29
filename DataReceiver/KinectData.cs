@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.DataReceiver
 {
     using System;
     using Microsoft.Kinect;

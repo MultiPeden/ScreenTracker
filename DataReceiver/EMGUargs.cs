@@ -4,7 +4,7 @@ using Emgu.CV.Structure;
 using System;
 using System.Windows.Media.Imaging;
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.DataReceiver
 {
     [CLSCompliant(false)]
 

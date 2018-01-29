@@ -2,7 +2,7 @@
 using Emgu.CV.Structure;
 using Microsoft.Kinect;
 
-namespace Microsoft.Samples.Kinect.InfraredKinectData
+namespace InfraredKinectData.DataProcessing
 {
     class IRUtils
     {
