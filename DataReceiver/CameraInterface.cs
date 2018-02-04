@@ -13,7 +13,7 @@ namespace InfraredKinectData.DataReceiver
         /// eventhandler for sending frames as EMGU images when they are
         /// received from the camera
         /// </summary>
-        event EventHandler<EMGUargs> emguArgsProcessed;
+        event EventHandler<EMGUargs> EmguArgsProcessed;
 
         /// <summary>
         /// EventHandler for passing on the camera availibility status on

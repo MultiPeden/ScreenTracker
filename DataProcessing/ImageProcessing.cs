@@ -100,6 +100,7 @@ namespace InfraredKinectData.DataProcessing
         /// </summary>
         private MainWindow mainWindow;
 
+        private bool firstDetected = true;
 
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace InfraredKinectData.DataProcessing
 
 
             // listen for images from the Camera
-            cameraData.emguArgsProcessed += KinectData_EmguImageReceived;
+            cameraData.EmguArgsProcessed += KinectData_EmguImageReceived;
 
             // listen for status changes from the camera object's kinectSensor
             cameraData.ChangeStatusText += KinectData_ChangeStatusText;
@@ -556,6 +557,20 @@ namespace InfraredKinectData.DataProcessing
                 // newPoints = prevPoints;
                 double[][] newPointsSparse = new double[prevPoints.Length][];
 
+               
+
+
+
+
+                if (firstDetected)
+                {
+                    int cols = Properties.UserSettings.Default.GridColums;
+                    int rows = Properties.UserSettings.Default.GridRows;
+
+                    mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
+
+                    firstDetected = false;
+                }
 
 
                 // build KD-tree for nearest neighbour search

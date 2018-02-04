@@ -245,12 +245,23 @@ namespace InfraredKinectData.DataProcessing
         {
             return new double[]
             {
-                position[0] - this.orignalPos[0] ,
-                position[1] - this.orignalPos[1]
+               DisplacementFunction( position[0] - this.orignalPos[0]) ,
+               DisplacementFunction( position[1] - this.orignalPos[1])
             };
         }
 
 
+        private double DisplacementFunction(double displacement)
+        {
+            var sign = Math.Sign(displacement);
+            displacement = Math.Abs(displacement);
+
+           return displacement;
+
+         //   return sign * (2 / (0.1 + Math.Exp(-displacement)));
+  
+
+        }
 
 
 

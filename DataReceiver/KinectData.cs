@@ -94,7 +94,7 @@ namespace InfraredKinectData.DataReceiver
         /// <summary>
         /// EventHandler for sending events when a frame has been processed
         /// </summary>
-        public event EventHandler<EMGUargs> emguArgsProcessed;
+        public event EventHandler<EMGUargs> EmguArgsProcessed;
         
         /// <summary>
         /// generateColorImage determines wether the color image should be created
@@ -169,7 +169,7 @@ namespace InfraredKinectData.DataReceiver
         /// <param name="e"></param>
         protected virtual void OnEmguArgsProcessed(EMGUargs e)
         {
-            emguArgsProcessed?.Invoke(this, e);
+            EmguArgsProcessed?.Invoke(this, e);
         }
 
         /// <summary>

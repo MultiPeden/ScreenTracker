@@ -124,10 +124,10 @@
     <value>Depth clicked</value>
   </data>
   <data name="CheckBoxthresholdChecked" xml:space="preserve">
-    <value>Threshold off</value>
+    <value>Threshold on</value>
   </data>
   <data name="CheckBoxthresholdUnChecked" xml:space="preserve">
-    <value>Threshold on</value>
+    <value>Threshold off</value>
   </data>
   <data name="FailedScreenshotStatusTextFormat" xml:space="preserve">
     <value>Failed to write screenshot to {0}</value>

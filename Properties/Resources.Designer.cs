@@ -79,7 +79,7 @@ namespace InfraredKinectData.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Threshold off.
+        ///   Looks up a localized string similar to Threshold on.
         /// </summary>
         internal static string CheckBoxthresholdChecked {
             get {
@@ -88,7 +88,7 @@ namespace InfraredKinectData.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Threshold on.
+        ///   Looks up a localized string similar to Threshold off.
         /// </summary>
         internal static string CheckBoxthresholdUnChecked {
             get {

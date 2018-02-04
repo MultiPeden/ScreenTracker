@@ -205,6 +205,7 @@ namespace InfraredKinectData.GUI
         {
             thresholdedClicked = false;
             StatusText = Properties.Resources.CheckBoxthresholdUnChecked;
+
             imageProcessing.Threshold(false);
         }
     }
