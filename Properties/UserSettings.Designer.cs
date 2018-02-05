@@ -106,5 +106,41 @@ namespace InfraredKinectData.Properties {
                 this["GridColums"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.001")]
+        public float Spring_Damping {
+            get {
+                return ((float)(this["Spring_Damping"]));
+            }
+            set {
+                this["Spring_Damping"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.25")]
+        public float Spring_StepSize {
+            get {
+                return ((float)(this["Spring_StepSize"]));
+            }
+            set {
+                this["Spring_StepSize"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        public float Spring_ConstraintIterations {
+            get {
+                return ((float)(this["Spring_ConstraintIterations"]));
+            }
+            set {
+                this["Spring_ConstraintIterations"] = value;
+            }
+        }
     }
 }

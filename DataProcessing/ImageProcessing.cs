@@ -52,10 +52,7 @@ namespace InfraredKinectData.DataProcessing
         private WriteableBitmap depthBitmap = null;
 
 
-        /// <summary>
-        /// Array for holding points found in the previous frame
-        /// </summary>
-        double[][] prevPoints;
+
 
         /// <summary>
         /// Holds referece to the UDPsender object responsible outgoing data(via UDP socket)
@@ -84,11 +81,7 @@ namespace InfraredKinectData.DataProcessing
         private bool thresholdedClicked = false;
 
 
-
-        /// <summary>
-        /// Info for each detected point i the frame.
-        /// </summary>
-        private PointInfoRelation[] pointInfo;
+        private SpringScreen screen;
 
         /// <summary>
         /// Holds a reference to the camera
@@ -142,6 +135,8 @@ namespace InfraredKinectData.DataProcessing
             // show the window
             showWindow = true;
 
+            this.screen = new SpringScreen();
+
 
 
 
@@ -175,7 +170,7 @@ namespace InfraredKinectData.DataProcessing
             // get z-coordinates
             ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
             // Send point via UDP
-            SendPoints(prevPoints, zCoordinates);
+            SendPoints(screen.PrevPoints, zCoordinates);
 
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
@@ -315,10 +310,10 @@ namespace InfraredKinectData.DataProcessing
         /// <returns> The estimated z-coodinates </returns>
         private unsafe ushort[] GetZCoordinatesSurroundingBox(Image<Gray, UInt16> depthImage)
         {
-            if (prevPoints != null)
+            if (screen.PrevPoints != null)
             {
                 // init array to the size of the array with tracked points
-                ushort[] zCoordinates = new ushort[this.prevPoints.Length];
+                ushort[] zCoordinates = new ushort[this.screen.PrevPoints.Length];
 
 
 
@@ -327,13 +322,13 @@ namespace InfraredKinectData.DataProcessing
 
                 // find the cardinal and inter-candinal points and their values
                 // to the list zCoords.
-                for (int i = 0; i < prevPoints.Length; i++)
+                for (int i = 0; i < screen.PrevPoints.Length; i++)
                 {
                     zCoords = new List<double>();
-                    PointInfoRelation p = pointInfo[i];
+                    PointInfo p = screen.PointInfo[i];
 
-                    int x = (int)prevPoints[i][0];
-                    int y = (int)prevPoints[i][1];
+                    int x = (int)screen.PrevPoints[i][0];
+                    int y = (int)screen.PrevPoints[i][1];
 
                     // We want to go half the with and hight(+ padding) 
                     // in each direction to get the estimate
@@ -445,6 +440,8 @@ namespace InfraredKinectData.DataProcessing
         private void TrackedData(Image<Gray, Byte> thresholdImg)
         {
 
+     
+
             //int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;
 
             // Get Connected component in the frame
@@ -474,7 +471,7 @@ namespace InfraredKinectData.DataProcessing
 
             int i = 0;
             // if we have no previous points we add the conneted components as the tracked points
-            if (prevPoints == null)
+            if (screen.PrevPoints == null)
             {
 
 
@@ -498,7 +495,7 @@ namespace InfraredKinectData.DataProcessing
                 }
 
                 double[][] orderedCentroidPoints = new double[rows * cols][];
-                pointInfo = new PointInfoRelation[rows * cols];
+                screen.PointInfo = new PointInfoSpring[rows * cols];
 
                 Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
 
@@ -535,17 +532,31 @@ namespace InfraredKinectData.DataProcessing
                     int height = stats.GetData(j, 3)[0];
                     int area = stats.GetData(j, 4)[0];
                     // set info for each point, used later to get z-coordinate
-                    pointInfo[i] = new PointInfoRelation(width, height, i, point);
+                    screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
                     i++;
                     Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
                 }
 
                 // assign kardinal points to pointInfo
-                for (int k = 0; k < pointInfo.Length; k++)
+                for (int k = 0; k < screen.PointInfo.Length; k++)
                 {
-                    pointInfo[k].AssignCardinalPoints(pointInfo, k, cols, rows);
+                    screen.PointInfo[k].AssignCardinalPoints(screen.PointInfo, k, cols, rows);
                 }
 
+                // assign kardinal points to pointInfo
+                for (int k = 0; k < screen.PointInfo.Length; k++)
+                {
+                    screen.PointInfo[k].SetConstraints();
+                }
+               
+
+
+                screen.PointInfo[0].MakeUnmovable();
+                screen.PointInfo[4].MakeUnmovable();
+                screen.PointInfo[24].MakeUnmovable();
+                screen.PointInfo[20].MakeUnmovable();
+                // Update the previous points
+                screen.PrevPoints = newPoints;
 
 
 
@@ -555,9 +566,9 @@ namespace InfraredKinectData.DataProcessing
 
                 // copy previous points to new point to avoid loosing any points
                 // newPoints = prevPoints;
-                double[][] newPointsSparse = new double[prevPoints.Length][];
+                double[][] newPointsSparse = new double[screen.PrevPoints.Length][];
 
-               
+                screen.TimeStep();
 
 
 
@@ -579,7 +590,7 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-                int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, prevPoints);
+                int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
 
                 Hungarian hung = new Hungarian(costMatrix);
                 int[,] M = hung.M;
@@ -592,7 +603,7 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-                double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, prevPoints.Length);
+                double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
 
 
 
@@ -625,7 +636,7 @@ namespace InfraredKinectData.DataProcessing
                             //   index = nearest.Value;
 
                             // update info for the point
-                            PointInfoRelation pInfo = pointInfo[i];
+                            PointInfo pInfo = screen.PointInfo[i];
                             pInfo.Width = width;
                             pInfo.Height = height;
                             pInfo.Visible = true;
@@ -646,7 +657,7 @@ namespace InfraredKinectData.DataProcessing
 
                         //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
 
-                        double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPointsSparse,1);
+                        double[] estPoint = screen.PointInfo[k].EstimatePostitionDisplacement(newPointsSparse,1);
 
 
                         // if we can get an estimate using extrapolation, update with the estimated point
@@ -656,26 +667,34 @@ namespace InfraredKinectData.DataProcessing
                         }
                         else
                         {
-                            newPoints[k] = prevPoints[k];
+                            newPoints[k] = screen.PrevPoints[k];
 
                         }
 
 
 
-                        pointInfo[k].Visible = false;
+                        screen.PointInfo[k].Visible = false;
                     }
 
                 }
 
 
+                for (int l = 0; l < screen.PointInfo.Length; l++)
+                {
+                    screen.PrevPoints[l] = new double[] {
+                screen.PointInfo[l].GetPos().X,
+                screen.PointInfo[l].GetPos().Y };
+                }
 
 
             }
 
 
 
-            // Update the previous points
-            prevPoints = newPoints;
+
+
+
+
         }
 
         /// <summary>
@@ -734,7 +753,7 @@ namespace InfraredKinectData.DataProcessing
         /// </summary>
         public void ResetMesh()
         {
-            prevPoints = null;
+            screen.PrevPoints = null;
         }
 
         /// <summary>
@@ -852,16 +871,16 @@ namespace InfraredKinectData.DataProcessing
             Image<Bgr, Byte> colImg = infraredImage.Convert<Bgr, Byte>();
 
 
-            if (prevPoints != null)
+            if (screen.PrevPoints != null)
             {
 
 
-                for (int i = 0; i < prevPoints.Length; i++)
+                for (int i = 0; i < screen.PrevPoints.Length; i++)
                 {
-                    int width = pointInfo[i].Width;
-                    int height = pointInfo[i].Height;
-                    int x = (int)prevPoints[i][0];
-                    int y = (int)prevPoints[i][1];
+                    int width = screen.PointInfo[i].Width;
+                    int height = screen.PointInfo[i].Height;
+                    int x = (int)screen.PrevPoints[i][0];
+                    int y = (int)screen.PrevPoints[i][1];
 
                     Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
                     /*
@@ -874,7 +893,7 @@ namespace InfraredKinectData.DataProcessing
                                     1.0,
                                     new Gray(colorcode).MCvScalar);
     */
-                    if (pointInfo[i].Visible)
+                    if (screen.PointInfo[i].Visible)
                     {
                         CvInvoke.Rectangle(colImg, rect, new Bgr(0, 255, 0).MCvScalar, thickness); // 2 pixel box thick
                     }
@@ -885,7 +904,7 @@ namespace InfraredKinectData.DataProcessing
 
                     CvInvoke.PutText(colImg,
                     i.ToString(),
-                    new System.Drawing.Point((int)prevPoints[i][0] - width, (int)prevPoints[i][1] + height),
+                    new System.Drawing.Point((int)screen.PrevPoints[i][0] - width, (int)screen.PrevPoints[i][1] + height),
                     FontFace.HersheyComplex,
                     .6,
                     new Bgr(255, 255, 0).MCvScalar);
@@ -902,7 +921,7 @@ namespace InfraredKinectData.DataProcessing
         /// <param name="ThresholdedInfraredImage"></param>
         private void DrawTrackedData(Image<Gray, Byte> ThresholdedInfraredImage)
         {
-            if (prevPoints != null)
+            if (screen.PrevPoints != null)
             {
 
 
@@ -910,11 +929,11 @@ namespace InfraredKinectData.DataProcessing
                 int colorcode = Properties.Settings.Default.DataIndicatorColor8bit;
                 int padding = Properties.Settings.Default.DataIndicatorPadding;
 
-                for (int i = 0; i < prevPoints.Length; i++)
+                for (int i = 0; i < screen.PrevPoints.Length; i++)
                 {
-                    int width = pointInfo[i].Width;
-                    int height = pointInfo[i].Height;
-                    Rectangle rect = new Rectangle((int)prevPoints[i][0] - (width / 2) - padding, (int)prevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                    int width = screen.PointInfo[i].Width;
+                    int height = screen.PointInfo[i].Height;
+                    Rectangle rect = new Rectangle((int)screen.PrevPoints[i][0] - (width / 2) - padding, (int)screen.PrevPoints[i][1] - (height / 2) - padding, width + padding * 2, height + padding * 2);
                     CvInvoke.Rectangle(ThresholdedInfraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
 
 
