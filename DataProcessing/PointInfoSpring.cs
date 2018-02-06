@@ -22,17 +22,14 @@ namespace InfraredKinectData.DataProcessing
         private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 
 
-        private List<Constraint> constraints;
+        private List<int> cardinalIDs;
         // end spring
 
 
 
-        int id;
-        PointInfoSpring pN, pE, pS, pW, p2N, p2E, p2S, p2W;
-        PointInfoSpring pNE, pSE, pSW, pNW;
+        public int id;
 
 
-        PointInfoSpring p2SE, p2NE;
 
         //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
 
@@ -50,7 +47,7 @@ namespace InfraredKinectData.DataProcessing
             this.pos = new Vector3((float)position[0], (float)position[1], (float)position[2]);
             this.old_pos = pos;
             this.mass = 1;
-            this.movable = true;
+            this.movable = false;
             ///
 
 
@@ -58,8 +55,8 @@ namespace InfraredKinectData.DataProcessing
             this.Visible = true;
             this.orignalPos = position;
 
-            this.constraints = new List<Constraint>();
-      
+            this.cardinalIDs = new List<int>();
+
 
         }
 
@@ -89,7 +86,7 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-        public void addForce(Vector3 f)
+        public void AddForce(Vector3 f)
         {
             acceleration += f / mass;
         }
@@ -105,63 +102,64 @@ namespace InfraredKinectData.DataProcessing
             acceleration = new Vector3(0, 0, 0);
         }
 
-        public void OffsetPos( Vector3 v)
+        public void OffsetPos(Vector3 v)
         {
             if (this.movable)
             {
                 pos += v;
             }
         }
+
+
+        public void SetPos(Vector3 vec)
+        {
+            this.pos = vec;
+        }
+
+        public void SetOldPos(Vector3 vec)
+        {
+            this.old_pos = vec;
+        }
+
         public void MakeUnmovable() { movable = false; }
 
+        public void MakeMovable() { movable = true; }
 
 
 
+        /*
+                public void SetConstraints()
+                {
+                    // cardinal points
+              //      SetConstraint(pN);
+                    SetConstraint(pE);
+                    SetConstraint(pS);
+             //       SetConstraint(pW);
 
-        public void SetConstraints()
-        {
-            // cardinal points
-      //      SetConstraint(pN);
-            SetConstraint(pE);
-            SetConstraint(pS);
-     //       SetConstraint(pW);
-
-            // second cardinal
-       //     SetConstraint(p2N);
-            SetConstraint(p2E);
-            SetConstraint(p2S);
-       //     SetConstraint(p2W);
-
-
-            // inter-cardinal
-            SetConstraint(pNE);
-            SetConstraint(pSE);
-            //    SetConstraint(pSW);
-            //   SetConstraint(pNW);
+                    // second cardinal
+               //     SetConstraint(p2N);
+                    SetConstraint(p2E);
+                    SetConstraint(p2S);
+               //     SetConstraint(p2W);
 
 
-            SetConstraint(p2SE);
-            SetConstraint(p2NE);
+                    // inter-cardinal
+                    SetConstraint(pNE);
+                    SetConstraint(pSE);
+                    //    SetConstraint(pSW);
+                    //   SetConstraint(pNW);
 
-        }
 
-        public List<Constraint> Constraints { get => constraints; }
+                    SetConstraint(p2SE);
+                    SetConstraint(p2NE);
 
-        private void SetConstraint(PointInfoSpring p2)
-        {
-            if(p2 != null)
-            {
-                Constraints.Add(new Constraint(this, p2));
-            }
-        }
+                }
 
-        public void SatisfyConstraints()
-        {
-            foreach (Constraint constraint in Constraints)
-            {
-                constraint.SatisfyConstraint();
-            }
-        }
+            */
+
+        public List<int> CardinalIDs { get => cardinalIDs; }
+
+
 
 
         //////////////////////
@@ -175,60 +173,8 @@ namespace InfraredKinectData.DataProcessing
         /// <returns></returns>
         public double[] EstimatePostition(double[][] points)
         {
-            double[] estPoint;
-            double accX = 0;
-            double accY = 0;
-            int count = 0;
 
-            estPoint = Extrapolate(pN, p2N, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-            estPoint = Extrapolate(pE, p2E, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-            estPoint = Extrapolate(pS, p2S, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-            estPoint = Extrapolate(pW, p2W, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-            if (count != 0)
-            {
-                //  estPoint[0] = accX / count;
-                //  estPoint[1] = accY / count;
-
-                estPoint = new double[2]
-                {
-                    accX / count,
-                    accY / count
-                };
-
-                return estPoint;
-            }
-            else
-            {
-                return null;
-            }
+            return null;
 
         }
 
@@ -276,6 +222,20 @@ namespace InfraredKinectData.DataProcessing
 
         }
 
+/*
+        Liste constraints
+
+        public SetCardinals(Dictionary dicty)
+        {
+
+            foreach (var item in collection)
+            {
+                constraints.add( dicty.get(cardinalIDs))
+            }
+
+        }
+*/
+
 
         /// <summary>
         /// 
@@ -284,114 +244,261 @@ namespace InfraredKinectData.DataProcessing
         /// <param name="id"></param>
         /// <param name="numOfCols"></param>
         /// <param name="numOfRows"></param>
-        public void AssignCardinalPoints(PointInfoSpring[] points, int id, int numOfCols, int numOfRows)
+        public List<int> GetCardinals(PointInfoSpring[] points, int id, int numOfCols, int numOfRows)
         {
-            int pos;
+            int index;
             int n = (numOfCols * numOfRows) - 1;
             int idModCols = id % numOfCols;
 
 
-            //         PointInfoRelation pNE, pSE, pSW, pNW;
+            List<int> SouthEast_cardinals = new List<int>();
 
-            // north, north east and 2nd north
-            pos = id - numOfCols;
-            if (pos >= 0)
+
+
+
+            // north
+            int north = CanGoNorth(id, n, numOfCols);
+            if (north != -1)
             {
-                // north
-                this.pN = points[pos];
+                cardinalIDs.Add(north);
 
                 // north east
-                int posNE = pos + 1;
-                if (posNE <= n && posNE % numOfCols >= idModCols)
+                index = CanGoEast(north, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pNE = points[pos];
+                    cardinalIDs.Add(index);
                 }
-
                 // north west
-                int posNW = pos - 1;
-                if (posNW >= 0 && posNW % numOfCols <= idModCols)
+                index = CanGoWest(north, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pNW = points[pos];
+                    cardinalIDs.Add(index);
                 }
-
                 // second north
-                pos -= numOfCols;
-                if (pos >= 0)
+                int north2 = CanGoNorth(north, n, numOfCols);
+                if (north2 != -1)
                 {
-                    this.p2N = points[pos];
+                    cardinalIDs.Add(north2);
 
-
-                    // Second NE
-                    pos += 2;
-                    if(pos <= n && pos % numOfCols >= idModCols)
+                    // second north east
+                    index = CanGo2East(north2, n, numOfCols, idModCols);
+                    if (index != -1)
                     {
-                        this.p2NE = points[pos];
+                        cardinalIDs.Add(index);
+                    }
+                    // second north west
+                    index = CanGo2West(north2, n, numOfCols, idModCols);
+                    if (index != -1)
+                    {
+                        cardinalIDs.Add(index);
                     }
 
-
                 }
-            }
-            // East and 2nd east
-            pos = id + 1;
-            if (pos <= n && pos % numOfCols >= idModCols)
-            {
-                this.pE = points[pos];
-                pos += 1;
-                if (pos <= n && pos % numOfCols >= idModCols)
-                {
-                    this.p2E = points[pos];
-                }
-            }
-            // South and 2nd south
-            pos = id + numOfCols;
-            if (pos <= n)
-            {
-                this.pS = points[pos];
 
+            }
+
+
+
+
+            // south
+            int south = CanGoSouth(id, n, numOfCols);
+            if (south != -1)
+            {
+                cardinalIDs.Add(south);
+                SouthEast_cardinals.Add(south);
 
                 // south east
-                int posSE = pos + 1;
-                if (posSE <= n && posSE % numOfCols >= idModCols)
+                index = CanGoEast(south, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pSE = points[pos];
-
+                    cardinalIDs.Add(index);
+                    SouthEast_cardinals.Add(index);
                 }
-
-                // north west
-                int posSw = pos - 1;
-                if (posSw >= 0 && posSw % numOfCols <= idModCols)
+                // south west
+                index = CanGoWest(south, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pSW = points[pos];
+                    cardinalIDs.Add(index);
+                    SouthEast_cardinals.Add(index);
                 }
-
-
-                pos += numOfCols;
-                if (pos <= n)
+                // second south
+                int south2 = CanGoSouth(south, n, numOfCols);
+                if (south2 != -1)
                 {
-                    this.p2S = points[pos];
+                    cardinalIDs.Add(south2);
+                    SouthEast_cardinals.Add(south2);
 
-                    // Second NE
-                    pos += 2;
-                    if (pos <= n && pos % numOfCols >= idModCols)
+                    // second south east
+                    index = CanGo2East(south2, n, numOfCols, idModCols);
+                    if (index != -1)
                     {
-                        this.p2SE = points[pos];
+                        cardinalIDs.Add(index);
+                        SouthEast_cardinals.Add(index);
+                    }
+                    // second south west
+                    index = CanGo2West(south2, n, numOfCols, idModCols);
+                    if (index != -1)
+                    {
+                        cardinalIDs.Add(index);
+                        SouthEast_cardinals.Add(index);
                     }
 
+                }
+            }
 
-                }
-            }
-            // West and 2nd west
-            pos = id - 1;
-            if (pos >= 0 && pos % numOfCols <= idModCols)
+
+            // east
+            index = CanGoEast(id, n, numOfCols, idModCols);
+            if (index != -1)
             {
-                this.pW = points[pos];
-                pos -= 1;
-                if (pos >= 0 && pos % numOfCols <= idModCols)
+                cardinalIDs.Add(index);
+                SouthEast_cardinals.Add(index);
+
+                // second east
+                index = CanGoEast(index, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.p2W = points[pos];
+                    cardinalIDs.Add(index);
+                    SouthEast_cardinals.Add(index);
                 }
+
+
             }
+
+            // west
+            index = CanGoWest(id, n, numOfCols, idModCols);
+            if (index != -1)
+            {
+                cardinalIDs.Add(index);
+
+                // second west
+                index = CanGoWest(index, n, numOfCols, idModCols);
+                if (index != -1)
+                {
+                    cardinalIDs.Add(index);
+                }
+
+            }
+
+
+            return SouthEast_cardinals;
+
         }
+
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <returns></returns>
+        private int CanGoSouth(int id, int n, int numOfCols)
+        {
+            int index = id + numOfCols;
+
+            if (index <= n)
+            {
+                return index;
+            }
+
+            return -1;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <returns></returns>
+        private int CanGoNorth(int id, int n, int numOfCols)
+        {
+            int index = (id - numOfCols);
+            if (index >= 0)
+            {
+                return index;
+            }
+            return -1;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <param name="idModCols"></param>
+        /// <returns></returns>
+        private int CanGoEast(int id, int n, int numOfCols, int idModCols)
+        {
+            int index = id + 1;
+            if (index <= n && index % numOfCols > idModCols)
+            {
+                return index;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <param name="idModCols"></param>
+        /// <returns></returns>
+        private int CanGoWest(int id, int n, int numOfCols, int idModCols)
+        {
+            int index = id - 1;
+            if (index >= 0 && index % numOfCols < idModCols)
+            {
+                return index;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <param name="idModCols"></param>
+        /// <returns></returns>
+        private int CanGo2East(int id, int n, int numOfCols, int idModCols)
+        {
+            int index = id + 2;
+            if (index <= n && index % numOfCols > idModCols)
+            {
+                return index;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="n"></param>
+        /// <param name="numOfCols"></param>
+        /// <param name="idModCols"></param>
+        /// <returns></returns>
+        private int CanGo2West(int id, int n, int numOfCols, int idModCols)
+        {
+            int index = id - 2;
+            if (index >= 0 && index % numOfCols < idModCols)
+            {
+                return index;
+            }
+            return -1;
+        }
+
+
 
         /// <summary>
         /// retuns the displacement of the point.
@@ -422,110 +529,6 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="mode"></param>
-        /// <returns></returns>
-        public double[] EstimatePostitionDisplacement(double[][] points, int mode)
-        {
-            double[] estPoint;
-            double accX = 0;
-            double accY = 0;
-            int count = 0;
-
-
-            estPoint = ExtrapolateDisplacement(pN, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-
-            }
-
-
-
-            estPoint = ExtrapolateDisplacement(pE, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-
-
-            estPoint = ExtrapolateDisplacement(pW, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-
-            if (mode == 1)
-            {
-
-
-                estPoint = ExtrapolateDisplacement(pNE, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
-
-                estPoint = ExtrapolateDisplacement(pSE, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
-                estPoint = ExtrapolateDisplacement(pSW, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
-
-                estPoint = ExtrapolateDisplacement(pNW, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
-            }
-
-
-            if (count != 0)
-            {
-                //  estPoint[0] = accX / count;
-                //  estPoint[1] = accY / count;
-
-                estPoint = new double[2]
-                {
-                   this.orignalPos[0] + (accX / count),
-                   this.orignalPos[1] + (accY / count)
-                };
-
-                return estPoint;
-            }
-            else
-            {
-                return null;
-            }
-
-        }
 
 
 

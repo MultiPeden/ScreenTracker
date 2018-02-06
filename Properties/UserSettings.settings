@@ -24,7 +24,7 @@
       <Value Profile="(Default)">5</Value>
     </Setting>
     <Setting Name="Spring_Damping" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.001</Value>
+      <Value Profile="(Default)">0.01</Value>
     </Setting>
     <Setting Name="Spring_StepSize" Type="System.Single" Scope="User">
       <Value Profile="(Default)">0.25</Value>

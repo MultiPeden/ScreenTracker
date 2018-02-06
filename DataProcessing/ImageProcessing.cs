@@ -537,6 +537,8 @@ namespace InfraredKinectData.DataProcessing
                     Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
                 }
 
+
+                /*
                 // assign kardinal points to pointInfo
                 for (int k = 0; k < screen.PointInfo.Length; k++)
                 {
@@ -548,6 +550,8 @@ namespace InfraredKinectData.DataProcessing
                 {
                     screen.PointInfo[k].SetConstraints();
                 }
+
+                */
                
 
 
@@ -556,8 +560,11 @@ namespace InfraredKinectData.DataProcessing
                 screen.PointInfo[24].MakeUnmovable();
                 screen.PointInfo[20].MakeUnmovable();
                 // Update the previous points
-                screen.PrevPoints = newPoints;
 
+ 
+
+                screen.PrevPoints = newPoints;
+                screen.AssignConstraints();
 
 
             }
@@ -568,7 +575,7 @@ namespace InfraredKinectData.DataProcessing
                 // newPoints = prevPoints;
                 double[][] newPointsSparse = new double[screen.PrevPoints.Length][];
 
-                screen.TimeStep();
+                
 
 
 
@@ -649,34 +656,15 @@ namespace InfraredKinectData.DataProcessing
                 newPoints = newPointsSparse;
 
 
+                screen.TimeStep(newPoints);
+                
+                
+                //do estimation using the displacement model
+                ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
 
-                for (int k = 0; k < newPointsSparse.Length; k++)
-                {
-                    if (newPoints[k] == null)
-                    {
-
-                        //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
-
-                        double[] estPoint = screen.PointInfo[k].EstimatePostitionDisplacement(newPointsSparse,1);
+              //  screen.UpdateKnownPoints(newPoints);
 
 
-                        // if we can get an estimate using extrapolation, update with the estimated point
-                        if (estPoint != null)
-                        {
-                            newPoints[k] = estPoint;
-                        }
-                        else
-                        {
-                            newPoints[k] = screen.PrevPoints[k];
-
-                        }
-
-
-
-                        screen.PointInfo[k].Visible = false;
-                    }
-
-                }
 
 
                 for (int l = 0; l < screen.PointInfo.Length; l++)
@@ -718,6 +706,43 @@ namespace InfraredKinectData.DataProcessing
 
             return centroidPoints2;
         }
+
+
+/*
+        private void DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
+        {
+
+            for (int k = 0; k < newPointsSparse.Length; k++)
+            {
+                if (newPoints[k] == null)
+                {
+
+                    //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
+
+                    double[] estPoint = screen.PointInfo[k].EstimatePostitionDisplacement(newPointsSparse, 1);
+
+
+                    // if we can get an estimate using extrapolation, update with the estimated point
+                    if (estPoint != null)
+                    {
+                        newPoints[k] = estPoint;
+                    }
+                    else
+                    {
+                        newPoints[k] = screen.PrevPoints[k];
+
+                    }
+
+
+
+                    screen.PointInfo[k].Visible = false;
+                }
+
+            }
+
+        }
+
+        */
 
 
         /// <summary>

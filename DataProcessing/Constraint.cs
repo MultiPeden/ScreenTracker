@@ -11,12 +11,13 @@ namespace InfraredKinectData.DataProcessing
     {
         private float rest_distance; // the length between particle p1 and p2 in rest configuration
         public PointInfoSpring p1, p2; // the two particles that are connected through this constraint
+        public string name;
 
-
-        public Constraint(PointInfoSpring p1, PointInfoSpring p2)
+        public Constraint(PointInfoSpring p1, PointInfoSpring p2, string name)
         {
             this.p1 = p1;
             this.p2 = p2;
+            this.name = name;
 
             Vector3 vec = p1.GetPos() - p2.GetPos();
             this.rest_distance = vec.Length();

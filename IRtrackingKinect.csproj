@@ -122,6 +122,7 @@
     </Compile>
     <Compile Include="DataProcessing\Constraint.cs" />
     <Compile Include="DataProcessing\PointInfoSpring.cs" />
+    <Compile Include="DataProcessing\PointPair2.cs" />
     <Compile Include="DataProcessing\Screen.cs" />
     <Compile Include="DataProcessing\SpringScreen.cs" />
     <Compile Include="DataReceiver\CameraInterface.cs" />
