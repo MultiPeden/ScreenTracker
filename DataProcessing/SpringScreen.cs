@@ -25,11 +25,15 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-        private List<Constraint> constraints;
-        // end spring
         Dictionary<String, Constraint> pairDict = new Dictionary<String, Constraint>();
 
 
+
+
+        public void UpdateScreen(double[][] newPoints)
+        {
+            TimeStep(newPoints);
+        }
 
 
         /* this is an important methods where the time is progressed one time step for the entire cloth.
@@ -95,7 +99,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
 
 
-
+            this.prevPoints = newPoints;
 
 
         }

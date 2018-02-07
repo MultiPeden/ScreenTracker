@@ -19,7 +19,7 @@ namespace InfraredKinectData.DataProcessing
         private Vector3 pos; // the current position of the particle in 3D space
         private Vector3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
         private Vector3 acceleration; // a vector representing the current acceleration of the particle
-        private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
+      //  private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 
 
         private List<int> cardinalIDs;
@@ -29,11 +29,7 @@ namespace InfraredKinectData.DataProcessing
 
         public int id;
 
-
-
-        //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
-
-
+        
 
         //for displacement calculations 
         double[] orignalPos;
@@ -127,114 +123,11 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-        /*
-                public void SetConstraints()
-                {
-                    // cardinal points
-              //      SetConstraint(pN);
-                    SetConstraint(pE);
-                    SetConstraint(pS);
-             //       SetConstraint(pW);
-
-                    // second cardinal
-               //     SetConstraint(p2N);
-                    SetConstraint(p2E);
-                    SetConstraint(p2S);
-               //     SetConstraint(p2W);
-
-
-                    // inter-cardinal
-                    SetConstraint(pNE);
-                    SetConstraint(pSE);
-                    //    SetConstraint(pSW);
-                    //   SetConstraint(pNW);
-
-
-                    SetConstraint(p2SE);
-                    SetConstraint(p2NE);
-
-                }
-
-            */
 
         public List<int> CardinalIDs { get => cardinalIDs; }
 
 
 
-
-        //////////////////////
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="points"></param>
-        /// <returns></returns>
-        public double[] EstimatePostition(double[][] points)
-        {
-
-            return null;
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="cardinal"></param>
-        /// <param name="cardinal2"></param>
-        /// <param name="points"></param>
-        /// <returns></returns>
-        public double[] Extrapolate(PointInfoSpring cardinal, PointInfoSpring cardinal2, double[][] points)
-        {
-
-
-
-            if (cardinal != null && cardinal2 != null && cardinal.Visible && cardinal2.Visible)
-            {
-
-
-                int cardinalId = cardinal.id;
-                int cardinalId2 = cardinal2.id;
-
-
-                double[] p1 = points[cardinalId];
-                double[] p2 = points[cardinalId2];
-
-                if (p1 == null || p2 == null)
-                {
-                    return null;
-                }
-                else
-                {
-
-                    double[] est = new double[2] {
-                    p1[0] * 2 - p2[0],
-                    p1[1] * 2 - p2[1]
-                };
-                    return est;
-                }
-            }
-            else
-            {
-                return null;
-            }
-
-        }
-
-/*
-        Liste constraints
-
-        public SetCardinals(Dictionary dicty)
-        {
-
-            foreach (var item in collection)
-            {
-                constraints.add( dicty.get(cardinalIDs))
-            }
-
-        }
-*/
 
 
         /// <summary>
@@ -252,9 +145,6 @@ namespace InfraredKinectData.DataProcessing
 
 
             List<int> SouthEast_cardinals = new List<int>();
-
-
-
 
             // north
             int north = CanGoNorth(id, n, numOfCols);
@@ -296,8 +186,6 @@ namespace InfraredKinectData.DataProcessing
                 }
 
             }
-
-
 
 
             // south
@@ -377,199 +265,8 @@ namespace InfraredKinectData.DataProcessing
                 {
                     cardinalIDs.Add(index);
                 }
-
             }
-
-
             return SouthEast_cardinals;
-
-        }
-
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <returns></returns>
-        private int CanGoSouth(int id, int n, int numOfCols)
-        {
-            int index = id + numOfCols;
-
-            if (index <= n)
-            {
-                return index;
-            }
-
-            return -1;
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <returns></returns>
-        private int CanGoNorth(int id, int n, int numOfCols)
-        {
-            int index = (id - numOfCols);
-            if (index >= 0)
-            {
-                return index;
-            }
-            return -1;
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <param name="idModCols"></param>
-        /// <returns></returns>
-        private int CanGoEast(int id, int n, int numOfCols, int idModCols)
-        {
-            int index = id + 1;
-            if (index <= n && index % numOfCols > idModCols)
-            {
-                return index;
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <param name="idModCols"></param>
-        /// <returns></returns>
-        private int CanGoWest(int id, int n, int numOfCols, int idModCols)
-        {
-            int index = id - 1;
-            if (index >= 0 && index % numOfCols < idModCols)
-            {
-                return index;
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <param name="idModCols"></param>
-        /// <returns></returns>
-        private int CanGo2East(int id, int n, int numOfCols, int idModCols)
-        {
-            int index = id + 2;
-            if (index <= n && index % numOfCols > idModCols)
-            {
-                return index;
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="n"></param>
-        /// <param name="numOfCols"></param>
-        /// <param name="idModCols"></param>
-        /// <returns></returns>
-        private int CanGo2West(int id, int n, int numOfCols, int idModCols)
-        {
-            int index = id - 2;
-            if (index >= 0 && index % numOfCols < idModCols)
-            {
-                return index;
-            }
-            return -1;
-        }
-
-
-
-        /// <summary>
-        /// retuns the displacement of the point.
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        private double[] Displacement(double[] position)
-        {
-            return new double[]
-            {
-               DisplacementFunction( position[0] - this.orignalPos[0]) ,
-               DisplacementFunction( position[1] - this.orignalPos[1])
-            };
-        }
-
-
-        private double DisplacementFunction(double displacement)
-        {
-            var sign = Math.Sign(displacement);
-            displacement = Math.Abs(displacement);
-
-            return displacement;
-
-            //   return sign * (2 / (0.1 + Math.Exp(-displacement)));
-
-
-        }
-
-
-
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="cardinal"></param>
-        /// <param name="cardinal2"></param>
-        /// <param name="points"></param>
-        /// <returns></returns>
-        private double[] ExtrapolateDisplacement(PointInfoSpring cardinal, double[][] points)
-        {
-
-
-
-            if (cardinal != null && cardinal.Visible)
-            {
-
-
-                int cardinalId = cardinal.id;
-
-
-
-                double[] p = points[cardinalId];
-
-
-                if (p == null)
-                {
-                    return null;
-                }
-                else
-                {
-
-                    return cardinal.Displacement(p);
-                }
-            }
-            else
-            {
-                return null;
-            }
-
         }
 
 

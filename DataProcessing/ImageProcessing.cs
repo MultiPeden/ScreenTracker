@@ -555,10 +555,7 @@ namespace InfraredKinectData.DataProcessing
                
 
 
-                screen.PointInfo[0].MakeUnmovable();
-                screen.PointInfo[4].MakeUnmovable();
-                screen.PointInfo[24].MakeUnmovable();
-                screen.PointInfo[20].MakeUnmovable();
+        
                 // Update the previous points
 
  
@@ -594,21 +591,8 @@ namespace InfraredKinectData.DataProcessing
                 // build KD-tree for nearest neighbour search
                 //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
 
-
-
-
-                int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
-
-                Hungarian hung = new Hungarian(costMatrix);
-                int[,] M = hung.M;
-                // hung.ShowCostMatrix();
-                //  hung.ShowMaskMatrix();
-                // Create a new Hungarian algorithm
-                // Munkres m = new Munkres(costMatrix);
-                int[] minInd = hung.GetMinimizedIndicies();
-
-
-
+                // Use Hungarian algorithm to find points from the old frame, in the new frame
+                int[] minInd = GetPointsIndices(centroidPoints);
 
                 double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
 
@@ -656,34 +640,45 @@ namespace InfraredKinectData.DataProcessing
                 newPoints = newPointsSparse;
 
 
+
+
+
                 screen.TimeStep(newPoints);
-                
-                
+
+
                 //do estimation using the displacement model
                 ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
 
-              //  screen.UpdateKnownPoints(newPoints);
 
 
-
-
-                for (int l = 0; l < screen.PointInfo.Length; l++)
-                {
-                    screen.PrevPoints[l] = new double[] {
-                screen.PointInfo[l].GetPos().X,
-                screen.PointInfo[l].GetPos().Y };
-                }
+                
 
 
             }
 
+            
+        }
 
+        /// <summary>
+        /// Uses the Hungarian algorithm to recognize points from the old frame, in the new frame.
+        /// </summary>
+        /// <param name="centroidPoints"></param>
+        /// <returns></returns>
+        private int[] GetPointsIndices(double[][] centroidPoints)
+        {
+            int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
 
-
-
-
+            Hungarian hung = new Hungarian(costMatrix);
+            int[,] M = hung.M;
+            // hung.ShowCostMatrix();
+            //  hung.ShowMaskMatrix();
+            // Create a new Hungarian algorithm
+            // Munkres m = new Munkres(costMatrix);
+            return hung.GetMinimizedIndicies();
 
         }
+
+
 
         /// <summary>
         ///  Converts from EMGUs MCvPoint2D64f array to a jagged double array

@@ -22,5 +22,6 @@ namespace InfraredKinectData.DataProcessing
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         internal PointInfoRelation[] PointInfo { get => pointInfo; set => pointInfo = value; }
+
     }
 }
