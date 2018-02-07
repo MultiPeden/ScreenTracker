@@ -121,10 +121,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DataProcessing\Constraint.cs" />
+    <Compile Include="DataProcessing\IPointInfo.cs" />
     <Compile Include="DataProcessing\PointInfoSpring.cs" />
-    <Compile Include="DataProcessing\Screen.cs" />
+    <Compile Include="DataProcessing\RelationScreen.cs" />
+    <Compile Include="DataProcessing\IScreen.cs" />
     <Compile Include="DataProcessing\SpringScreen.cs" />
-    <Compile Include="DataReceiver\CameraInterface.cs" />
+    <Compile Include="DataReceiver\ICameraInterface.cs" />
     <Compile Include="DataReceiver\EMGUargs.cs" />
     <Compile Include="DataReceiver\FrameDimension.cs" />
     <Compile Include="DataProcessing\Hungarian.cs" />

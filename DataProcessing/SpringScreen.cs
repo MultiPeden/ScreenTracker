@@ -1,13 +1,13 @@
-﻿using System;
+﻿using Emgu.CV;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace InfraredKinectData.DataProcessing
 {
-    class SpringScreen
+    class SpringScreen : IScreen
     {
         /// <summary>
         /// Info for each detected point i the frame.
@@ -21,13 +21,49 @@ namespace InfraredKinectData.DataProcessing
         private double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
-        internal PointInfoSpring[] PointInfo { get => pointInfo; set => pointInfo = value; }
+        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[]) value; }
 
 
 
         Dictionary<String, Constraint> pairDict = new Dictionary<String, Constraint>();
 
+        int num_particles_width = Properties.UserSettings.Default.GridColums;
+        int num_particles_height = Properties.UserSettings.Default.GridRows;
 
+
+
+
+        public void Initialize(double[][] orderedCentroidPoints, Mat stats)
+        {
+
+
+            PointInfo = new PointInfoSpring[num_particles_height * num_particles_width];
+
+
+
+            int i = 0;
+            // initialize points
+            foreach (double[] point in orderedCentroidPoints)
+            {
+                int j = i + 1;
+                int width = stats.GetData(j, 2)[0];
+                int height = stats.GetData(j, 3)[0];
+                int area = stats.GetData(j, 4)[0];
+                // set info for each point, used later to get z-coordinate
+
+                //todo
+                //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
+                this.PointInfo[i] = new PointInfoSpring(width, height, i, point);
+                i++;
+                Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
+            }
+
+
+
+
+            PrevPoints = orderedCentroidPoints;
+            AssignConstraints();
+        }
 
 
         public void UpdateScreen(double[][] newPoints)
@@ -58,15 +94,6 @@ This includes calling satisfyConstraint() for every constraint, and calling time
              * 
              */
 
-            /*
-                        for (int i = 0; i < Properties.UserSettings.Default.Spring_ConstraintIterations; i++)
-                        {
-                            foreach (PointInfoSpring point in PointInfo)
-                            {
-                                point.SatisfyConstraints();
-                            }
-                        }
-                        */
 
             for (int i = 0; i < newPoints.Length; i++)
             {
@@ -97,10 +124,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                 }
             }
 
-
-
             this.prevPoints = newPoints;
-
 
         }
 
@@ -116,8 +140,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
                 foreach (int cardinal in cardinals)
                 {
-                    //     constraints.Add(new Constraint(pointInfo[i], pointInfo[cardinal]));
-                    //     PointPair2 pp = new PointPair2(i, cardinal);
+
                     Constraint constraint = new Constraint(pointInfo[i], pointInfo[cardinal], PointPair(i, cardinal));
 
                     pairDict.Add(PointPair(i, cardinal), constraint);
@@ -145,7 +168,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
             {
                 if (newPoints[i] == null)
                 {
-                    foreach (int id in PointInfo[i].CardinalIDs)
+                    foreach (int id in pointInfo[i].CardinalIDs)
                     {
                         PointInfo[i].Visible = false;
                         Constraint constraint = pairDict[PointPair(i, id)];
@@ -193,55 +216,8 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
             }
 
-
-
-
         }
 
-        /* used to add gravity (or any other arbitrary vector) to all particles*/
-        public void AddForce(Vector3 direction)
-        {
-
-            foreach (PointInfoSpring point in PointInfo)
-            {
-                point.AddForce(direction);
-            }
-
-
-
-        }
-
-
-        /* A private method used by windForce() to calcualte the wind force for a single triangle 
-defined by p1,p2,p3*/
-        public void AddWindForcesForTriangle(PointInfoSpring p1, PointInfoSpring p2, PointInfoSpring p3, Vector3 direction)
-        {
-
-            Vector3 normal = calcTriangleNormal(p1, p2, p3);
-            Vector3 d = Vector3.Normalize(normal);
-            Vector3 force = normal * (Vector3.Dot(d, direction));
-            p1.AddForce(force);
-            p2.AddForce(force);
-            p3.AddForce(force);
-        }
-
-
-
-        /* A private method used by drawShaded() and addWindForcesForTriangle() to retrieve the  
-normal vector of the triangle defined by the position of the particles p1, p2, and p3.
-The magnitude of the normal vector is equal to the area of the parallelogram defined by p1, p2 and p3
-*/
-        private Vector3 calcTriangleNormal(PointInfoSpring p1, PointInfoSpring p2, PointInfoSpring p3)
-        {
-            Vector3 pos1 = p1.GetPos();
-            Vector3 pos2 = p2.GetPos();
-            Vector3 pos3 = p3.GetPos();
-
-            Vector3 v1 = pos2 - pos1;
-            Vector3 v2 = pos3 - pos1;
-
-            return Vector3.Cross(v1, v2);
-        }
 
 
 

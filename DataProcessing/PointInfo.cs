@@ -10,7 +10,7 @@ namespace InfraredKinectData.DataProcessing
     /// Holds information for tracking points
     /// both for visual representation and track filtering
     /// </summary>
-    abstract class PointInfo
+    abstract class PointInfo : IPointInfo
     {
         // Bounding box dimensions
         private int height;
@@ -43,6 +43,8 @@ namespace InfraredKinectData.DataProcessing
 
 
         public bool Visible { get => visible; set => visible = value; }
+
+
 
 
 

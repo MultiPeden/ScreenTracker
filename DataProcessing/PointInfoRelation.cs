@@ -252,7 +252,7 @@ namespace InfraredKinectData.DataProcessing
             var sign = Math.Sign(displacement);
             displacement = Math.Abs(displacement);
 
-           return displacement;
+           return sign * displacement;
 
          //   return sign * (2 / (0.1 + Math.Exp(-displacement)));
   

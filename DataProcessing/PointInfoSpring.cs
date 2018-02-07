@@ -40,7 +40,7 @@ namespace InfraredKinectData.DataProcessing
         {
 
             // spring
-            this.pos = new Vector3((float)position[0], (float)position[1], (float)position[2]);
+            this.pos = new Vector3((float)position[0], (float)position[1], 0);
             this.old_pos = pos;
             this.mass = 1;
             this.movable = false;

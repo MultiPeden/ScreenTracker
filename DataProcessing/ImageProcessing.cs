@@ -81,7 +81,7 @@ namespace InfraredKinectData.DataProcessing
         private bool thresholdedClicked = false;
 
 
-        private SpringScreen screen;
+        private IScreen screen;
 
         /// <summary>
         /// Holds a reference to the camera
@@ -476,14 +476,6 @@ namespace InfraredKinectData.DataProcessing
 
 
 
-                /*
-                Array.Sort(centroidPoints,
-                    (left, right) => left[1].CompareTo(right[1]) != 0
-                                ? left[1].CompareTo(right[1])
-                                : left[0].CompareTo(right[0]));
-                                */
-
-
                 int cols = Properties.UserSettings.Default.GridColums;
                 int rows = Properties.UserSettings.Default.GridRows;
 
@@ -495,7 +487,8 @@ namespace InfraredKinectData.DataProcessing
                 }
 
                 double[][] orderedCentroidPoints = new double[rows * cols][];
-                screen.PointInfo = new PointInfoSpring[rows * cols];
+
+
 
                 Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
 
@@ -522,46 +515,7 @@ namespace InfraredKinectData.DataProcessing
                 //Console.WriteLine("cat: " + cat);
 
 
-
-
-                // initialize points
-                foreach (double[] point in orderedCentroidPoints)
-                {
-                    int j = i + 1;
-                    int width = stats.GetData(j, 2)[0];
-                    int height = stats.GetData(j, 3)[0];
-                    int area = stats.GetData(j, 4)[0];
-                    // set info for each point, used later to get z-coordinate
-                    screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
-                    i++;
-                    Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
-                }
-
-
-                /*
-                // assign kardinal points to pointInfo
-                for (int k = 0; k < screen.PointInfo.Length; k++)
-                {
-                    screen.PointInfo[k].AssignCardinalPoints(screen.PointInfo, k, cols, rows);
-                }
-
-                // assign kardinal points to pointInfo
-                for (int k = 0; k < screen.PointInfo.Length; k++)
-                {
-                    screen.PointInfo[k].SetConstraints();
-                }
-
-                */
-               
-
-
-        
-                // Update the previous points
-
- 
-
-                screen.PrevPoints = newPoints;
-                screen.AssignConstraints();
+                screen.Initialize(newPoints, stats);
 
 
             }
@@ -570,7 +524,7 @@ namespace InfraredKinectData.DataProcessing
 
                 // copy previous points to new point to avoid loosing any points
                 // newPoints = prevPoints;
-                double[][] newPointsSparse = new double[screen.PrevPoints.Length][];
+                newPoints = new double[screen.PrevPoints.Length][];
 
                 
 
@@ -602,13 +556,9 @@ namespace InfraredKinectData.DataProcessing
                 foreach (double[] point in rearranged)
                 {
 
-                    // index = minInd[i] +1;
                     if (point != null)
                     {
                         index = minInd[i] + 1;
-
-                        //  ArrangedPoints[indices[i]] = points[i];
-
 
                         int width = stats.GetData(index, 2)[0];
                         int height = stats.GetData(index, 3)[0];
@@ -617,42 +567,22 @@ namespace InfraredKinectData.DataProcessing
                         // if the area is more than minArea, discard 
                         if (true) // (area > minArea)
                         {
-
-                            // find nearest neighbour
-                            //         KDTreeNode<int> nearest = tree.Nearest(point);
-
-
-
-                            // get its index
-                            //   index = nearest.Value;
-
-                            // update info for the point
                             PointInfo pInfo = screen.PointInfo[i];
                             pInfo.Width = width;
                             pInfo.Height = height;
                             pInfo.Visible = true;
-                            newPointsSparse[i] = point;
+                            newPoints[i] = point;
                         }
                     }
 
                     i++;
                 }
-                newPoints = newPointsSparse;
+           
 
 
-
-
-
-                screen.TimeStep(newPoints);
-
-
+                screen.UpdateScreen(newPoints);
                 //do estimation using the displacement model
                 ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
-
-
-
-                
-
 
             }
 
@@ -703,41 +633,7 @@ namespace InfraredKinectData.DataProcessing
         }
 
 
-/*
-        private void DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
-        {
 
-            for (int k = 0; k < newPointsSparse.Length; k++)
-            {
-                if (newPoints[k] == null)
-                {
-
-                    //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
-
-                    double[] estPoint = screen.PointInfo[k].EstimatePostitionDisplacement(newPointsSparse, 1);
-
-
-                    // if we can get an estimate using extrapolation, update with the estimated point
-                    if (estPoint != null)
-                    {
-                        newPoints[k] = estPoint;
-                    }
-                    else
-                    {
-                        newPoints[k] = screen.PrevPoints[k];
-
-                    }
-
-
-
-                    screen.PointInfo[k].Visible = false;
-                }
-
-            }
-
-        }
-
-        */
 
 
         /// <summary>

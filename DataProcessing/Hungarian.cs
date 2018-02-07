@@ -20,7 +20,7 @@ namespace InfraredKinectData.DataProcessing
         private int path_count = 0;
         private int path_row_0;
         private int path_col_0;
-        private int asgn = 0;
+      //  private int asgn = 0;
         private int step = 1;
 
 
