@@ -1,2 +1,2 @@
-# InfredKinectData
-Lib for processing kinect IR frames
+# ScreenTracker
+Lib for tracking and detections of gestures of a deformable screen
