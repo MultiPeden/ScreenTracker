@@ -2,7 +2,7 @@
 using Emgu.CV.Structure;
 using Microsoft.Kinect;
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     class IRUtils
     {

@@ -3,9 +3,9 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using InfraredKinectData.DataProcessing;
+using ScreenTracker.DataProcessing;
 
-namespace InfraredKinectData.Communication
+namespace ScreenTracker.Communication
 {
     [CLSCompliant(false)]
     public class TCPserv

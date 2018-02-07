@@ -1,7 +1,7 @@
 ﻿using Emgu.CV;
 using System;
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     class RelationScreen : IScreen
     {

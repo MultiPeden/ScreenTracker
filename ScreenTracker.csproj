@@ -7,8 +7,8 @@
     <ProjectGuid>{DEB27987-B434-4541-A170-61D21D7A9379}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>InfraredKinectData</RootNamespace>
-    <AssemblyName>InfraredKinectData-WPF</AssemblyName>
+    <RootNamespace>ScreenTracker</RootNamespace>
+    <AssemblyName>ScreenTracker</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -56,7 +56,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>InfraredKinectData.App</StartupObject>
+    <StartupObject>ScreenTracker.App</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>GUI\Images\Kinect.ico</ApplicationIcon>

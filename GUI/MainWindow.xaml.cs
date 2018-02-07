@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace InfraredKinectData.GUI
+namespace ScreenTracker.GUI
 {
     using System;
     using System.ComponentModel;
@@ -12,8 +12,8 @@ namespace InfraredKinectData.GUI
     using System.IO;
     using System.Windows;
     using System.Windows.Media.Imaging;
-    using InfraredKinectData;
-    using InfraredKinectData.DataProcessing;
+    using ScreenTracker;
+    using ScreenTracker.DataProcessing;
 
     [CLSCompliant(false)]
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     interface IPointInfo
     {

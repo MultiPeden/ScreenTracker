@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfraredKinectData
+namespace ScreenTracker
 {
     class PointsConnected : IComparer<double[]>
     {

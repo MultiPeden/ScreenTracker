@@ -14,11 +14,11 @@ using System.Linq;
 using Accord.Statistics;
 using Accord.Math.Optimization;
 using System.Diagnostics;
-using InfraredKinectData.GUI;
-using InfraredKinectData.Communication;
-using InfraredKinectData.DataReceiver;
+using ScreenTracker.GUI;
+using ScreenTracker.Communication;
+using ScreenTracker.DataReceiver;
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     [CLSCompliant(false)]
     /// <summary>

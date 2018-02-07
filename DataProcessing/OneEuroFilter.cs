@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     [CLSCompliant(false)]
     public class OneEuroFilter

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InfraredKinectData.DataReceiver
+namespace ScreenTracker.DataReceiver
 {
     [CLSCompliant(false)]
     public interface ICameraInterface

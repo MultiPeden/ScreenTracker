@@ -4,7 +4,7 @@ using Emgu.CV.Structure;
 using System;
 using System.Windows.Media.Imaging;
 
-namespace InfraredKinectData.DataReceiver
+namespace ScreenTracker.DataReceiver
 {
     [CLSCompliant(false)]
 

@@ -1,8 +1,8 @@
-﻿namespace InfraredKinectData
+﻿namespace ScreenTracker
 {
-    using InfraredKinectData.DataProcessing;
-    using InfraredKinectData.DataReceiver;
-    using InfraredKinectData.GUI;
+    using ScreenTracker.DataProcessing;
+    using ScreenTracker.DataReceiver;
+    using ScreenTracker.GUI;
     using System;
     using System.Windows;
 

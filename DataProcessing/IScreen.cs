@@ -2,7 +2,7 @@
 
 
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     interface IScreen
     {

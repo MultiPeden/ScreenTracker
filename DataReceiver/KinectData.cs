@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace InfraredKinectData.DataReceiver
+namespace ScreenTracker.DataReceiver
 {
     using System;
     using Microsoft.Kinect;

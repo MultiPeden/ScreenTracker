@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Numerics;
 
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     class SpringScreen : IScreen
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 
 
-namespace InfraredKinectData.DataProcessing
+namespace ScreenTracker.DataProcessing
 {
     class PointInfoSpring : PointInfo
     {
