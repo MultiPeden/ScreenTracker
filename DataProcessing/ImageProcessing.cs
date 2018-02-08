@@ -135,7 +135,7 @@ namespace ScreenTracker.DataProcessing
             // show the window
             showWindow = true;
 
-            this.screen = new SpringScreen();
+            this.screen = new DisplacementScreen();
 
 
 

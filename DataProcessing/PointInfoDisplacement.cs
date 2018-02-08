@@ -145,89 +145,92 @@ namespace ScreenTracker.DataProcessing
         /// <param name="numOfRows"></param>
         public void AssignCardinalPoints(PointInfoDisplacement[] points, int id, int numOfCols, int numOfRows)
         {
-            int pos;
             int n = (numOfCols * numOfRows) - 1;
             int idModCols = id % numOfCols;
 
+            int index;
 
-            //         PointInfoDisplacement pNE, pSE, pSW, pNW;
-
-            // north, north east and 2nd north
-            pos = id - numOfCols;
-            if (pos >= 0)
+            // north
+            int north = CanGoNorth(id, n, numOfCols);
+            if (north != -1)
             {
-                // north
-                this.pN = points[pos];
+                this.pN = points[north];
 
                 // north east
-                int posNE = pos + 1;
-                if (posNE <= n && posNE % numOfCols >= idModCols)
+                index = CanGoEast(north, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pNE = points[pos];
+                    this.pNE = points[index];
                 }
-
                 // north west
-                int posNW = pos - 1;
-                if (posNW >= 0 && posNW % numOfCols <= idModCols)
+                index = CanGoWest(north, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pNW = points[pos];
+                    this.pNW = points[index];
                 }
-
                 // second north
-                pos -= numOfCols;
-                if (pos >= 0)
+                int north2 = CanGoNorth(north, n, numOfCols);
+                if (north2 != -1)
                 {
-                    this.p2N = points[pos];
+                    this.p2N = points[north2];
                 }
+
             }
-            // East and 2nd east
-            pos = id + 1;
-            if (pos <= n && pos % numOfCols >= idModCols)
-            {
-                this.pE = points[pos];
-                pos += 1;
-                if (pos <= n && pos % numOfCols >= idModCols)
-                {
-                    this.p2E = points[pos];
-                }
-            }
-            // South and 2nd south
-            pos = id + numOfCols;
-            if (pos <= n)
-            {
-                this.pS = points[pos];
 
 
+            // south
+            int south = CanGoSouth(id, n, numOfCols);
+            if (south != -1)
+            {
+                this.pS = points[south];
+               
                 // south east
-                int posSE = pos + 1;
-                if (posSE <= n && posSE % numOfCols >= idModCols)
+                index = CanGoEast(south, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pSE = points[pos];
+                    this.pSE = points[index];
                 }
-
-                // north west
-                int posSw = pos - 1;
-                if (posSw >= 0 && posSw % numOfCols <= idModCols)
+                // south west
+                index = CanGoWest(south, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.pSW = points[pos];
+                    this.pSW = points[index];
                 }
-
-
-                pos += numOfCols;
-                if (pos <= n)
+                // second south
+                int south2 = CanGoSouth(south, n, numOfCols);
+                if (south2 != -1)
                 {
-                    this.p2S = points[pos];
+                    this.p2S = points[south2];
+
+
                 }
             }
-            // West and 2nd west
-            pos = id - 1;
-            if (pos >= 0 && pos % numOfCols <= idModCols)
+
+
+            // east
+            index = CanGoEast(id, n, numOfCols, idModCols);
+            if (index != -1)
             {
-                this.pW = points[pos];
-                pos -= 1;
-                if (pos >= 0 && pos % numOfCols <= idModCols)
+                this.pE = points[index];
+                // second east
+                index = CanGoEast(index, n, numOfCols, idModCols);
+                if (index != -1)
                 {
-                    this.p2W = points[pos];
+                    this.p2E = points[index];
+                }
+            }
+
+            // west
+            index = CanGoWest(id, n, numOfCols, idModCols);
+            if (index != -1)
+            {
+                this.pW = points[index];
+
+                // second west
+                index = CanGoWest(index, n, numOfCols, idModCols);
+                if (index != -1)
+                {
+                    this.p2W = points[index];
                 }
             }
         }
