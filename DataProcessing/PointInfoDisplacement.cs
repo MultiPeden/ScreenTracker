@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ScreenTracker.DataProcessing
 {
-    class PointInfoRelation : PointInfo
+    class PointInfoDisplacement : PointInfo
     {
         int id;
-        PointInfoRelation pN, pE, pS, pW, p2N, p2E, p2S, p2W;
-        PointInfoRelation pNE, pSE, pSW, pNW;
+        PointInfoDisplacement pN, pE, pS, pW, p2N, p2E, p2S, p2W;
+        PointInfoDisplacement pNE, pSE, pSW, pNW;
 
 
         //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
@@ -19,7 +19,7 @@ namespace ScreenTracker.DataProcessing
         //for displacement calculations 
         double[] orignalPos;
 
-        public PointInfoRelation(int height, int width, int id, double[] position) : base(height, width)
+        public PointInfoDisplacement(int height, int width, int id, double[] position) : base(height, width)
         {
             this.id = id;
             Visible = true;
@@ -98,7 +98,7 @@ namespace ScreenTracker.DataProcessing
         /// <param name="cardinal2"></param>
         /// <param name="points"></param>
         /// <returns></returns>
-        public double[] Extrapolate(PointInfoRelation cardinal, PointInfoRelation cardinal2, double[][] points)
+        public double[] Extrapolate(PointInfoDisplacement cardinal, PointInfoDisplacement cardinal2, double[][] points)
         {
 
 
@@ -143,14 +143,14 @@ namespace ScreenTracker.DataProcessing
         /// <param name="id"></param>
         /// <param name="numOfCols"></param>
         /// <param name="numOfRows"></param>
-        public void AssignCardinalPoints(PointInfoRelation[] points, int id, int numOfCols, int numOfRows)
+        public void AssignCardinalPoints(PointInfoDisplacement[] points, int id, int numOfCols, int numOfRows)
         {
             int pos;
             int n = (numOfCols * numOfRows) - 1;
             int idModCols = id % numOfCols;
 
 
-            //         PointInfoRelation pNE, pSE, pSW, pNW;
+            //         PointInfoDisplacement pNE, pSE, pSW, pNW;
 
             // north, north east and 2nd north
             pos = id - numOfCols;
@@ -375,7 +375,7 @@ namespace ScreenTracker.DataProcessing
         /// <param name="cardinal2"></param>
         /// <param name="points"></param>
         /// <returns></returns>
-        private double[] ExtrapolateDisplacement(PointInfoRelation cardinal, double[][] points)
+        private double[] ExtrapolateDisplacement(PointInfoDisplacement cardinal, double[][] points)
         {
 
 

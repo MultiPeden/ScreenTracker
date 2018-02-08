@@ -3,13 +3,13 @@ using System;
 
 namespace ScreenTracker.DataProcessing
 {
-    class RelationScreen : IScreen
+    class DisplacementScreen : IScreen
     {
 
         /// <summary>
         /// Info for each detected point i the frame.
         /// </summary>
-        private PointInfoRelation[] pointInfo;
+        private PointInfoDisplacement[] pointInfo;
 
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace ScreenTracker.DataProcessing
         double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
-        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoRelation[])value; }
+        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoDisplacement[])value; }
 
 
 
@@ -31,7 +31,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            PointInfo = new PointInfoRelation[num_particles_height * num_particles_width];
+            PointInfo = new PointInfoDisplacement[num_particles_height * num_particles_width];
 
           
 
@@ -47,7 +47,7 @@ namespace ScreenTracker.DataProcessing
 
                 //todo
                 //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
-                this.PointInfo[i] = new PointInfoRelation(width, height, i, point);
+                this.PointInfo[i] = new PointInfoDisplacement(width, height, i, point);
                 i++;
                 Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
             }

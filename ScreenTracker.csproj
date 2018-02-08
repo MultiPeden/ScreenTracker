@@ -123,7 +123,7 @@
     <Compile Include="DataProcessing\Constraint.cs" />
     <Compile Include="DataProcessing\IPointInfo.cs" />
     <Compile Include="DataProcessing\PointInfoSpring.cs" />
-    <Compile Include="DataProcessing\RelationScreen.cs" />
+    <Compile Include="DataProcessing\DisplacementScreen.cs" />
     <Compile Include="DataProcessing\IScreen.cs" />
     <Compile Include="DataProcessing\SpringScreen.cs" />
     <Compile Include="DataReceiver\ICameraInterface.cs" />
@@ -135,7 +135,7 @@
     <Compile Include="DataReceiver\KinectData.cs" />
     <Compile Include="DataProcessing\OneEuroFilter.cs" />
     <Compile Include="DataProcessing\PointInfo.cs" />
-    <Compile Include="DataProcessing\PointInfoRelation.cs" />
+    <Compile Include="DataProcessing\PointInfoDisplacement.cs" />
     <Compile Include="PointsConnected.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>
