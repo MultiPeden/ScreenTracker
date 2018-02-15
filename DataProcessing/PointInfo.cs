@@ -10,7 +10,7 @@ namespace ScreenTracker.DataProcessing
     /// Holds information for tracking points
     /// both for visual representation and track filtering
     /// </summary>
-    abstract class PointInfo : IPointInfo
+    abstract class PointInfo 
     {
         // Bounding box dimensions
         private int height;

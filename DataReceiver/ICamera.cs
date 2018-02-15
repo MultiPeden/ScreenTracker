@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace ScreenTracker.DataReceiver
 {
     [CLSCompliant(false)]
-    public interface ICameraInterface
+    public interface ICamera
     {
         /// <summary>
         /// eventhandler for sending frames as EMGU images when they are

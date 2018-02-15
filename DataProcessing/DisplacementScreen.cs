@@ -15,7 +15,7 @@ namespace ScreenTracker.DataProcessing
         /// <summary>
         /// Array for holding points found in the previous frame
         /// </summary>
-        double[][] prevPoints;
+       public  double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoDisplacement[])value; }

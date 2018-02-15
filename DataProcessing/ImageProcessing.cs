@@ -86,7 +86,7 @@ namespace ScreenTracker.DataProcessing
         /// <summary>
         /// Holds a reference to the camera
         /// </summary>
-        private ICameraInterface cameraData;
+        private ICamera cameraData;
 
         /// <summary>
         /// Holds a reference to to mainWindow if it is set visible
@@ -96,12 +96,15 @@ namespace ScreenTracker.DataProcessing
         private bool firstDetected = true;
 
 
+        double[]  missingx = new double[]{0,0};
+
+
         /// <summary>
         ///  Constructor for the ImageProcessing class
         /// </summary>
         /// <param name="cameraData"></param>
         /// <param name="mainWindow"></param>
-        public ImageProcessing(ICameraInterface cameraData, MainWindow mainWindow)
+        public ImageProcessing(ICamera cameraData, MainWindow mainWindow)
         {
             // only genrate colorimage if the mainwindow is present and the color option is clicked
             if (mainWindow != null && mainWindow.colorClicked)
@@ -173,7 +176,7 @@ namespace ScreenTracker.DataProcessing
             SendPoints(screen.PrevPoints, zCoordinates);
 
             stopwatch.Stop();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds);
+          //  Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
             // only show images if mainwindow is present
             if (mainWindow != null)
@@ -577,10 +580,46 @@ namespace ScreenTracker.DataProcessing
 
                     i++;
                 }
-           
 
 
-                screen.UpdateScreen(newPoints);
+                PointInfoDisplacement sprinInfo = (PointInfoDisplacement)screen.PointInfo[12];
+                if (sprinInfo.Visible)
+                {
+                    screen.UpdateScreen(newPoints);
+
+                    double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
+                    double[] orgPost = sprinInfo.orignalPos;
+
+                    double estimateDiffx = estimatedPos[0] - orgPost[0] ;
+                   double aactualDiffx = screen.PrevPoints[12][0]- orgPost[0] ;
+
+                 //   double estimateDiffy = estimatedPos[1] - orgPost[1];
+                 //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
+
+
+                    Console.Write(estimateDiffx + ",");
+
+                    Console.WriteLine(aactualDiffx + ",");
+
+                //    Console.Write(estimateDiffy + ",");
+
+                  //  Console.WriteLine(aactualDiffy);
+
+                    /*
+                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0] + ",");
+                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1] + ",");
+                                        Console.Write(screen.PrevPoints[12][0] + ",");
+                                        Console.WriteLine(screen.PrevPoints[12][0]);
+                                        */
+
+                    missingx = new double[]
+                    {
+                        sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0],
+                        sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1]
+                    };
+
+                }
+
                 //do estimation using the displacement model
                 ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
 
@@ -725,8 +764,12 @@ namespace ScreenTracker.DataProcessing
             // to obtain binary image with only 0's & 255
             float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
             int minThreshold = Properties.UserSettings.Default.minThreshold;
+
             CvInvoke.Threshold(infraredFrame, thresholdImg, Math.Max(maxVal[0] * percentageThreshold, minThreshold), 255, ThresholdType.Binary);
 
+
+            //  CvInvoke.Threshold(infraredFrame, thresholdImg, 10000, 255, ThresholdType.Trunc);
+            //     thresholdImg = infraredFrame.InRange(new Gray(5000), new Gray(5500));
 
             // nomalize the 16bit vals to 8bit vals (max 255)
             //  CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
@@ -818,6 +861,8 @@ namespace ScreenTracker.DataProcessing
                         CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
                     }
 
+
+
                     CvInvoke.PutText(colImg,
                     i.ToString(),
                     new System.Drawing.Point((int)screen.PrevPoints[i][0] - width, (int)screen.PrevPoints[i][1] + height),
@@ -826,7 +871,15 @@ namespace ScreenTracker.DataProcessing
                     new Bgr(255, 255, 0).MCvScalar);
 
                 }
+
+
             }
+
+            int height1 = 10;
+            int width1 = 10;
+            Rectangle rect1 = new Rectangle((int)missingx[0] - (width1 / 2) - padding, (int)missingx[1] - (height1 / 2) - padding, width1 + padding * 2, height1 + padding * 2);
+            CvInvoke.Rectangle(colImg, rect1, new Bgr(255, 0, 255).MCvScalar, thickness); // 2 pixel box thick
+
             return colImg;
 
         }

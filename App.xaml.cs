@@ -35,7 +35,7 @@
 
 
             // create new cameraData object to processes frames from the Kinect camera
-            ICameraInterface cameraData = new KinectData();
+            ICamera cameraData = new KinectData();
 
 
 

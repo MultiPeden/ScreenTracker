@@ -19,7 +19,7 @@ namespace ScreenTracker.DataReceiver
     /// This allows for retrival of information from the camera
     /// Aswell as conversion from camera output to EMGU images for further processing
     /// </summary>
-    public class KinectData : ICameraInterface
+    public class KinectData : ICamera
     {
         /// <summary>
         /// Maximum value (as a float) that can be returned by the InfraredFrame
