@@ -47,6 +47,8 @@ namespace ScreenTracker.DataProcessing
         /// depthBitmap - for the depth sensor
         /// </summary>
         private WriteableBitmap infraredThesholdedBitmap = null;
+        private WriteableBitmap colorThesholdedBitmap = null;
+
         private WriteableBitmap infraredBitmap = null;
         private WriteableBitmap colorBitmap = null;
         private WriteableBitmap depthBitmap = null;
@@ -96,7 +98,7 @@ namespace ScreenTracker.DataProcessing
         private bool firstDetected = true;
 
 
-        double[]  missingx = new double[]{0,0};
+        double[] missingx = new double[] { 0, 0 };
 
 
         /// <summary>
@@ -169,14 +171,17 @@ namespace ScreenTracker.DataProcessing
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             // Process infrared image and track points
-            this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
+            //  this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
+            this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
+
+
             // get z-coordinates
             ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
             // Send point via UDP
             SendPoints(screen.PrevPoints, zCoordinates);
 
             stopwatch.Stop();
-          //  Console.WriteLine(stopwatch.ElapsedMilliseconds);
+            //  Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
             // only show images if mainwindow is present
             if (mainWindow != null)
@@ -213,16 +218,21 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="img"></param>
         /// <param name="frameDimension"></param>
-        private void SetColorImage(Image<Bgr, UInt16> img, FrameDimension frameDimension)
+        private void SetColorImage(Mat img, FrameDimension frameDimension)
         {
 
             if (this.colorBitmap == null)
             {
-                this.colorBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
+                this.colorBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
             }
 
             // Convert to writablebitmao
-            AddToBitmap(this.colorBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 4));
+            AddToBitmap(this.colorBitmap, img, (frameDimension.Width * frameDimension.Height * 4));
+
+
+
+
+
             // Send to Mainwindow
             mainWindow.SetRightImage(this.colorBitmap);
         }
@@ -232,14 +242,14 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="img"></param>
         /// <param name="frameDimension"></param>
-        private void SetInfraredImage(Image<Gray, UInt16> img, FrameDimension frameDimension)
+        private void SetInfraredImage(Mat img, FrameDimension frameDimension)
         {
             if (this.infraredBitmap == null)
             {
-                this.infraredBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray16, null);
+                this.infraredBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgr24, null);
             }
             // Convert to writablebitmao
-            AddToBitmap(this.infraredBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 2));
+            AddToBitmap(this.infraredBitmap, img, (frameDimension.Width * frameDimension.Height * 3));
             // Send to Mainwindow
             mainWindow.SetLeftImage(this.infraredBitmap);
 
@@ -264,19 +274,62 @@ namespace ScreenTracker.DataProcessing
 
         }
 
+
+
+
         /// <summary>
         /// Sets the Thresholded image in the MainWindow
         /// </summary>
         /// <param name="img"></param>
         /// <param name="frameDimension"></param>
+        private void SetThresholdedInfraredImage(Mat img, FrameDimension frameDimension)
+        {
+            if (this.colorThesholdedBitmap == null)
+            {
+
+
+
+
+                this.colorThesholdedBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            }
+
+            // Convert to writablebitmao
+            AddToBitmap(this.colorThesholdedBitmap, img, (frameDimension.Width * frameDimension.Height));
+            // Send to Mainwindow
+            mainWindow.SetLeftImage(this.colorThesholdedBitmap);
+
+        }
+
+
         private void SetThresholdedInfraredImage(Image<Gray, Byte> img, FrameDimension frameDimension)
+        {
+            if (this.colorThesholdedBitmap == null)
+            {
+
+                this.colorThesholdedBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+            }
+
+            // Convert to writablebitmao
+            AddToBitmap(this.colorThesholdedBitmap, img.Mat, (frameDimension.Width * frameDimension.Height));
+            // Send to Mainwindow
+            mainWindow.SetLeftImage(this.colorThesholdedBitmap);
+
+        }
+
+
+        /// <summary>
+        /// Sets the Thresholded image in the MainWindow
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="frameDimension"></param>
+        private void SetThresholdedcolorImage(Image<Bgr, ushort> img, FrameDimension frameDimension)
         {
             if (this.infraredThesholdedBitmap == null)
             {
-                this.infraredThesholdedBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray8, null);
+                this.infraredThesholdedBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
             }
             // Convert to writablebitmao
-            AddToBitmap(this.infraredThesholdedBitmap, img.Mat, (frameDimension.Width * frameDimension.Height));
+            AddToBitmap(this.infraredThesholdedBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 4));
             // Send to Mainwindow
             mainWindow.SetLeftImage(this.infraredThesholdedBitmap);
 
@@ -287,16 +340,16 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="img"></param>
         /// <param name="frameDimension"></param>
-        private void SetDepthImage(Image<Gray, UInt16> img, FrameDimension frameDimension)
+        private void SetDepthImage(Mat img, FrameDimension frameDimension)
         {
             if (this.depthBitmap == null)
             {
                 this.depthBitmap = new WriteableBitmap(frameDimension.Width, frameDimension.Height, 96.0, 96.0, PixelFormats.Gray16, null);
             }
             // Normalize for better visibility
-            CvInvoke.Normalize(img.Mat, img.Mat, 0, 65535, NormType.MinMax);
+            CvInvoke.Normalize(img, img, 0, 65535, NormType.MinMax);
             // Convert to  writablebitmao
-            AddToBitmap(this.depthBitmap, img.Mat, (frameDimension.Width * frameDimension.Height * 2));
+            AddToBitmap(this.depthBitmap, img, (frameDimension.Width * frameDimension.Height * 2));
             // Send to Mainwindow
             mainWindow.SetRightImage(this.depthBitmap);
 
@@ -311,7 +364,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="depthFrameData"></param>
         /// <returns> The estimated z-coodinates </returns>
-        private unsafe ushort[] GetZCoordinatesSurroundingBox(Image<Gray, UInt16> depthImage)
+        private unsafe ushort[] GetZCoordinatesSurroundingBox(Mat depthImage)
         {
             if (screen.PrevPoints != null)
             {
@@ -381,11 +434,16 @@ namespace ScreenTracker.DataProcessing
         /// <param name="y"></param>
         /// <param name="depthImage"></param>
         /// <param name="zCoords"></param>
-        private void AddDephtPixel(int x, int y, ref Image<Gray, UInt16> depthImage, ref List<double> zCoords)
+        private void AddDephtPixel(int x, int y, ref Mat depthImage, ref List<double> zCoords)
         {
             if (x >= 0 && x < depthImage.Width && y >= 0 && y < depthImage.Height)
             {
-                ushort zCoord = depthImage.Data[y, x, 0];
+
+                /// todo check correct z vals
+                // ushort zCoord = (ushort) depthImage.GetData(x, y)[0];//.Data[y, x, 0];
+                ushort zCoord = 5;
+
+
                 if (zCoord > 0)
                 {
                     zCoords.Add(zCoord);
@@ -396,20 +454,6 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        /// <summary>
-        /// Copies the "data" into the "bitmap" with datasize "dataSize"
-        /// </summary>
-        /// <param name="bitmap"></param>
-        /// <param name="data"></param>
-        /// <param name="dataSize"></param>
-        private void EMGUToBitmap(WriteableBitmap bitmap, Mat data, int dataSize)
-        {
-            bitmap.Lock();
-            CopyMemory(bitmap.BackBuffer, data.DataPointer, dataSize);
-            bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
-            bitmap.Unlock();
-            data.Dispose();
-        }
 
 
 
@@ -440,10 +484,10 @@ namespace ScreenTracker.DataProcessing
         /// <param name="thresholdImg"></param>
         /// <param name="showThesholdedImg"></param>
         /// <returns></returns>
-        private void TrackedData(Image<Gray, Byte> thresholdImg)
+        private void TrackedData(Mat thresholdImg)
         {
 
-     
+
 
             //int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;
 
@@ -484,7 +528,7 @@ namespace ScreenTracker.DataProcessing
 
                 if (rows * cols != n - 1)
                 {
-                    mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image" ;
+                    mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image";
 
                     return;
                 }
@@ -529,7 +573,7 @@ namespace ScreenTracker.DataProcessing
                 // newPoints = prevPoints;
                 newPoints = new double[screen.PrevPoints.Length][];
 
-                
+
 
 
 
@@ -590,20 +634,20 @@ namespace ScreenTracker.DataProcessing
                     double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
                     double[] orgPost = sprinInfo.orignalPos;
 
-                    double estimateDiffx = estimatedPos[0] - orgPost[0] ;
-                   double aactualDiffx = screen.PrevPoints[12][0]- orgPost[0] ;
+                    double estimateDiffx = estimatedPos[0] - orgPost[0];
+                    double aactualDiffx = screen.PrevPoints[12][0] - orgPost[0];
 
-                 //   double estimateDiffy = estimatedPos[1] - orgPost[1];
-                 //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
+                    //   double estimateDiffy = estimatedPos[1] - orgPost[1];
+                    //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
 
 
                     Console.Write(estimateDiffx + ",");
 
                     Console.WriteLine(aactualDiffx + ",");
 
-                //    Console.Write(estimateDiffy + ",");
+                    //    Console.Write(estimateDiffy + ",");
 
-                  //  Console.WriteLine(aactualDiffy);
+                    //  Console.WriteLine(aactualDiffy);
 
                     /*
                                         Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0] + ",");
@@ -625,7 +669,7 @@ namespace ScreenTracker.DataProcessing
 
             }
 
-            
+
         }
 
         /// <summary>
@@ -724,6 +768,10 @@ namespace ScreenTracker.DataProcessing
         }
 
 
+
+
+
+
         /// <summary>
         /// Copies the "data" into the "bitmap" with datasize "dataSize"
         /// </summary>
@@ -749,13 +797,17 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="infraredFrame"> the InfraredFrame image </param>
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private void ProcessInfraredFrame(Image<Gray, UInt16> infraredFrame, FrameDimension infraredFrameDimension)
+        private void ProcessInfraredFrame(Mat infraredFrame, FrameDimension infraredFrameDimension)
         {
             // init threshold image variable
-            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDimension.Width, infraredFrameDimension.Height);
+            //            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDimension.Width, infraredFrameDimension.Height);
+
+            Mat thresholdImg = new Mat(infraredFrameDimension.Width, infraredFrameDimension.Height, DepthType.Cv8U, 1);
 
             // nessesary for calling  CvInvoke.Threshold because it only supports 8 and 32-bit datatypes  
-            infraredFrame.Mat.ConvertTo(infraredFrame, DepthType.Cv32F);
+            infraredFrame.ConvertTo(infraredFrame, DepthType.Cv32F);
+
+
 
             // find max val of the 16 bit ir-image
             infraredFrame.MinMax(out _, out double[] maxVal, out _, out _);
@@ -773,17 +825,19 @@ namespace ScreenTracker.DataProcessing
 
             // nomalize the 16bit vals to 8bit vals (max 255)
             //  CvInvoke.Normalize(img.Mat, img.Mat, 0, 255, NormType.MinMax, DepthType.Cv8U);
-            infraredFrame.Mat.ConvertTo(infraredFrame, DepthType.Cv16U);
+            infraredFrame.ConvertTo(infraredFrame, DepthType.Cv16U);
 
             // convert back to 8 bit for showing as a bitmap
-            thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv8U);
+            thresholdImg.ConvertTo(thresholdImg, DepthType.Cv8U);
 
             // perform opening 
             int kernelSize = Properties.UserSettings.Default.kernelSize;
             Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
 
 
-            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+            //            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+            CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+
 
             // find controids of reflective surfaces and mark them on the image 
             TrackedData(thresholdImg);
@@ -801,7 +855,8 @@ namespace ScreenTracker.DataProcessing
                 else
                 {
 
-                    Image<Bgr, Byte> colImg = DrawTrackedData(infraredFrame);
+                    Mat colImg = DrawTrackedData(infraredFrame);
+                    //  CvInvoke.Normalize(colImg, colImg, 0, 255, NormType.MinMax, DepthType.Cv8U);
                     SetInfraredImage(colImg, infraredFrameDimension);
                     colImg.Dispose();
                 }
@@ -812,22 +867,230 @@ namespace ScreenTracker.DataProcessing
             infraredFrame.Dispose();
         }
 
+
+        /// <summary> 
+        /// Processes the infrared frame:
+        /// 1. Thesholds the infrared image
+        /// 2. Opens the thesholded image
+        /// 3. Tracks refletive markers in the thresholded image.
+        /// 4. Show infrared/thresholded image if mainwindow is present 
+        /// </summary>
+        /// <param name="infraredFrame"> the InfraredFrame image </param>
+        /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
+        private void ProcessRGBFrame(Mat colorFrame, FrameDimension colorFrameDimension)
+        {
+
+
+            // init threshold image variable
+            //    Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(colorFrame.Bitmap);
+
+
+            Mat grayImage = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
+
+            CvInvoke.CvtColor(colorFrame, grayImage, ColorConversion.Bgr2Gray);
+
+            Mat thresholdImg = new Mat( colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
+
+
+
+
+            //  Mat hsvImg = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
+
+
+            //  Mat[] channels  = colorFrame.Split();
+
+
+            //   Mat imgprocessed = colorFrame.InRange(new Bgr(0, 0, 175),  // min filter value ( if color is greater than or equal to this)
+            //                                      new Bgr(100, 100, 256)); // max filter value ( if color is less than or equal to this)
+
+            /*
+            CvInvoke.CvtColor(colorFrame, hsvImg, ColorConversion.Bgr2Hsv);
+
+
+             Mat imageHSVDest = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
+
+            CvInvoke.InRange(hsvImg, new ScalarArray(new MCvScalar(20, 100, 100)), new ScalarArray(new MCvScalar(20, 255, 255)), imageHSVDest);
+
+
+            Mat thresholdImg2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 1);
+            Mat colorFrame2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
+            
+            CvInvoke.CvtColor(imageHSVDest, colorFrame2, ColorConversion.Hsv2Bgr);
+            CvInvoke.CvtColor(colorFrame2, thresholdImg2, ColorConversion.Bgr2Gray);
+
+            */
+
+            Mat colorFrame2 = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 4);
+            CvInvoke.InRange(colorFrame, new ScalarArray(new MCvScalar(0, 0, 130, 255)), new ScalarArray(new MCvScalar(50, 50, 255, 255)), colorFrame2);
+
+            //    Mat thresholdImg2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 1);
+            //CvInvoke.CvtColor(colorFrame2, thresholdImg2, ColorConversion.Bgra2Gray,1);
+
+
+
+            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            // int kernelSize = 3;
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
+
+
+            //            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
+            CvInvoke.MorphologyEx(colorFrame2, colorFrame2, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 5, BorderType.Default, new MCvScalar(1.0));
+
+
+
+            Mat mask = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
+            // Get Connected component in the frame
+            Mat labels = new Mat();
+            Mat stats = new Mat();
+            Mat centroids = new Mat();
+            MCvPoint2D64f[] centroidPointsEmgu;
+            int n;
+            n = CvInvoke.ConnectedComponentsWithStats(colorFrame2, labels, stats, centroids, LineType.FourConnected, DepthType.Cv16U);
+
+            if (n > 2)
+            {
+                // Copy centroid points to point array
+                centroidPointsEmgu = new MCvPoint2D64f[n];
+                centroids.CopyTo(centroidPointsEmgu);
+                int width = 20;
+                int height = 20;
+
+
+                int padding = 2;
+
+                int[] areas = new int[centroidPointsEmgu.Length - 1];
+
+
+                Console.Write("Areas: ");
+                for (int i = 1; i < centroidPointsEmgu.Length; i++)
+                {
+                    areas[i - 1] = stats.GetData(i, 4)[0];
+
+                    Console.Write(stats.GetData(i, 4)[0] + " ");
+                }
+                Console.WriteLine(" ");
+
+                int[] twoMaxArea = findNLargest(areas, 2);
+
+
+                for (int i = 0; i < twoMaxArea.Length; i++)
+                {
+                    int index = twoMaxArea[i] + 1;
+                    Rectangle rect = new Rectangle((int)centroidPointsEmgu[index].X - (width / 2) - padding, (int)centroidPointsEmgu[index].Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+
+                    Console.Write(index + " ");
+                    CvInvoke.Rectangle(colorFrame2, rect, new Gray(50).MCvScalar, 2); // 2 pixel box thick
+
+
+                }
+
+                MCvPoint2D64f p1 = centroidPointsEmgu[twoMaxArea[0] + 1];
+                MCvPoint2D64f p2 = centroidPointsEmgu[twoMaxArea[1] + 1];
+
+                Console.WriteLine("");
+
+
+
+                Rectangle rect1 = new Rectangle((int)p1.X, (int)p1.Y, 200,200);
+
+
+                CvInvoke.Rectangle(mask, rect1, new MCvScalar(255), -1); // 2 pixel box thick
+
+
+                              CvInvoke.BitwiseAnd(mask, grayImage, grayImage);
+
+              //  colorFrame2.CopyTo(colorFrame2, mask);
+
+                SetThresholdedInfraredImage(grayImage, colorFrameDimension);
+            }
+            labels.Dispose();
+            stats.Dispose();
+            centroids.Dispose();
+
+
+
+
+
+
+
+            
+
+            //     this.SetColorImage(colorFrame2, colorFrameDimension);
+
+
+
+            // find max val of the grat scaled image from the RGB cam
+        //    grayImage.MinMax(out _, out double[] maxVal, out _, out _);
+
+            // apply threshold with 98% of maxval || minThreshold
+            // to obtain binary image with only 0's & 255
+         //   float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
+         //   int minThreshold = Properties.UserSettings.Default.minThreshold;
+
+            // thresholdImg = colorFrame.Convert<Gray, byte>();
+
+
+
+
+       //     CvInvoke.Threshold(grayImage, thresholdImg, 40, 255, ThresholdType.BinaryInv);
+
+
+
+
+            //     thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv16U);
+
+
+
+            // perform opening 
+
+            // find controids of reflective surfaces and mark them on the image 
+            //  TrackedData(thresholdImg);
+
+
+            //  SetThresholdedInfraredImage(thresholdImg, colorFrameDimension);
+
+            colorFrame2.Dispose();
+            // thresholdImg2.Dispose();
+            grayImage.Dispose();
+
+            thresholdImg.Dispose();
+            //  colorImage.Dispose();   
+
+        }
+
+        private int[] findNLargest(int[] numbers, int n)
+        {
+
+            int N = numbers.Length;
+            int[] index = Enumerable.Range(0, N).ToArray<int>();
+            Array.Sort<int>(index, (a, b) => numbers[b].CompareTo(numbers[a]));
+            return index.Take(n).ToArray();
+        }
+
+
         /// <summary>
         /// Draws tracked data on a Uint16 infraredImage
         /// </summary>
         /// <param name="infraredImage"></param>
-        private Image<Bgr, Byte> DrawTrackedData(Image<Gray, UInt16> infraredImage)
+        private Mat DrawTrackedData(Mat infraredImage)
         {
 
             int thickness = Properties.UserSettings.Default.DataIndicatorThickness;
             int colorcode = Properties.Settings.Default.DataIndicatorColor;
             int padding = Properties.Settings.Default.DataIndicatorPadding;
 
-            //  Image<Bgr, ushort> colImg = new Image<Bgr, Byte>(infraredImage.Width, infraredImage.Height);
 
-            //  CvInvoke.CvtColor(infraredImage, colImg, ColorConversion.Gray2Bgr,3);
+            CvInvoke.Normalize(infraredImage, infraredImage, 0, 255, NormType.MinMax, DepthType.Cv8U);
 
-            Image<Bgr, Byte> colImg = infraredImage.Convert<Bgr, Byte>();
+
+
+            Mat colImg = new Mat(infraredImage.Width, infraredImage.Height, DepthType.Cv8U, 3);
+
+
+
+            CvInvoke.CvtColor(infraredImage, colImg, ColorConversion.Gray2Bgr, 3);
+
+
 
 
             if (screen.PrevPoints != null)

@@ -249,7 +249,7 @@ namespace ScreenTracker.DataReceiver
                         (depthBuffer.Size / this.depthFrameDescription.BytesPerPixel)))
                     {
                         // Conversion to needed EMGU image
-                        Image<Gray, UInt16> depthImage = this.ProcessDepthFrameData(depthFrame);
+                        Mat depthImage = this.ProcessDepthFrameData(depthFrame);
                         emguArgs.DepthImage = depthImage;
                         emguArgs.DepthFrameDimension = new FrameDimension(depthFrameDescription.Width, depthFrameDescription.Height);
                     }
@@ -269,7 +269,7 @@ namespace ScreenTracker.DataReceiver
                     if (((this.infraredFrameDescription.Width * this.infraredFrameDescription.Height) == (infraredBuffer.Size / this.infraredFrameDescription.BytesPerPixel)))
                     {
                         // Conversion to needed EMGU image
-                        Image<Gray, UInt16> infraredImage = this.ProcessInfaredFrameData(infraredFrame);
+                        Mat infraredImage = this.ProcessInfaredFrameData(infraredFrame);
                         emguArgs.InfraredImage = infraredImage;
                         emguArgs.InfraredFrameDimension = new FrameDimension(infraredFrameDescription.Width, infraredFrameDescription.Height);
                       //  infraredImage.Dispose();
@@ -294,7 +294,7 @@ namespace ScreenTracker.DataReceiver
                         using (Microsoft.Kinect.KinectBuffer colorBuffer = colorFrame.LockRawImageBuffer())
                         {
                             // Conversion to needed EMGU image
-                            Image<Bgr, UInt16> colorImage = this.ProcessColorFrameData(colorFrame);
+                            Mat colorImage = this.ProcessColorFrameData(colorFrame);
                             emguArgs.Colorimage = colorImage;
                             emguArgs.ColorFrameDimension = new FrameDimension(colorFrameDescription.Width, colorFrameDescription.Height);
                         }
@@ -350,17 +350,17 @@ namespace ScreenTracker.DataReceiver
         /// access to the native memory pointed to by the infraredFrameData pointer.
         /// </summary>
         /// <param name="ColorFrame"> the InfraredFrame image </param>
-        private unsafe Image<Bgr, UInt16> ProcessColorFrameData(ColorFrame colorFrame)
+        private unsafe Mat ProcessColorFrameData(ColorFrame colorFrame)
         {
             // create EMGU and copy the Frame Data into it 
 
             // Generate Mat used for EMGU images
-            Mat colorMat = new Mat(colorFrameDescription.Width, colorFrameDescription.Height, DepthType.Cv16U, 3);
+            Mat colorMat = new Mat(colorFrameDescription.Height, colorFrameDescription.Width, DepthType.Cv8U, 4);
             // Move data to new Mat
-            colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height * 4), ColorImageFormat.Bgra);
-            Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
-            colorMat.Dispose();
-            return EmguImg;
+            colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height  *4), ColorImageFormat.Bgra);
+           // Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
+         //   colorMat.Dispose();
+            return colorMat;
         }
 
         /// <summary> EMGU VERSION
@@ -371,7 +371,7 @@ namespace ScreenTracker.DataReceiver
         /// </summary>
         /// <param name="infraredFrame"> the InfraredFrame image </param>
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private unsafe Image<Gray, UInt16> ProcessInfaredFrameData(InfraredFrame infraredFrame)
+        private unsafe Mat ProcessInfaredFrameData(InfraredFrame infraredFrame)
         {
             // create EMGU and copy the Frame Data into it 
 
@@ -379,11 +379,9 @@ namespace ScreenTracker.DataReceiver
             Mat mat = new Mat(infraredFrameDescription.Height, infraredFrameDescription.Width, DepthType.Cv16U, 1);
             // Move data to new Mat
             infraredFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(infraredFrameDescription.Width * infraredFrameDescription.Height * 2));
-            Image<Gray, UInt16> EmguImg = mat.ToImage<Gray, UInt16>();
 
-            mat.Dispose();
 
-            return EmguImg;
+            return mat;
         }
 
         /// <summary>
@@ -396,7 +394,7 @@ namespace ScreenTracker.DataReceiver
         /// <param name="depthFrameDataSize">Size of the DepthFrame image data</param>
         /// <param name="minDepth">The minimum reliable depth value for the frame</param>
         /// <param name="maxDepth">The maximum reliable depth value for the frame</param>
-        private unsafe Image<Gray, UInt16> ProcessDepthFrameData(DepthFrame depthFrame)
+        private unsafe Mat ProcessDepthFrameData(DepthFrame depthFrame)
         {
             // create EMGU and copy the Frame Data into it 
 
@@ -404,11 +402,11 @@ namespace ScreenTracker.DataReceiver
             Mat mat = new Mat(depthFrameDescription.Height, depthFrameDescription.Width, DepthType.Cv16U, 1);
             // Move data to new Mat
             depthFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(depthFrameDescription.Width * depthFrameDescription.Height * 2));
-            Image<Gray, UInt16> EmguImg = mat.ToImage<Gray, UInt16>();
+      
 
-            mat.Dispose();
+     
 
-            return EmguImg;
+            return mat;
         }
 
         /// <summary>
