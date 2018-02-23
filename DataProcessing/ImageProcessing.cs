@@ -100,6 +100,9 @@ namespace ScreenTracker.DataProcessing
 
         double[] missingx = new double[] { 0, 0 };
 
+        private Mat mask;
+        private bool maskSet = false;
+
 
         /// <summary>
         ///  Constructor for the ImageProcessing class
@@ -868,6 +871,82 @@ namespace ScreenTracker.DataProcessing
         }
 
 
+
+        private Mat GetColorMask(Mat colorFrame, FrameDimension colorFrameDimension)
+        {
+
+
+
+            Mat redFrame = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 4);
+            CvInvoke.InRange(colorFrame, new ScalarArray(new MCvScalar(0, 0, 130, 255)), new ScalarArray(new MCvScalar(50, 50, 255, 255)), redFrame);
+
+
+
+            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
+
+            CvInvoke.MorphologyEx(redFrame, redFrame, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 5, BorderType.Default, new MCvScalar(1.0));
+
+
+
+            Mat mask = null;
+            // Get Connected component in the frame
+            Mat labels = new Mat();
+            Mat stats = new Mat();
+            Mat centroids = new Mat();
+            MCvPoint2D64f[] centroidPointsEmgu;
+            int n;
+            n = CvInvoke.ConnectedComponentsWithStats(redFrame, labels, stats, centroids, LineType.FourConnected, DepthType.Cv16U);
+            labels.Dispose();
+            stats.Dispose();
+
+            redFrame.Dispose();
+            if (n > 2)
+            {
+                mask = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
+
+                // Copy centroid points to point array
+                centroidPointsEmgu = new MCvPoint2D64f[n];
+                centroids.CopyTo(centroidPointsEmgu);
+                centroids.Dispose();
+
+                int[] areas = new int[centroidPointsEmgu.Length - 1];
+
+
+                int[] twoMaxArea = findNLargest(areas, 2);
+
+
+                MCvPoint2D64f p1 = centroidPointsEmgu[twoMaxArea[0] + 1];
+                MCvPoint2D64f p2 = centroidPointsEmgu[twoMaxArea[1] + 1];
+                MCvPoint2D64f upperLeft;
+                MCvPoint2D64f bottomRight;
+
+
+                if (p1.X < p2.X && p1.Y > p2.Y)
+                {
+                    upperLeft = p1;
+                    bottomRight = p2;
+
+                }
+                else
+                {
+                    upperLeft = p2;
+                    bottomRight = p1;
+                }
+
+                int rectHeight = (int)Math.Round(Math.Abs(p1.Y - p2.Y));
+                int rectWidth = (int)Math.Round(Math.Abs(p1.X - p2.X));
+
+                Rectangle rect1 = new Rectangle((int)upperLeft.X, (int)upperLeft.Y - rectHeight, rectWidth, rectHeight);
+
+                CvInvoke.Rectangle(mask, rect1, new MCvScalar(255), -1); // 2 pixel box thick
+
+            }
+
+
+            return mask;
+        }
+
         /// <summary> 
         /// Processes the infrared frame:
         /// 1. Thesholds the infrared image
@@ -889,7 +968,7 @@ namespace ScreenTracker.DataProcessing
 
             CvInvoke.CvtColor(colorFrame, grayImage, ColorConversion.Bgr2Gray);
 
-            Mat thresholdImg = new Mat( colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
+            Mat thresholdImg = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
 
 
 
@@ -914,147 +993,44 @@ namespace ScreenTracker.DataProcessing
 
             Mat thresholdImg2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 1);
             Mat colorFrame2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
-            
+
             CvInvoke.CvtColor(imageHSVDest, colorFrame2, ColorConversion.Hsv2Bgr);
             CvInvoke.CvtColor(colorFrame2, thresholdImg2, ColorConversion.Bgr2Gray);
 
             */
 
-            Mat colorFrame2 = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 4);
-            CvInvoke.InRange(colorFrame, new ScalarArray(new MCvScalar(0, 0, 130, 255)), new ScalarArray(new MCvScalar(50, 50, 255, 255)), colorFrame2);
 
-            //    Mat thresholdImg2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 1);
-            //CvInvoke.CvtColor(colorFrame2, thresholdImg2, ColorConversion.Bgra2Gray,1);
-
-
-
-            int kernelSize = Properties.UserSettings.Default.kernelSize;
-            // int kernelSize = 3;
-            Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
-
-
-            //            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
-            CvInvoke.MorphologyEx(colorFrame2, colorFrame2, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 5, BorderType.Default, new MCvScalar(1.0));
-
-
-
-            Mat mask = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1);
-            // Get Connected component in the frame
-            Mat labels = new Mat();
-            Mat stats = new Mat();
-            Mat centroids = new Mat();
-            MCvPoint2D64f[] centroidPointsEmgu;
-            int n;
-            n = CvInvoke.ConnectedComponentsWithStats(colorFrame2, labels, stats, centroids, LineType.FourConnected, DepthType.Cv16U);
-
-            if (n > 2)
+            //  colorFrame2.CopyTo(colorFrame2, mask);
+            if (mask == null)
             {
-                // Copy centroid points to point array
-                centroidPointsEmgu = new MCvPoint2D64f[n];
-                centroids.CopyTo(centroidPointsEmgu);
-                int width = 20;
-                int height = 20;
-
-
-                int padding = 2;
-
-                int[] areas = new int[centroidPointsEmgu.Length - 1];
-
-
-                Console.Write("Areas: ");
-                for (int i = 1; i < centroidPointsEmgu.Length; i++)
-                {
-                    areas[i - 1] = stats.GetData(i, 4)[0];
-
-                    Console.Write(stats.GetData(i, 4)[0] + " ");
-                }
-                Console.WriteLine(" ");
-
-                int[] twoMaxArea = findNLargest(areas, 2);
-
-
-                for (int i = 0; i < twoMaxArea.Length; i++)
-                {
-                    int index = twoMaxArea[i] + 1;
-                    Rectangle rect = new Rectangle((int)centroidPointsEmgu[index].X - (width / 2) - padding, (int)centroidPointsEmgu[index].Y - (height / 2) - padding, width + padding * 2, height + padding * 2);
-
-                    Console.Write(index + " ");
-                    CvInvoke.Rectangle(colorFrame2, rect, new Gray(50).MCvScalar, 2); // 2 pixel box thick
-
-
-                }
-
-                MCvPoint2D64f p1 = centroidPointsEmgu[twoMaxArea[0] + 1];
-                MCvPoint2D64f p2 = centroidPointsEmgu[twoMaxArea[1] + 1];
-
-                Console.WriteLine("");
-
-
-
-                Rectangle rect1 = new Rectangle((int)p1.X, (int)p1.Y, 200,200);
-
-
-                CvInvoke.Rectangle(mask, rect1, new MCvScalar(255), -1); // 2 pixel box thick
-
-
-                              CvInvoke.BitwiseAnd(mask, grayImage, grayImage);
-
-              //  colorFrame2.CopyTo(colorFrame2, mask);
-
-                SetThresholdedInfraredImage(grayImage, colorFrameDimension);
+                mask = GetColorMask(colorFrame, colorFrameDimension);
+                //  maskSet = true;
             }
-            labels.Dispose();
-            stats.Dispose();
-            centroids.Dispose();
+            //      if (!mask.IsEmpty) { 
+
+            if (mask != null)
+            {
+            //   CvInvoke.BitwiseNot
+       
+                CvInvoke.Threshold(grayImage, thresholdImg, 100, 255, ThresholdType.BinaryInv);
+           
+                CvInvoke.BitwiseAnd(mask, thresholdImg, thresholdImg);
+
+                if (thresholdedClicked)
+                {
+                    SetThresholdedInfraredImage(thresholdImg, colorFrameDimension);
+                }
+                else
+                {
+                    CvInvoke.BitwiseAnd(mask, grayImage, grayImage);
+                    SetThresholdedInfraredImage(grayImage, colorFrameDimension);
+                }
 
 
+            }
 
-
-
-
-
-            
-
-            //     this.SetColorImage(colorFrame2, colorFrameDimension);
-
-
-
-            // find max val of the grat scaled image from the RGB cam
-        //    grayImage.MinMax(out _, out double[] maxVal, out _, out _);
-
-            // apply threshold with 98% of maxval || minThreshold
-            // to obtain binary image with only 0's & 255
-         //   float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
-         //   int minThreshold = Properties.UserSettings.Default.minThreshold;
-
-            // thresholdImg = colorFrame.Convert<Gray, byte>();
-
-
-
-
-       //     CvInvoke.Threshold(grayImage, thresholdImg, 40, 255, ThresholdType.BinaryInv);
-
-
-
-
-            //     thresholdImg.Mat.ConvertTo(thresholdImg, DepthType.Cv16U);
-
-
-
-            // perform opening 
-
-            // find controids of reflective surfaces and mark them on the image 
-            //  TrackedData(thresholdImg);
-
-
-            //  SetThresholdedInfraredImage(thresholdImg, colorFrameDimension);
-
-            colorFrame2.Dispose();
-            // thresholdImg2.Dispose();
             grayImage.Dispose();
-
             thresholdImg.Dispose();
-            //  colorImage.Dispose();   
 
         }
 
