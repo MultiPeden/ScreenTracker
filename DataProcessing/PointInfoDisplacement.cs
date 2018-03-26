@@ -282,8 +282,8 @@ namespace ScreenTracker.DataProcessing
             // y = -0.0322x3 + 0.0674x2 + 4.2751x + 1.0466
 
 
-         ////   return x;
-            return (-0.0322 * Math.Pow(x, 3)) + (0.0674 * Math.Pow(x, 2)) + (4.2751 * x) + 1.0466;
+            return x;
+         //   return (-0.0322 * Math.Pow(x, 3)) + (0.0674 * Math.Pow(x, 2)) + (4.2751 * x) + 1.0466;
         }
 
        
@@ -291,8 +291,8 @@ namespace ScreenTracker.DataProcessing
                     private double ScaleDisty(double y)
         {
             //  y = -0.0318x3 - 0.6185x2 + 7.4246x - 2.0988
-          //  return y;
-            return (-0.0318 * Math.Pow(y, 3)) - (0.6185 * Math.Pow(y, 2)) + (7.4246 * y) - 2.0988;
+            return y;
+          //  return (-0.0318 * Math.Pow(y, 3)) - (0.6185 * Math.Pow(y, 2)) + (7.4246 * y) - 2.0988;
         }
 
 

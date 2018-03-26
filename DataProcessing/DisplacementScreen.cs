@@ -39,7 +39,7 @@ namespace ScreenTracker.DataProcessing
             // initialize points
             foreach (double[] point in orderedCentroidPoints)
             {
-                int j = i + 1;
+                int j = i + 2;
                 int width = stats.GetData(j, 2)[0];
                 int height = stats.GetData(j, 3)[0];
                 int area = stats.GetData(j, 4)[0];

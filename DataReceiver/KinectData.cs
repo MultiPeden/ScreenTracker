@@ -11,6 +11,7 @@ namespace ScreenTracker.DataReceiver
     using Emgu.CV;
     using Emgu.CV.CvEnum;
     using Emgu.CV.Structure;
+    using System.Diagnostics;
 
     [CLSCompliant(false)]
 
@@ -253,6 +254,9 @@ namespace ScreenTracker.DataReceiver
                         emguArgs.DepthImage = depthImage;
                         emguArgs.DepthFrameDimension = new FrameDimension(depthFrameDescription.Width, depthFrameDescription.Height);
                     }
+
+                    //BgrToDephtPixel(depthBuffer.UnderlyingBuffer, depthBuffer.Size);
+
                     depthFrame.Dispose();
                     depthFrame = null;
 
@@ -356,6 +360,7 @@ namespace ScreenTracker.DataReceiver
 
             // Generate Mat used for EMGU images
             Mat colorMat = new Mat(colorFrameDescription.Height, colorFrameDescription.Width, DepthType.Cv8U, 4);
+
             // Move data to new Mat
             colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height  *4), ColorImageFormat.Bgra);
            // Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
@@ -457,5 +462,40 @@ namespace ScreenTracker.DataReceiver
                 return null;
             }
         }
+
+
+
+        CameraSpacePoint[] result;
+        /// <summary>
+        ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="zCoordinates"></param>
+        /// <returns></returns>
+        public CameraSpacePoint[] BgrToDephtPixel(IntPtr DepthFramePtr, uint size)
+        {
+
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            if (result == null)
+            {
+                result = new CameraSpacePoint[1080 * 1920];
+            }
+            // 512 * 424
+
+            //   mapper.MapColorFrameToDepthSpaceUsingIntPtr(DepthFramePtr, size, result);
+            mapper.MapColorFrameToCameraSpaceUsingIntPtr(DepthFramePtr, size, result);
+          //  result = null;
+
+            stopwatch.Stop();
+              Console.WriteLine(stopwatch.ElapsedMilliseconds);
+
+
+
+
+            return result;
+  
+        }
+
     }
 }
