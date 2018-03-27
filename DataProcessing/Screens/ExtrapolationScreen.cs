@@ -8,7 +8,7 @@ namespace ScreenTracker.DataProcessing.Screens
     {
 
         /// <summary>
-        /// Info for each detected point i the frame.
+        /// Info for each detected point in the frame.
         /// </summary>
         private PointInfoExtrapolation[] pointInfo;
 
@@ -16,7 +16,7 @@ namespace ScreenTracker.DataProcessing.Screens
         /// <summary>
         /// Array for holding points found in the previous frame
         /// </summary>
-       public  double[][] prevPoints;
+        public double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoExtrapolation[])value; }
@@ -34,7 +34,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
             PointInfo = new PointInfoExtrapolation[num_particles_height * num_particles_width];
 
-          
+
 
             int i = 0;
             // initialize points
@@ -62,7 +62,7 @@ namespace ScreenTracker.DataProcessing.Screens
             }
 
 
-             this.prevPoints = orderedCentroidPoints;
+            this.prevPoints = orderedCentroidPoints;
 
         }
 

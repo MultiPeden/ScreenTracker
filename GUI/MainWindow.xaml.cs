@@ -6,14 +6,13 @@
 
 namespace ScreenTracker.GUI
 {
+    using ScreenTracker.DataProcessing;
     using System;
     using System.ComponentModel;
     using System.Globalization;
     using System.IO;
     using System.Windows;
     using System.Windows.Media.Imaging;
-    using ScreenTracker;
-    using ScreenTracker.DataProcessing;
 
     [CLSCompliant(false)]
 

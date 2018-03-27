@@ -1,6 +1,6 @@
 ﻿
-using System.Numerics;
 using ScreenTracker.DataProcessing.Screens.Points;
+using System.Numerics;
 
 namespace ScreenTracker.DataProcessing.Screens
 {

@@ -1,9 +1,9 @@
-﻿using System;
+﻿using ScreenTracker.DataProcessing;
+using System;
 using System.Linq;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using ScreenTracker.DataProcessing;
+using System.Text;
 
 namespace ScreenTracker.Communication
 {

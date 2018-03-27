@@ -6,11 +6,10 @@
 
 namespace ScreenTracker.DataReceiver
 {
-    using System;
-    using Microsoft.Kinect;
     using Emgu.CV;
     using Emgu.CV.CvEnum;
-    using Emgu.CV.Structure;
+    using Microsoft.Kinect;
+    using System;
     using System.Diagnostics;
 
     [CLSCompliant(false)]

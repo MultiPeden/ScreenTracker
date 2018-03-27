@@ -1,6 +1,5 @@
-﻿using System;
-using Emgu.CV.Structure;
-using Microsoft.Kinect;
+﻿using Emgu.CV.Structure;
+using System;
 
 namespace ScreenTracker.DataProcessing
 {
