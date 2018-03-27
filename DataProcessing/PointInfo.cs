@@ -24,7 +24,7 @@ namespace ScreenTracker.DataProcessing
         // zFilter for completing OneEuroFilter
         private OneEuroFilter zFilter;
         // Chosen Rate for Filtering
-        private double rate = 60;
+        private double rate = 15;
 
         public PointInfo(int height, int width)
         {

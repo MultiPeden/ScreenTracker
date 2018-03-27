@@ -148,7 +148,7 @@ namespace ScreenTracker.DataProcessing
 
             // 502, 414
 
-            int padding = 8;
+            int padding = 40;
             int height = 424;
             int width = 512 ;
             mask = new Rectangle(padding, padding, width - (padding * 2) , height - (padding * 2));
@@ -217,7 +217,7 @@ namespace ScreenTracker.DataProcessing
 
                 }
 
-                SendPoints(shittyPoints, zCoordinates);
+                SendPoints(screen.PrevPoints, zCoordinates);
             }
 
             stopwatch.Stop();
@@ -467,7 +467,7 @@ namespace ScreenTracker.DataProcessing
                         zCoordinates[i] = 0;
                     }
                     // todo
-                    zCoordinates[i] = 130;
+                   // zCoordinates[i] = 130;
                 }
                 return zCoordinates;
             }
@@ -487,20 +487,43 @@ namespace ScreenTracker.DataProcessing
         /// <param name="y"></param>
         /// <param name="depthImage"></param>
         /// <param name="zCoords"></param>
-        private void AddDephtPixel(int x, int y, ref Mat depthImage, ref List<double> zCoords)
+        private unsafe void AddDephtPixel(int x, int y, ref Mat depthImage, ref List<double> zCoords)
         {
             if (x >= 0 && x < depthImage.Width && y >= 0 && y < depthImage.Height)
             {
 
+
+                // Get pointer to first pixel
+            //    ushort* pixelP = (ushort*)depthImage.DataPointer.ToPointer();
+
+
+            //   ushort der = pixelP[x + depthImage.Width + y];
+
+                //   ushort caller = pixelP[x+y];
+
+                // Mat objects created using the create method are stored
+                // in one continous memory block.
+                //    const Pixel* endPixel = pixel + image1.cols * image1.rows;
+
+
                 /// todo check correct z vals
-                ushort zCoordy = (ushort)depthImage.GetData(x, y)[0];//.Data[y, x, 0];
-                ushort zCoord = 1500;
+                //   string zCoordy = depthImage.GetData(x, y)[1].ToString();//.Data[y, x, 0];
 
-
-                if (zCoord > 0)
+                try
                 {
+                   short zCoord = BitConverter.ToInt16(depthImage.GetData(x, y), 0);
+                   // short zCoord = 1500;
                     zCoords.Add(zCoord);
                 }
+                catch (Exception)
+                {
+
+                    Console.Out.WriteLine("z coord failed x : " + x + " y: " + y);
+                }
+
+              
+
+
             }
 
         }
