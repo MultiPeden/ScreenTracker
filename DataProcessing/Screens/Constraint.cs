@@ -1,7 +1,8 @@
 ﻿
 using System.Numerics;
+using ScreenTracker.DataProcessing.Screens.Points;
 
-namespace ScreenTracker.DataProcessing
+namespace ScreenTracker.DataProcessing.Screens
 {
     class Constraint
     {

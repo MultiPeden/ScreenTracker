@@ -113,11 +113,13 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DataProcessing\Constraint.cs" />
-    <Compile Include="DataProcessing\PointInfoSpring.cs" />
-    <Compile Include="DataProcessing\DisplacementScreen.cs" />
-    <Compile Include="DataProcessing\IScreen.cs" />
-    <Compile Include="DataProcessing\SpringScreen.cs" />
+    <Compile Include="DataProcessing\Screens\Constraint.cs" />
+    <Compile Include="DataProcessing\Screens\ExtrapolationScreen.cs" />
+    <Compile Include="DataProcessing\Screens\Points\PointInfoExtrapolation.cs" />
+    <Compile Include="DataProcessing\Screens\Points\PointInfoSpring.cs" />
+    <Compile Include="DataProcessing\Screens\DisplacementScreen.cs" />
+    <Compile Include="DataProcessing\Screens\IScreen.cs" />
+    <Compile Include="DataProcessing\Screens\SpringScreen.cs" />
     <Compile Include="DataReceiver\ICamera.cs" />
     <Compile Include="DataReceiver\EMGUargs.cs" />
     <Compile Include="DataReceiver\FrameDimension.cs" />
@@ -126,8 +128,8 @@
     <Compile Include="DataProcessing\IRUtils.cs" />
     <Compile Include="DataReceiver\KinectData.cs" />
     <Compile Include="DataProcessing\OneEuroFilter.cs" />
-    <Compile Include="DataProcessing\PointInfo.cs" />
-    <Compile Include="DataProcessing\PointInfoDisplacement.cs" />
+    <Compile Include="DataProcessing\Screens\Points\PointInfo.cs" />
+    <Compile Include="DataProcessing\Screens\Points\PointInfoDisplacement.cs" />
     <Compile Include="PointsConnected.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>

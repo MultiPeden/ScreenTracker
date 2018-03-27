@@ -7,17 +7,17 @@ using System.Windows;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using Emgu.CV.CvEnum;
-using Accord.Collections;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using Accord.Statistics;
-using Accord.Math.Optimization;
 using System.Diagnostics;
 using ScreenTracker.GUI;
 using ScreenTracker.Communication;
 using ScreenTracker.DataReceiver;
-using Emgu.CV.Cuda;
+using ScreenTracker.DataProcessing.Screens;
+using ScreenTracker.DataProcessing.Screens.Points;
+
 
 namespace ScreenTracker.DataProcessing
 {
@@ -145,6 +145,9 @@ namespace ScreenTracker.DataProcessing
             showWindow = true;
 
             this.screen = new DisplacementScreen();
+           // this.screen = new ExtrapolationScreen();
+
+
 
             // 502, 414
 
@@ -511,7 +514,8 @@ namespace ScreenTracker.DataProcessing
 
                 try
                 {
-                   short zCoord = BitConverter.ToInt16(depthImage.GetData(x, y), 0);
+                    // X and Y has med interchanged because the GetData get the trasposed pixel values
+                   short zCoord = BitConverter.ToInt16(depthImage.GetData(y,x), 0);
                    // short zCoord = 1500;
                     zCoords.Add(zCoord);
                 }
@@ -733,17 +737,17 @@ namespace ScreenTracker.DataProcessing
                     }
 
 
-                    PointInfoDisplacement sprinInfo = (PointInfoDisplacement)screen.PointInfo[12];
+                    PointInfo sprinInfo = screen.PointInfo[12];
                     if (sprinInfo.Visible)
                     {
                         screen.UpdateScreen(newPoints);
-
+                        /*
                         double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
                         double[] orgPost = sprinInfo.orignalPos;
 
                         double estimateDiffx = estimatedPos[0] - orgPost[0];
                         double aactualDiffx = screen.PrevPoints[12][0] - orgPost[0];
-
+                        */
                         //   double estimateDiffy = estimatedPos[1] - orgPost[1];
                         //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
 
@@ -762,13 +766,13 @@ namespace ScreenTracker.DataProcessing
                                             Console.Write(screen.PrevPoints[12][0] + ",");
                                             Console.WriteLine(screen.PrevPoints[12][0]);
                                             */
-
+/*
                         missingx = new double[]
                         {
                         sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0],
                         sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1]
                         };
-
+                        */
                     }
 
                     //do estimation using the displacement model

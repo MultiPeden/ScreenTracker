@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScreenTracker.DataProcessing
+namespace ScreenTracker.DataProcessing.Screens.Points
 {
     /// <summary>
     /// Holds information for tracking points

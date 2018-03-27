@@ -1,15 +1,16 @@
 ﻿using Emgu.CV;
 using System;
+using ScreenTracker.DataProcessing.Screens.Points;
 
-namespace ScreenTracker.DataProcessing
+namespace ScreenTracker.DataProcessing.Screens
 {
-    class DisplacementScreen : IScreen
+    class ExtrapolationScreen : IScreen
     {
 
         /// <summary>
         /// Info for each detected point i the frame.
         /// </summary>
-        private PointInfoDisplacement[] pointInfo;
+        private PointInfoExtrapolation[] pointInfo;
 
 
         /// <summary>
@@ -18,7 +19,7 @@ namespace ScreenTracker.DataProcessing
        public  double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
-        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoDisplacement[])value; }
+        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoExtrapolation[])value; }
 
 
 
@@ -31,7 +32,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            PointInfo = new PointInfoDisplacement[num_particles_height * num_particles_width];
+            PointInfo = new PointInfoExtrapolation[num_particles_height * num_particles_width];
 
           
 
@@ -47,7 +48,7 @@ namespace ScreenTracker.DataProcessing
 
                 //todo
                 //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
-                this.PointInfo[i] = new PointInfoDisplacement(width, height, i, point);
+                this.PointInfo[i] = new PointInfoExtrapolation(width, height, i);
                 i++;
                 Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
             }
@@ -85,7 +86,7 @@ namespace ScreenTracker.DataProcessing
 
                     //double[] estPoint = pointInfo[k].EstimatePostition(newPointsSparse);
 
-                    double[] estPoint = pointInfo[k].EstimatePostitionDisplacement(newPoints, 1);
+                    double[] estPoint = pointInfo[k].EstimatePostition(newPoints);
 
 
                     // if we can get an estimate using extrapolation, update with the estimated point

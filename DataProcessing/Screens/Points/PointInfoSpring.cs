@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 
 
-namespace ScreenTracker.DataProcessing
+namespace ScreenTracker.DataProcessing.Screens.Points
 {
     class PointInfoSpring : PointInfo
     {

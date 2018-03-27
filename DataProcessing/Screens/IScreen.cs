@@ -1,8 +1,8 @@
 ﻿using Emgu.CV;
+using ScreenTracker.DataProcessing.Screens.Points;
 
 
-
-namespace ScreenTracker.DataProcessing
+namespace ScreenTracker.DataProcessing.Screens
 {
     interface IScreen
     {
