@@ -103,8 +103,11 @@ namespace ScreenTracker.DataProcessing
 
         private Rectangle mask;
 
+        Mat kernel;
+        private double[][] centroidPoints;
 
 
+        Hungarian hung;
         /// <summary>
         ///  Constructor for the ImageProcessing class
         /// </summary>
@@ -146,24 +149,22 @@ namespace ScreenTracker.DataProcessing
 
             //this.screen = new DisplacementScreen();
             int[] irdims = cameraData.IRFrameDImensions();
-            this.screen = new ExtrapolationScreen(irdims[0], irdims[1]);
-
-            //this.screen = new SpringScreen();
-
-
-            // 502, 414
-
+            int height = irdims[0];
+            int width = irdims[1];
+            this.screen = new ExtrapolationScreen(height, width);
             int padding = 40;
-            int height = 424;
-            int width = 512;
+
             mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
 
+            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            this.kernel = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
 
+            this.centroidPoints = new double[Properties.UserSettings.Default.GridColums * Properties.UserSettings.Default.GridRows][];
 
 
             //maskMat = new Mat(424,512, DepthType.Cv8U,1);
 
-
+            hung = new Hungarian(Properties.UserSettings.Default.GridColums, Properties.UserSettings.Default.GridRows);
 
             //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
 
@@ -197,34 +198,6 @@ namespace ScreenTracker.DataProcessing
             //this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
 
 
-            double[][] testarray2D = new double[2][];
-
-            testarray2D[0] = new double[]
-            {
-                10000,2
-            };
-
-
-            testarray2D[1] = new double[]
-{
-                1,20000
-};
-
-
-            ushort[] zcoordstest = new ushort[2]
-            {
-                1,20000
-            };
-
-            double[][] wordcoord;
-
-
-
-            for (int i = 0; i < 100; i++)
-            {
-
-                wordcoord = cameraData.ScreenToWorldCoordinates(testarray2D, zcoordstest);
-            }
 
 
 
@@ -644,22 +617,24 @@ namespace ScreenTracker.DataProcessing
              centroids = new Mat())
             {
 
-                MCvPoint2D64f[] centroidPointsEmgu;
+
                 int n;
                 n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
 
                 // Copy centroid points to point array
+
+                MCvPoint2D64f[] centroidPointsEmgu;
                 centroidPointsEmgu = new MCvPoint2D64f[n];
+
                 centroids.CopyTo(centroidPointsEmgu);
 
-                // Convert to jagged array
-                double[][] centroidPoints = PointArrayToJaggedArray(centroidPointsEmgu, n);
+
+
+                // Convert centoid points to jagged array
+                SetCentroidPoints(centroidPointsEmgu, n);
 
 
 
-
-                // Jagged array for new points
-                double[][] newPoints;
                 // index for array
                 int index;
 
@@ -707,11 +682,10 @@ namespace ScreenTracker.DataProcessing
 
 
                     }
-                    newPoints = orderedCentroidPoints;
-                    //Console.WriteLine("cat: " + cat);
 
 
-                    screen.Initialize(newPoints, stats);
+
+                    screen.Initialize(orderedCentroidPoints, stats);
 
 
                 }
@@ -720,7 +694,6 @@ namespace ScreenTracker.DataProcessing
 
                     // copy previous points to new point to avoid loosing any points
                     // newPoints = prevPoints;
-                    newPoints = new double[screen.PrevPoints.Length][];
 
 
 
@@ -767,7 +740,7 @@ namespace ScreenTracker.DataProcessing
                                 pInfo.Width = width;
                                 pInfo.Height = height;
                                 pInfo.Visible = true;
-                                newPoints[i] = point;
+
                             }
                         }
 
@@ -776,7 +749,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    screen.UpdateScreen(newPoints);
+                    screen.UpdateScreen(rearranged);
                     //     PointInfo sprinInfo = screen.PointInfo[12];
                     // if (sprinInfo.Visible)
                     //   {
@@ -831,8 +804,8 @@ namespace ScreenTracker.DataProcessing
         private int[] GetPointsIndices(double[][] centroidPoints)
         {
             int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
+            hung.Solve(costMatrix);
 
-            Hungarian hung = new Hungarian(costMatrix);
             int[,] M = hung.M;
             // hung.ShowCostMatrix();
             //  hung.ShowMaskMatrix();
@@ -850,40 +823,24 @@ namespace ScreenTracker.DataProcessing
         /// <param name="points"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        private double[][] PointArrayToJaggedArray(MCvPoint2D64f[] points, int n)
+        private void SetCentroidPoints(MCvPoint2D64f[] points, int n)
         {
-            double[][] centroidPoints2 = new double[n - 2][];
-            int i = 0;
 
-            if (mask.IsEmpty)
+
+
+
+            System.Drawing.Point offsetP = mask.Location;
+
+
+            for (int i = 0; i < centroidPoints.Length; i++)
             {
+                MCvPoint2D64f point = points[i + 2];
 
-                foreach (MCvPoint2D64f point in points)
-                {
-                    if (i > 1)
-                    {
-                        centroidPoints2[i - 2] = new double[2] { point.X, point.Y };
-                    }
-                    i++;
-                }
-            }
-            else
-            {
-                System.Drawing.Point offsetP = mask.Location;
-
-                foreach (MCvPoint2D64f point in points)
-                {
-                    if (i > 1)
-                    {
-                        centroidPoints2[i - 2] = new double[2] { point.X + offsetP.X, point.Y + offsetP.Y };
-                    }
-                    i++;
-                }
-
-
+                centroidPoints[i] = new double[2] { point.X + offsetP.X, point.Y + offsetP.Y };
             }
 
-            return centroidPoints2;
+
+
         }
 
 
@@ -1001,23 +958,23 @@ namespace ScreenTracker.DataProcessing
 
 
                 // find max val of the 16 bit ir-image
-                infraredFrameROI.MinMax(out _, out double[] maxVal, out _, out _);
+                //    infraredFrameROI.MinMax(out _, out double[] maxVal, out _, out _);
 
                 // apply threshold with 98% of maxval || minThreshold
                 // to obtain binary image with only 0's & 255
-                float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
-                int minThreshold = Properties.UserSettings.Default.minThreshold;
+                //    float percentageThreshold = Properties.UserSettings.Default.PercentageThreshold;
+                //   int minThreshold = Properties.UserSettings.Default.minThreshold;
 
                 //    CvInvoke.Threshold(infraredFrame, thresholdImg, Math.Max(maxVal[0] * percentageThreshold, minThreshold), 255, ThresholdType.Binary);
 
                 // CvInvoke.Threshold(infraredFrame, thresholdImg, 10000, 255, ThresholdType.Binary);
-                CvInvoke.Normalize(infraredFrameROI.Clone(), thresholdImg, 0, 255, NormType.MinMax, DepthType.Cv8U);
+                CvInvoke.Normalize(infraredFrameROI, thresholdImg, 0, 255, NormType.MinMax, DepthType.Cv8U);
                 //    SetThresholdedInfraredImage(thresholdImg, infraredFrameDimension);
 
                 //   SetThresholdedInfraredImage(thresholdImg, infraredFrameDimension);
 
 
-                DepthType type = thresholdImg.Depth;
+                //   DepthType type = thresholdImg.Depth;
                 //                CvInvoke.AdaptiveThreshold(thresholdImg, thresholdImg, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 9, -30);
 
                 CvInvoke.AdaptiveThreshold(thresholdImg, thresholdImg, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 13, -20);
@@ -1034,14 +991,14 @@ namespace ScreenTracker.DataProcessing
                 //  thresholdImg.ConvertTo(thresholdImg, DepthType.Cv8U);
 
                 // perform opening 
-                int kernelSize = Properties.UserSettings.Default.kernelSize;
-                Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(5, 5), new System.Drawing.Point(-1, -1));
+
+
 
 
                 //            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
 
-                CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 2, BorderType.Constant, new MCvScalar(1.0));
-                CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Erode, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Constant, new MCvScalar(1.0));
+                CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Dilate, kernel, new System.Drawing.Point(-1, -1), 2, BorderType.Constant, new MCvScalar(1.0));
+                CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Erode, kernel, new System.Drawing.Point(-1, -1), 1, BorderType.Constant, new MCvScalar(1.0));
 
 
                 // find controids of reflective surfaces and mark them on the image 

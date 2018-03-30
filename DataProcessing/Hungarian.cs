@@ -34,21 +34,22 @@ namespace ScreenTracker.DataProcessing
     {
 
         private int[,] C;
-        private int[,] C_orig;
         public int[,] M;
         private int[,] path;
         private int[] RowCover;
         private int[] ColCover;
         private int nrow;
         private int ncol;
-        private int path_count = 0;
         private int path_row_0;
         private int path_col_0;
-      //  private int asgn = 0;
-        private int step = 1;
+        //  private int asgn = 0;
 
 
-        public Hungarian(int[,] costMatrix)
+        private int path_count;
+        private int step;
+
+
+        public Hungarian(int rows, int cols)
         {
 
 
@@ -58,19 +59,31 @@ namespace ScreenTracker.DataProcessing
             //  this.C = new int[costMatrix.GetLength(0), costMatrix.GetLength(1)];
             // this.C_orig = new int[costMatrix.GetLength(0), costMatrix.GetLength(1)];
 
-            this.C = (int[,])costMatrix.Clone();
-            this.C_orig = (int[,])costMatrix.Clone();
 
-            this.M = new int[costMatrix.GetLength(0), costMatrix.GetLength(1)];
-            this.path = new int[costMatrix.GetLength(0) + costMatrix.GetLength(1) + 1, 2];
-            this.RowCover = new int[costMatrix.GetLength(0)];
-            this.ColCover = new int[costMatrix.GetLength(1)];
+
+            this.M = new int[rows, cols];
+            this.path = new int[rows + cols + 1, 2];
+            this.RowCover = new int[rows];
+            this.ColCover = new int[cols];
+
+
+
+        }
+
+
+        public void Solve(int[,] costMatrix)
+        {
+
+            path_count = 0;
+            step = 1;
+
+            this.C = costMatrix;
+
             this.nrow = costMatrix.GetLength(0);
             this.ncol = costMatrix.GetLength(1);
             this.RunMunkres();
 
         }
-
 
 
         private void resetMaskandCovers()
@@ -113,12 +126,22 @@ namespace ScreenTracker.DataProcessing
             for (int r = 0; r < nrow; r++)
                 for (int c = 0; c < ncol; c++)
                 {
-                    if (C[r, c] == 0 && RowCover[r] == 0 && ColCover[c] == 0)
+
+                    try
                     {
-                        M[r, c] = 1;
-                        RowCover[r] = 1;
-                        ColCover[c] = 1;
+                        if (C[r, c] == 0 && RowCover[r] == 0 && ColCover[c] == 0)
+                        {
+                            M[r, c] = 1;
+                            RowCover[r] = 1;
+                            ColCover[c] = 1;
+                        }
                     }
+                    catch (Exception)
+                    {
+
+                        int en = 1;
+                    }
+
                 }
             for (int r = 0; r < nrow; r++)
                 RowCover[r] = 0;
@@ -421,44 +444,27 @@ namespace ScreenTracker.DataProcessing
 
         public int[] GetMinimizedIndicies()
         {
-
-
             int len = M.GetLength(0);
             int[] money = new int[M.GetLength(1)];
-
             for (int i = 0; i < money.Length; i++)
             {
                 money[i] = -1;
             }
 
-
-            try
+            for (int j = 0; j < M.GetLength(1); j++)
             {
-                for (int j = 0; j < M.GetLength(1); j++)
+                for (int i = 0; i < M.GetLength(0); i++)
                 {
-                    for (int i = 0; i < M.GetLength(0); i++)
+                    if (M[i, j] == 1)
                     {
-
-
-
-                        if (M[i, j] == 1)
-                        {
-
-                            money[j] = i;
-                            continue;
-                        }
-
-
-
+                        money[j] = i;
+                        continue;
                     }
                 }
-
             }
-            catch (Exception)
-            {
 
 
-            }
+
 
             return money;
 
