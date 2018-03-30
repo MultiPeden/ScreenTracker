@@ -1,14 +1,13 @@
 ﻿using Emgu.CV;
+using ScreenTracker.DataProcessing.Screens.Points;
 using System;
 using System.Collections.Generic;
-
 using System.Numerics;
-using ScreenTracker.DataProcessing.Screens.Points;
 
 
 namespace ScreenTracker.DataProcessing.Screens
 {
-    class SpringScreen : IScreen
+    class SpringScreen : BaseScreen, IScreen
     {
         /// <summary>
         /// Info for each detected point i the frame.
@@ -22,7 +21,7 @@ namespace ScreenTracker.DataProcessing.Screens
         private double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
-        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[]) value; }
+        public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[])value; }
 
 
 
@@ -32,6 +31,7 @@ namespace ScreenTracker.DataProcessing.Screens
         int num_particles_height = Properties.UserSettings.Default.GridRows;
 
 
+        public SpringScreen(int height, int width) : base(height, width) { }
 
 
         public void Initialize(double[][] orderedCentroidPoints, Mat stats)

@@ -27,6 +27,11 @@ namespace ScreenTracker.GUI
         /// </summary>
         private string statusText = null;
 
+
+        private string fpsText = null;
+
+
+
         /// <summary>
         /// Indicates if the color button has been selected
         /// </summary>
@@ -48,20 +53,33 @@ namespace ScreenTracker.GUI
         /// </summary>
         public ImageProcessing imageProcessing;
 
+
+
+        FPSCounter fPSCounter;
+
+
         /// <summary>
         /// Initializes a new instance of the MainWindow class.
         /// </summary>
         public MainWindow()
         {
             //initialize button values
-            this.colorClicked = true;
+            this.colorClicked = false;
             this.thresholdedClicked = false;
 
             // use the window object as the view model
             this.DataContext = this;
-            
+
             // initialize the components (controls) of the window
             this.InitializeComponent();
+
+            fPSCounter = new FPSCounter(this);
+
+
+
+
+
+
         }
 
         /// <summary>
@@ -70,6 +88,7 @@ namespace ScreenTracker.GUI
         /// <param name="imageProcessing"></param>
         public void SetProcessor(ImageProcessing imageProcessing)
         {
+
             this.imageProcessing = imageProcessing;
         }
 
@@ -79,6 +98,7 @@ namespace ScreenTracker.GUI
         /// <param name="bitmap"></param>
         public void SetRightImage(WriteableBitmap bitmap)
         {
+
             rightImg.Source = bitmap;
         }
 
@@ -88,6 +108,7 @@ namespace ScreenTracker.GUI
         /// <param name="bitmap"></param>
         public void SetLeftImage(WriteableBitmap bitmap)
         {
+            fPSCounter.Update();
             leftImg.Source = bitmap;
         }
 
@@ -110,6 +131,32 @@ namespace ScreenTracker.GUI
                     if (this.PropertyChanged != null)
                     {
                         this.PropertyChanged(this, new PropertyChangedEventArgs("StatusText"));
+
+                        //this.PropertyChanged(this, new PropertyChangedEventArgs("FPSText"));
+                    }
+                }
+            }
+        }
+
+
+        public string FPSText
+        {
+            get
+            {
+                return this.fpsText;
+            }
+            set
+            {
+                if (this.fpsText != value)
+                {
+                    this.fpsText = value;
+
+                    // notify any bound elements that the text has changed
+                    if (this.PropertyChanged != null)
+                    {
+
+
+                        this.PropertyChanged(this, new PropertyChangedEventArgs("FPSText"));
                     }
                 }
             }
@@ -122,7 +169,9 @@ namespace ScreenTracker.GUI
         /// <param name="e">event arguments</param>
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-           //TODO kinectData.Stop_KinectData(); - CALL DESTRUCTOR
+            //TODO kinectData.Stop_KinectData(); - CALL DESTRUCTOR
+
+
         }
 
         /// <summary>
@@ -168,6 +217,7 @@ namespace ScreenTracker.GUI
         /// <param name="e"></param>
         private void Button_Click_Depth(object sender, RoutedEventArgs e)
         {
+            imageProcessing.GenerateColorImage(false);
             colorClicked = false;
             StatusText = Properties.Resources.ButtonClickDepth;
         }
@@ -180,6 +230,7 @@ namespace ScreenTracker.GUI
         private void Button_Click_Color(object sender, RoutedEventArgs e)
         {
             colorClicked = true;
+            imageProcessing.GenerateColorImage(true);
             StatusText = Properties.Resources.ButtonClickColor;
         }
 

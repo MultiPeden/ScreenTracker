@@ -30,7 +30,7 @@ namespace ScreenTracker.DataReceiver
         /// The value by which the infrared source data will be scaled
         /// </summary>
         private const float InfraredSourceScale = 0.75f;
-        
+
         /// <summary>
         /// Smallest value to display when the infrared data is normalized
         /// </summary>
@@ -85,17 +85,17 @@ namespace ScreenTracker.DataReceiver
         /// Settings changable by user at runtime
         /// </summary>
         int minThreshold = Properties.UserSettings.Default.minThreshold;
-        
+
         /// <summary>
         /// EventHandler for passing on the Kinects availibility status on
         /// </summary>
         public event EventHandler<bool> ChangeStatusText;
-        
+
         /// <summary>
         /// EventHandler for sending events when a frame has been processed
         /// </summary>
         public event EventHandler<EMGUargs> EmguArgsProcessed;
-        
+
         /// <summary>
         /// generateColorImage determines wether the color image should be created
         /// color image is only for the debugging window
@@ -117,10 +117,14 @@ namespace ScreenTracker.DataReceiver
             this.kinectSensor = KinectSensor.GetDefault();
 
             // get Reader for depth/color/ir frames
-            this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Color | FrameSourceTypes.Depth);
+            this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Depth);
 
             // Add an event handler to be called whenever depth and color both have new data
             this.reader.MultiSourceFrameArrived += this.Reader_MultiSourceFrameArrived;
+
+
+
+
 
             // get FrameDescription from InfraredFrameSource
             this.infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
@@ -139,7 +143,7 @@ namespace ScreenTracker.DataReceiver
 
             // open the Kinect sensor
             this.kinectSensor.Open();
-            
+
             // get conversiontable between depthframe to cameraspace
             this.mapper = kinectSensor.CoordinateMapper;
 
@@ -153,6 +157,22 @@ namespace ScreenTracker.DataReceiver
         public void GenerateColorImage(bool enable)
         {
             this.generateColorImage = enable;
+            if (this.reader != null)
+            {
+                this.reader.Dispose();
+
+            }
+            if (enable)
+            {
+
+                this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Color | FrameSourceTypes.Depth);
+            }
+            else
+            {
+                this.reader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Depth);
+            }
+
+            this.reader.MultiSourceFrameArrived += this.Reader_MultiSourceFrameArrived;
         }
 
         /// <summary>
@@ -235,7 +255,7 @@ namespace ScreenTracker.DataReceiver
                 depthFrame = depthFrameReference.AcquireFrame();
 
                 // Check whether needed frames are avaliable
-                if (infraredFrame == null || depthFrame == null )
+                if (infraredFrame == null || depthFrame == null)
                 {
                     return;
                 }
@@ -275,7 +295,7 @@ namespace ScreenTracker.DataReceiver
                         Mat infraredImage = this.ProcessInfaredFrameData(infraredFrame);
                         emguArgs.InfraredImage = infraredImage;
                         emguArgs.InfraredFrameDimension = new FrameDimension(infraredFrameDescription.Width, infraredFrameDescription.Height);
-                      //  infraredImage.Dispose();
+                        //  infraredImage.Dispose();
                     }
                     infraredFrame.Dispose();
                     infraredFrame = null;
@@ -285,9 +305,10 @@ namespace ScreenTracker.DataReceiver
                     {
                         ColorFrameReference colorFrameReference = multiSourceFrame.ColorFrameReference;
                         colorFrame = colorFrameReference.AcquireFrame();
-                        if(colorFrame == null) {
+                        if (colorFrame == null)
+                        {
                             return;
-                                }
+                        }
 
                         // color image
                         FrameDescription colorFrameDescription = colorFrame.FrameDescription;
@@ -307,7 +328,7 @@ namespace ScreenTracker.DataReceiver
                     }
                 }
                 // Call the processing finished event for the conversion to EMGU images
-                          OnEmguArgsProcessed(emguArgs);
+                OnEmguArgsProcessed(emguArgs);
             }
             catch (Exception ex)
             {
@@ -361,9 +382,9 @@ namespace ScreenTracker.DataReceiver
             Mat colorMat = new Mat(colorFrameDescription.Height, colorFrameDescription.Width, DepthType.Cv8U, 4);
 
             // Move data to new Mat
-            colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height  *4), ColorImageFormat.Bgra);
-           // Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
-         //   colorMat.Dispose();
+            colorFrame.CopyConvertedFrameDataToIntPtr(colorMat.DataPointer, (uint)(colorFrameDescription.Width * colorFrameDescription.Height * 4), ColorImageFormat.Bgra);
+            // Image<Bgr, UInt16> EmguImg = colorMat.ToImage<Bgr, UInt16>();
+            //   colorMat.Dispose();
             return colorMat;
         }
 
@@ -406,9 +427,9 @@ namespace ScreenTracker.DataReceiver
             Mat mat = new Mat(depthFrameDescription.Height, depthFrameDescription.Width, DepthType.Cv16U, 1);
             // Move data to new Mat
             depthFrame.CopyFrameDataToIntPtr(mat.DataPointer, (uint)(depthFrameDescription.Width * depthFrameDescription.Height * 2));
-      
 
-     
+
+
 
             return mat;
         }
@@ -456,7 +477,8 @@ namespace ScreenTracker.DataReceiver
                     newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
                 }
                 return newPointsTest;
-            }else
+            }
+            else
             {
                 return null;
             }
@@ -484,16 +506,23 @@ namespace ScreenTracker.DataReceiver
 
             //   mapper.MapColorFrameToDepthSpaceUsingIntPtr(DepthFramePtr, size, result);
             mapper.MapColorFrameToCameraSpaceUsingIntPtr(DepthFramePtr, size, result);
-          //  result = null;
+            //  result = null;
 
             stopwatch.Stop();
-              Console.WriteLine(stopwatch.ElapsedMilliseconds);
+            Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
 
 
 
             return result;
-  
+
+        }
+
+        public int[] IRFrameDImensions()
+        {
+            FrameDescription frameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
+
+            return new int[] { frameDescription.Height, frameDescription.Width };
         }
 
     }

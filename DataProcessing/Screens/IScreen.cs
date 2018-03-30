@@ -8,19 +8,27 @@ namespace ScreenTracker.DataProcessing.Screens
     {
 
 
-        PointInfo[] PointInfo { get; 
-                                set; }
+
+        PointInfo[] PointInfo
+        {
+            get;
+            set;
+        }
 
         double[][] PrevPoints
         {
             get;
             set;
         }
-    
+
         void Initialize(double[][] newPoints, Mat stats);
 
 
         void UpdateScreen(double[][] newPoints);
+
+
+        bool InFrame(double[] point);
+
 
     }
 }

@@ -1,22 +1,22 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows;
+﻿using Accord.Statistics;
 using Emgu.CV;
-using Emgu.CV.Structure;
 using Emgu.CV.CvEnum;
-using System.Drawing;
-using System.Collections.Generic;
-using System.Linq;
-using Accord.Statistics;
-using System.Diagnostics;
-using ScreenTracker.GUI;
+using Emgu.CV.Structure;
 using ScreenTracker.Communication;
-using ScreenTracker.DataReceiver;
 using ScreenTracker.DataProcessing.Screens;
 using ScreenTracker.DataProcessing.Screens.Points;
+using ScreenTracker.DataReceiver;
+using ScreenTracker.GUI;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 
 namespace ScreenTracker.DataProcessing
@@ -102,7 +102,7 @@ namespace ScreenTracker.DataProcessing
         double[] missingx = new double[] { 0, 0 };
 
         private Rectangle mask;
-   
+
 
 
         /// <summary>
@@ -144,26 +144,28 @@ namespace ScreenTracker.DataProcessing
             // show the window
             showWindow = true;
 
-            this.screen = new DisplacementScreen();
-           // this.screen = new ExtrapolationScreen();
+            //this.screen = new DisplacementScreen();
+            int[] irdims = cameraData.IRFrameDImensions();
+            this.screen = new ExtrapolationScreen(irdims[0], irdims[1]);
 
+            //this.screen = new SpringScreen();
 
 
             // 502, 414
 
             int padding = 40;
             int height = 424;
-            int width = 512 ;
-            mask = new Rectangle(padding, padding, width - (padding * 2) , height - (padding * 2));
+            int width = 512;
+            mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
 
-          
+
 
 
             //maskMat = new Mat(424,512, DepthType.Cv8U,1);
-            
 
 
-         //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
+
+            //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
 
         }
 
@@ -195,9 +197,43 @@ namespace ScreenTracker.DataProcessing
             //this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
 
 
+            double[][] testarray2D = new double[2][];
+
+            testarray2D[0] = new double[]
+            {
+                10000,2
+            };
+
+
+            testarray2D[1] = new double[]
+{
+                1,20000
+};
+
+
+            ushort[] zcoordstest = new ushort[2]
+            {
+                1,20000
+            };
+
+            double[][] wordcoord;
+
+
+
+            for (int i = 0; i < 100; i++)
+            {
+
+                wordcoord = cameraData.ScreenToWorldCoordinates(testarray2D, zcoordstest);
+            }
+
+
+
             // get z-coordinates
             ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
             // Send point via UDP
+
+
+
 
             if (screen.PrevPoints != null)
             {
@@ -215,7 +251,7 @@ namespace ScreenTracker.DataProcessing
                     {
                         screen.PrevPoints[i][0] + offsetP.X,
                         screen.PrevPoints[i][1] + offsetP.Y
-                    };
+    };
 
 
                 }
@@ -239,8 +275,10 @@ namespace ScreenTracker.DataProcessing
                     this.SetDepthImage(e.DepthImage, e.DepthFrameDimension);
                 }
             }
-
-            e.Colorimage.Dispose();
+            if (e.Colorimage != null)
+            {
+                e.Colorimage.Dispose();
+            }
             e.DepthImage.Dispose();
             e.InfraredImage.Dispose();
 
@@ -317,10 +355,10 @@ namespace ScreenTracker.DataProcessing
 
 
                 this.colorThesholdedBitmap = new WriteableBitmap(img.Width, img.Height, 96.0, 96.0, PixelFormats.Gray8, null);
-           
+
             }
 
-        //    colorThesholdedBitmap.se
+            //    colorThesholdedBitmap.se
 
             // Convert to writablebitmao
             AddToBitmap(this.colorThesholdedBitmap, img, (img.Width * img.Height));
@@ -470,7 +508,7 @@ namespace ScreenTracker.DataProcessing
                         zCoordinates[i] = 0;
                     }
                     // todo
-                   // zCoordinates[i] = 130;
+                    // zCoordinates[i] = 130;
                 }
                 return zCoordinates;
             }
@@ -497,10 +535,10 @@ namespace ScreenTracker.DataProcessing
 
 
                 // Get pointer to first pixel
-            //    ushort* pixelP = (ushort*)depthImage.DataPointer.ToPointer();
+                //    ushort* pixelP = (ushort*)depthImage.DataPointer.ToPointer();
 
 
-            //   ushort der = pixelP[x + depthImage.Width + y];
+                //   ushort der = pixelP[x + depthImage.Width + y];
 
                 //   ushort caller = pixelP[x+y];
 
@@ -515,8 +553,8 @@ namespace ScreenTracker.DataProcessing
                 try
                 {
                     // X and Y has med interchanged because the GetData get the trasposed pixel values
-                   short zCoord = BitConverter.ToInt16(depthImage.GetData(y,x), 0);
-                   // short zCoord = 1500;
+                    short zCoord = BitConverter.ToInt16(depthImage.GetData(y, x), 0);
+                    // short zCoord = 1500;
                     zCoords.Add(zCoord);
                 }
                 catch (Exception)
@@ -525,7 +563,7 @@ namespace ScreenTracker.DataProcessing
                     Console.Out.WriteLine("z coord failed x : " + x + " y: " + y);
                 }
 
-              
+
 
 
             }
@@ -737,43 +775,45 @@ namespace ScreenTracker.DataProcessing
                     }
 
 
-                    PointInfo sprinInfo = screen.PointInfo[12];
-                    if (sprinInfo.Visible)
-                    {
-                        screen.UpdateScreen(newPoints);
-                        /*
-                        double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
-                        double[] orgPost = sprinInfo.orignalPos;
 
-                        double estimateDiffx = estimatedPos[0] - orgPost[0];
-                        double aactualDiffx = screen.PrevPoints[12][0] - orgPost[0];
-                        */
-                        //   double estimateDiffy = estimatedPos[1] - orgPost[1];
-                        //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
+                    screen.UpdateScreen(newPoints);
+                    //     PointInfo sprinInfo = screen.PointInfo[12];
+                    // if (sprinInfo.Visible)
+                    //   {
+                    //screen.UpdateScreen(newPoints);
+                    /*
+                    double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
+                    double[] orgPost = sprinInfo.orignalPos;
+
+                    double estimateDiffx = estimatedPos[0] - orgPost[0];
+                    double aactualDiffx = screen.PrevPoints[12][0] - orgPost[0];
+                    */
+                    //   double estimateDiffy = estimatedPos[1] - orgPost[1];
+                    //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
 
 
-                        //    Console.Write(estimateDiffx + ",");
+                    //    Console.Write(estimateDiffx + ",");
 
-                        //   Console.WriteLine(aactualDiffx + ",");
+                    //   Console.WriteLine(aactualDiffx + ",");
 
-                        //    Console.Write(estimateDiffy + ",");
+                    //    Console.Write(estimateDiffy + ",");
 
-                        //  Console.WriteLine(aactualDiffy);
+                    //  Console.WriteLine(aactualDiffy);
 
-                        /*
-                                            Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0] + ",");
-                                            Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1] + ",");
-                                            Console.Write(screen.PrevPoints[12][0] + ",");
-                                            Console.WriteLine(screen.PrevPoints[12][0]);
+                    /*
+                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0] + ",");
+                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1] + ",");
+                                        Console.Write(screen.PrevPoints[12][0] + ",");
+                                        Console.WriteLine(screen.PrevPoints[12][0]);
+                                        */
+                    /*
+                                            missingx = new double[]
+                                            {
+                                            sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0],
+                                            sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1]
+                                            };
                                             */
-/*
-                        missingx = new double[]
-                        {
-                        sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0],
-                        sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1]
-                        };
-                        */
-                    }
+                    //  }
 
                     //do estimation using the displacement model
                     ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
@@ -916,7 +956,7 @@ namespace ScreenTracker.DataProcessing
             CopyMemory(bitmap.BackBuffer, data.DataPointer, dataSize);
             bitmap.AddDirtyRect(new Int32Rect(0, 0, data.Width, data.Height));
             bitmap.Unlock();
-          //  data.Dispose();
+            //  data.Dispose();
         }
 
 
@@ -940,10 +980,10 @@ namespace ScreenTracker.DataProcessing
 
 
             using (Mat thresholdImg = new Mat(), ///new Mat(infraredFrameDimension.Height, infraredFrameDimension.Width, DepthType.Cv8U, 1),
-                //   infraredFrame = infraredFrameOrg.Clone())
+                 //   infraredFrame = infraredFrameOrg.Clone())
 
                  infraredFrameROI = new Mat(infraredFrameOrg, mask))
-               // infraredFrame = infraredFrameOrg.Clone())
+            // infraredFrame = infraredFrameOrg.Clone())
             ///  infraredFrame = new Mat(infraredFrameDimension.Height, infraredFrameDimension.Width, DepthType.Cv16U, 1))
             ///  
             {
@@ -999,11 +1039,11 @@ namespace ScreenTracker.DataProcessing
 
 
                 //            thresholdImg = thresholdImg.MorphologyEx(MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
-                
+
                 CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 2, BorderType.Constant, new MCvScalar(1.0));
                 CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Erode, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Constant, new MCvScalar(1.0));
-                
-                
+
+
                 // find controids of reflective surfaces and mark them on the image 
                 TrackedData(thresholdImg);
 
@@ -1039,7 +1079,7 @@ namespace ScreenTracker.DataProcessing
 
                 // cleanup
             }
-            }
+        }
 
 
 
@@ -1312,7 +1352,7 @@ namespace ScreenTracker.DataProcessing
             CvInvoke.Normalize(infraredImage, infraredImage, 0, 255, NormType.MinMax, DepthType.Cv8U);
 
 
-            
+
             Mat colImg = new Mat(infraredImage.Width, infraredImage.Height, DepthType.Cv8U, 3);
 
 
@@ -1343,7 +1383,7 @@ namespace ScreenTracker.DataProcessing
                                     FontFace.HersheyComplex,
                                     1.0,
                                     new Gray(colorcode).MCvScalar);
-    */
+        */
                     if (screen.PointInfo[i].Visible)
                     {
                         CvInvoke.Rectangle(colImg, rect, new Bgr(100, 100, 0).MCvScalar, -1); // 2 pixel box thick
@@ -1357,7 +1397,7 @@ namespace ScreenTracker.DataProcessing
 
                     CvInvoke.PutText(colImg,
                     i.ToString(),
-                    new System.Drawing.Point((int)screen.PrevPoints[i][0] - (width) +2, (int)screen.PrevPoints[i][1] + (height/2)),
+                    new System.Drawing.Point((int)screen.PrevPoints[i][0] - (width) + 2, (int)screen.PrevPoints[i][1] + (height / 2)),
                     FontFace.HersheyPlain,
                     .4,
                     new Bgr(200, 200, 255).MCvScalar);

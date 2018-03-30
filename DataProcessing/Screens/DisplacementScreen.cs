@@ -1,10 +1,10 @@
 ﻿using Emgu.CV;
-using System;
 using ScreenTracker.DataProcessing.Screens.Points;
+using System;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
-    class DisplacementScreen : IScreen
+    class DisplacementScreen : BaseScreen, IScreen
     {
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace ScreenTracker.DataProcessing.Screens
         /// <summary>
         /// Array for holding points found in the previous frame
         /// </summary>
-       public  double[][] prevPoints;
+        public double[][] prevPoints;
 
         public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoDisplacement[])value; }
@@ -27,6 +27,12 @@ namespace ScreenTracker.DataProcessing.Screens
         int num_particles_height = Properties.UserSettings.Default.GridRows;
 
 
+        //constructor
+        public DisplacementScreen(int height, int width) : base(height, width) { }
+
+
+
+
         public void Initialize(double[][] orderedCentroidPoints, Mat stats)
         {
 
@@ -34,7 +40,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
             PointInfo = new PointInfoDisplacement[num_particles_height * num_particles_width];
 
-          
+
 
             int i = 0;
             // initialize points
@@ -62,7 +68,7 @@ namespace ScreenTracker.DataProcessing.Screens
             }
 
 
-             this.prevPoints = orderedCentroidPoints;
+            this.prevPoints = orderedCentroidPoints;
 
         }
 
@@ -90,7 +96,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
                     // if we can get an estimate using extrapolation, update with the estimated point
-                    if (estPoint != null)
+                    if (estPoint != null && InFrame(estPoint))
                     {
                         newPoints[k] = estPoint;
                     }

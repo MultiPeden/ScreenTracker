@@ -49,6 +49,9 @@
         <StatusBar Grid.Row="3" HorizontalAlignment="Stretch" Name="statusBar" VerticalAlignment="Bottom" Background="White" Foreground="{StaticResource MediumGreyBrush}">
             <StatusBarItem Content="{Binding StatusText}"/>
         </StatusBar>
+        <StatusBar Grid.Row="3" HorizontalAlignment="Right" Name="FPSBar" VerticalAlignment="Bottom" Background="White" Foreground="{StaticResource MediumGreyBrush}">
+            <StatusBarItem Content="{Binding FPSText}"/>
+        </StatusBar>
         <Grid Margin="10" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -58,10 +61,10 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Viewbox Grid.Row="0" Grid.Column="0" >
-                <Image Name="leftImg" Source="{Binding ImageSource}" Stretch="Fill" />
+                <Image Name="leftImg"  Stretch="Fill" />
             </Viewbox>
             <Viewbox Grid.Row="0" Grid.Column="1" >
-                <Image Name="rightImg" Source="{Binding ImageSourceColor}" Stretch="Fill" />
+                <Image Name="rightImg"  Stretch="Fill" />
             </Viewbox>
 
 

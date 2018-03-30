@@ -1,10 +1,10 @@
 ﻿using Emgu.CV;
-using System;
 using ScreenTracker.DataProcessing.Screens.Points;
+using System;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
-    class ExtrapolationScreen : IScreen
+    class ExtrapolationScreen : BaseScreen, IScreen
     {
 
         /// <summary>
@@ -26,6 +26,8 @@ namespace ScreenTracker.DataProcessing.Screens
         int num_particles_width = Properties.UserSettings.Default.GridColums;
         int num_particles_height = Properties.UserSettings.Default.GridRows;
 
+
+        public ExtrapolationScreen(int height, int width) : base(height, width) { }
 
         public void Initialize(double[][] orderedCentroidPoints, Mat stats)
         {
@@ -90,7 +92,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
                     // if we can get an estimate using extrapolation, update with the estimated point
-                    if (estPoint != null)
+                    if (estPoint != null && InFrame(estPoint))
                     {
                         newPoints[k] = estPoint;
                     }

@@ -34,6 +34,6 @@ namespace ScreenTracker.DataReceiver
         double[][] ScreenToWorldCoordinates(double[][] newPoints, ushort[] zCoordinates);
 
 
-
+        int[] IRFrameDImensions();
     }
 }
