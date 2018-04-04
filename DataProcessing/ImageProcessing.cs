@@ -108,6 +108,18 @@ namespace ScreenTracker.DataProcessing
 
 
         Hungarian hung;
+
+
+
+        int cols;
+        int rows;
+        int maxPoints;
+
+
+
+
+
+
         /// <summary>
         ///  Constructor for the ImageProcessing class
         /// </summary>
@@ -151,20 +163,32 @@ namespace ScreenTracker.DataProcessing
             int[] irdims = cameraData.IRFrameDImensions();
             int height = irdims[0];
             int width = irdims[1];
-            this.screen = new ExtrapolationScreen(height, width);
-            int padding = 40;
+
+
+
+            //       this.screen = new ExtrapolationScreen(height, width);
+            this.screen = new SpringScreen(height, width);
+
+
+            int padding = 20;
 
             mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
 
             int kernelSize = Properties.UserSettings.Default.kernelSize;
             this.kernel = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
 
-            this.centroidPoints = new double[Properties.UserSettings.Default.GridColums * Properties.UserSettings.Default.GridRows][];
+
 
 
             //maskMat = new Mat(424,512, DepthType.Cv8U,1);
 
-            hung = new Hungarian(Properties.UserSettings.Default.GridColums, Properties.UserSettings.Default.GridRows);
+
+
+
+            cols = Properties.UserSettings.Default.GridColums;
+            rows = Properties.UserSettings.Default.GridRows;
+            maxPoints = rows * cols;
+            hung = new Hungarian(maxPoints, maxPoints);
 
             //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
 
@@ -207,30 +231,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-
-            if (screen.PrevPoints != null)
-            {
-
-                System.Drawing.Point offsetP = mask.Location;
-
-                double[][] shittyPoints = new double[screen.PrevPoints.Length][];
-
-                for (int i = 0; i < screen.PrevPoints.Length; i++)
-                {
-                    //    shittyPoints[i][0] = screen.PrevPoints[i][0] + offsetP.X;
-                    //     shittyPoints[i][1] = screen.PrevPoints[i][1] + offsetP.Y;
-
-                    shittyPoints[i] = new double[]
-                    {
-                        screen.PrevPoints[i][0] + offsetP.X,
-                        screen.PrevPoints[i][1] + offsetP.Y
-    };
-
-
-                }
-
-                SendPoints(screen.PrevPoints, zCoordinates);
-            }
+            SendPoints(screen.PrevPoints, zCoordinates);
 
             stopwatch.Stop();
             //  Console.WriteLine(stopwatch.ElapsedMilliseconds);
@@ -623,11 +624,19 @@ namespace ScreenTracker.DataProcessing
 
                 // Copy centroid points to point array
 
+                int numbOfPoints = n - 2;
+
+
+
+
+
                 MCvPoint2D64f[] centroidPointsEmgu;
                 centroidPointsEmgu = new MCvPoint2D64f[n];
 
                 centroids.CopyTo(centroidPointsEmgu);
 
+
+                this.centroidPoints = new double[centroidPointsEmgu.Length - 2][];
 
 
                 // Convert centoid points to jagged array
@@ -647,15 +656,14 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    int cols = Properties.UserSettings.Default.GridColums;
-                    int rows = Properties.UserSettings.Default.GridRows;
-
-                    if (rows * cols != n - 2)
+                    if (this.maxPoints != numbOfPoints)
                     {
                         mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image";
 
                         return;
                     }
+
+
 
                     double[][] orderedCentroidPoints = new double[rows * cols][];
 
@@ -695,15 +703,17 @@ namespace ScreenTracker.DataProcessing
                     // copy previous points to new point to avoid loosing any points
                     // newPoints = prevPoints;
 
-
+                    if (this.maxPoints < numbOfPoints)
+                    {
+                        mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
+                        return;
+                    }
 
 
 
 
                     if (firstDetected)
                     {
-                        int cols = Properties.UserSettings.Default.GridColums;
-                        int rows = Properties.UserSettings.Default.GridRows;
 
                         mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
 
@@ -718,6 +728,38 @@ namespace ScreenTracker.DataProcessing
                     int[] minInd = GetPointsIndices(centroidPoints);
 
                     double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
+
+                    /*
+
+                    double[][] rearranged = new double[centroidPointsEmgu.Length - 2][];
+
+
+                    Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
+
+                    int count = 0;
+                    int j = 0;
+
+                    for (int k = 0; k < rows; k++)
+                    {
+
+
+
+                        double[][] colArray = centroidPoints.Skip(k * cols).Take(cols).ToArray();
+                        Array.Sort(colArray, (left, right) => left[0].CompareTo(right[0]));
+
+                        foreach (double[] p in colArray)
+                        {
+                            if (j < 2 || j > colArray.Length - 3)
+                                rearranged[count] = p;
+                            count++;
+                            j++;
+
+                        }
+
+                        break;
+
+                    }
+                    */
 
 
 
@@ -834,9 +876,13 @@ namespace ScreenTracker.DataProcessing
 
             for (int i = 0; i < centroidPoints.Length; i++)
             {
+
                 MCvPoint2D64f point = points[i + 2];
 
                 centroidPoints[i] = new double[2] { point.X + offsetP.X, point.Y + offsetP.Y };
+
+
+
             }
 
 

@@ -142,5 +142,17 @@ namespace ScreenTracker.Properties {
                 this["Spring_ConstraintIterations"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
+        public float Spring_constant {
+            get {
+                return ((float)(this["Spring_constant"]));
+            }
+            set {
+                this["Spring_constant"] = value;
+            }
+        }
     }
 }

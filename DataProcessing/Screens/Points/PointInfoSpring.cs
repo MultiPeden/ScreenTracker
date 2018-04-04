@@ -15,7 +15,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         private Vector3 pos; // the current position of the particle in 3D space
         private Vector3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
         private Vector3 acceleration; // a vector representing the current acceleration of the particle
-      //  private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
+                                      //  private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 
 
         private List<int> cardinalIDs;
@@ -25,7 +25,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
         public int id;
 
-        
+
 
         //for displacement calculations 
         double[] orignalPos;
@@ -67,7 +67,11 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
                 ///   pos = pos + (pos - old_pos) * (1.0 - damping) + acceleration * stepsize;
 
-                pos = Vector3.Multiply(pos + (pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
+                //    pos = Vector3.Multiply(pos + (pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
+
+                // 	pos = pos + (pos-old_pos)*(1.0-DAMPING) 
+
+                pos = pos + Vector3.Multiply((pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
 
 
 

@@ -32,5 +32,8 @@
     <Setting Name="Spring_ConstraintIterations" Type="System.Single" Scope="User">
       <Value Profile="(Default)">15</Value>
     </Setting>
+    <Setting Name="Spring_constant" Type="System.Single" Scope="User">
+      <Value Profile="(Default)">0.5</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

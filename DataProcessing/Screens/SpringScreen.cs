@@ -94,7 +94,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
              * 
              * 
              */
-
+         //   AddGravity();
 
             for (int i = 0; i < newPoints.Length; i++)
             {
@@ -118,6 +118,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
             for (int i = 0; i < newPoints.Length; i++)
             {
+
                 if (newPoints[i] == null)
                 {
                     pointInfo[i].TimeStep();
@@ -127,6 +128,16 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
             this.prevPoints = newPoints;
 
+        }
+
+
+        private void AddGravity()
+        {
+            Vector3 gravityVector = new Vector3(0, (float)9.8, 0);
+            foreach (PointInfoSpring point in pointInfo)
+            {
+                point.AddForce(gravityVector);
+            }
         }
 
 
@@ -164,19 +175,39 @@ This includes calling satisfyConstraint() for every constraint, and calling time
         {
             HashSet<Constraint> missingPointsConstraints = new HashSet<Constraint>();
 
+            HashSet<Constraint> missingPointsConstraintsNorth = new HashSet<Constraint>();
+
 
             for (int i = 0; i < newPoints.Length; i++)
             {
                 if (newPoints[i] == null)
                 {
+                    PointInfo[i].Visible = false;
                     foreach (int id in pointInfo[i].CardinalIDs)
                     {
-                        PointInfo[i].Visible = false;
+
                         Constraint constraint = pairDict[PointPair(i, id)];
 
-                        missingPointsConstraints.Add(constraint);
+                        if (id < i)
+                        {
+
+                            missingPointsConstraintsNorth.Add(constraint);
+                        }
+                        else
+                        {
+                            missingPointsConstraints.Add(constraint);
+                        }
                     }
                 }
+
+
+
+
+
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
 
 
                 foreach (Constraint constraint in missingPointsConstraints)
@@ -184,8 +215,10 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                     constraint.SatisfyConstraint();
                 }
 
-
-
+                foreach (Constraint constraint in missingPointsConstraintsNorth)
+                {
+                    constraint.SatisfyConstraintNorth();
+                }
             }
         }
 
@@ -210,9 +243,9 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                 {
                     Vector3 vec = new Vector3((float)point[0], (float)point[1], (float)0);
                     PointInfoSpring pinfo = pointInfo[i];
-
+                    pinfo.SetOldPos(pinfo.GetPos());
                     pinfo.SetPos(vec);
-                    pinfo.SetOldPos(vec);
+
                 }
 
             }

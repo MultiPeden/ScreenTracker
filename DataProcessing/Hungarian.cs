@@ -73,7 +73,7 @@ namespace ScreenTracker.DataProcessing
 
         public void Solve(int[,] costMatrix)
         {
-
+            resetMaskandCovers();
             path_count = 0;
             step = 1;
 
@@ -126,20 +126,11 @@ namespace ScreenTracker.DataProcessing
             for (int r = 0; r < nrow; r++)
                 for (int c = 0; c < ncol; c++)
                 {
-
-                    try
+                    if (C[r, c] == 0 && RowCover[r] == 0 && ColCover[c] == 0)
                     {
-                        if (C[r, c] == 0 && RowCover[r] == 0 && ColCover[c] == 0)
-                        {
-                            M[r, c] = 1;
-                            RowCover[r] = 1;
-                            ColCover[c] = 1;
-                        }
-                    }
-                    catch (Exception)
-                    {
-
-                        int en = 1;
+                        M[r, c] = 1;
+                        RowCover[r] = 1;
+                        ColCover[c] = 1;
                     }
 
                 }
