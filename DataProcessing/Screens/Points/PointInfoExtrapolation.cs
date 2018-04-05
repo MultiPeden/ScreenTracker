@@ -6,7 +6,7 @@
         PointInfoExtrapolation pN, pE, pS, pW, p2N, p2E, p2S, p2W;
         private bool visible;
 
-  //      public bool Visible { get => visible; set => visible = value; }
+        //      public bool Visible { get => visible; set => visible = value; }
 
         public PointInfoExtrapolation(int height, int width, int id) : base(height, width)
         {
@@ -103,55 +103,40 @@
         /// <returns></returns>
         public double[] EstimatePostition(double[][] points)
         {
+
+
             double[] estPoint;
-            double accX = 0;
-            double accY = 0;
+            double[] acc = new double[3] { 0, 0, 0 };
             int count = 0;
 
+
             estPoint = Extrapolate(pN, p2N, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+            count += AccumulateVector(acc, estPoint);
 
             estPoint = Extrapolate(pE, p2E, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+            count += AccumulateVector(acc, estPoint);
 
             estPoint = Extrapolate(pS, p2S, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+            count += AccumulateVector(acc, estPoint);
 
             estPoint = Extrapolate(pW, p2W, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+            count += AccumulateVector(acc, estPoint);
+
+
 
             if (count != 0)
             {
                 //  estPoint[0] = accX / count;
                 //  estPoint[1] = accY / count;
 
-                estPoint = new double[2]
+                return new double[3]
                 {
-                    accX / count,
-                    accY / count
+                    acc[0] / count,
+                    acc[1] / count,
+                    acc[2] / count
                 };
 
-                return estPoint;
+
             }
             else
             {
@@ -190,9 +175,10 @@
                 else
                 {
 
-                    double[] est = new double[2] {
+                    double[] est = new double[3] {
                     p1[0] * 2 - p2[0],
-                    p1[1] * 2 - p2[1]
+                    p1[1] * 2 - p2[1],
+                    p1[2] * 2 - p2[2]
                 };
                     return est;
                 }

@@ -37,21 +37,21 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
-            int i = 0;
+
+
             // initialize points
-            foreach (double[] point in orderedCentroidPoints)
+            for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
-                int j = i + 1;
+
+                int j = i + 2;
                 int width = stats.GetData(j, 2)[0];
                 int height = stats.GetData(j, 3)[0];
                 int area = stats.GetData(j, 4)[0];
-                // set info for each point, used later to get z-coordinate
+                // set info for each point, used to paint tracked marker later
 
-                //todo
-                //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
-                this.PointInfo[i] = new PointInfoSpring(width, height, i, point);
+                this.PointInfo[i] = new PointInfoSpring(width, height, i, orderedCentroidPoints[i]);
                 i++;
-                Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
+
             }
 
 
@@ -91,6 +91,8 @@ This includes calling satisfyConstraint() for every constraint, and calling time
              */
             //   AddGravity();
 
+            Vector3 point;
+
             for (int i = 0; i < newPoints.Length; i++)
             {
                 if (newPoints[i] == null)
@@ -117,7 +119,8 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                 if (newPoints[i] == null)
                 {
                     pointInfo[i].TimeStep();
-                    newPoints[i] = new double[] { pointInfo[i].GetPos().X, pointInfo[i].GetPos().Y };
+                    point = pointInfo[i].GetPos();
+                    newPoints[i] = new double[] { point.X, point.Y, point.Z };
                 }
             }
 
@@ -143,7 +146,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
             for (int i = 0; i < prevPoints.Length; i++)
             {
-                List<int> cardinals = pointInfo[i].GetCardinals(pointInfo, i, num_particles_width, num_particles_height);
+                List<int> cardinals = pointInfo[i].GetCardinals(i, num_particles_width, num_particles_height);
 
                 foreach (int cardinal in cardinals)
                 {
@@ -236,7 +239,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
                 if (point != null)
                 {
-                    Vector3 vec = new Vector3((float)point[0], (float)point[1], (float)0);
+                    Vector3 vec = new Vector3((float)point[0], (float)point[1], (float)point[2]);
                     PointInfoSpring pinfo = pointInfo[i];
                     pinfo.SetOldPos(pinfo.GetPos());
                     pinfo.SetPos(vec);

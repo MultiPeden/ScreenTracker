@@ -135,7 +135,8 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             return new double[]
             {
                DisplacementFunction( position[0] - this.orignalPos[0]) ,
-               DisplacementFunction( position[1] - this.orignalPos[1])
+               DisplacementFunction( position[1] - this.orignalPos[1]) ,
+               DisplacementFunction( position[2] - this.orignalPos[2])
             };
         }
 
@@ -154,6 +155,8 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
 
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -163,39 +166,23 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         public double[] EstimatePostitionDisplacement(double[][] points, int mode)
         {
             double[] estPoint;
-            double accX = 0;
-            double accY = 0;
+            double[] acc = new double[3] { 0, 0, 0 };
             int count = 0;
 
 
             estPoint = ExtrapolateDisplacement(pN, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-
-            }
-
-
+            count += AccumulateVector(acc, estPoint);
 
             estPoint = ExtrapolateDisplacement(pE, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
-
-
+            count += AccumulateVector(acc, estPoint);
 
             estPoint = ExtrapolateDisplacement(pW, points);
-            if (estPoint != null)
-            {
-                accX += estPoint[0];
-                accY += estPoint[1];
-                count++;
-            }
+            count += AccumulateVector(acc, estPoint);
+
+            estPoint = ExtrapolateDisplacement(pS, points);
+            count += AccumulateVector(acc, estPoint);
+
+
 
 
             if (mode == 1)
@@ -203,38 +190,17 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
                 estPoint = ExtrapolateDisplacement(pNE, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
+                count += AccumulateVector(acc, estPoint);
 
                 estPoint = ExtrapolateDisplacement(pSE, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
+                count += AccumulateVector(acc, estPoint);
+
 
                 estPoint = ExtrapolateDisplacement(pSW, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
-
+                count += AccumulateVector(acc, estPoint);
 
                 estPoint = ExtrapolateDisplacement(pNW, points);
-                if (estPoint != null)
-                {
-                    accX += estPoint[0];
-                    accY += estPoint[1];
-                    count++;
-                }
+                count += AccumulateVector(acc, estPoint);
 
             }
 
@@ -244,13 +210,12 @@ namespace ScreenTracker.DataProcessing.Screens.Points
                 //  estPoint[0] = accX / count;
                 //  estPoint[1] = accY / count;
 
-                estPoint = new double[2]
-                {
-                   this.orignalPos[0] + ScaleDistx(accX / count),
-                   this.orignalPos[1] + ScaleDisty(accY / count)
-                };
+                return new double[3]{
+                   this.orignalPos[0] + ScaleDistx(acc[0] / count),
+                   this.orignalPos[1] + ScaleDisty(acc[1] / count),
+                   this.orignalPos[2] + ScaleDisty(acc[2] / count)};
 
-                return estPoint;
+
             }
             else
             {
@@ -279,16 +244,16 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
             return x;
-         //   return (-0.0322 * Math.Pow(x, 3)) + (0.0674 * Math.Pow(x, 2)) + (4.2751 * x) + 1.0466;
+            //   return (-0.0322 * Math.Pow(x, 3)) + (0.0674 * Math.Pow(x, 2)) + (4.2751 * x) + 1.0466;
         }
 
-       
 
-                    private double ScaleDisty(double y)
+
+        private double ScaleDisty(double y)
         {
             //  y = -0.0318x3 - 0.6185x2 + 7.4246x - 2.0988
             return y;
-          //  return (-0.0318 * Math.Pow(y, 3)) - (0.6185 * Math.Pow(y, 2)) + (7.4246 * y) - 2.0988;
+            //  return (-0.0318 * Math.Pow(y, 3)) - (0.6185 * Math.Pow(y, 2)) + (7.4246 * y) - 2.0988;
         }
 
 

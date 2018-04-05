@@ -4,7 +4,7 @@
     /// Holds information for tracking points
     /// both for visual representation and track filtering
     /// </summary>
-    abstract class PointInfo 
+    abstract class PointInfo
     {
         // Bounding box dimensions
         private int height;
@@ -13,7 +13,7 @@
 
         private bool visible;
 
-  
+
 
         // zFilter for completing OneEuroFilter
         private OneEuroFilter zFilter;
@@ -26,18 +26,33 @@
             this.width = width;
             this.zFilter = new OneEuroFilter(1, 0);
         }
-        
+
         public int Height { get => height; set => height = value; }
         public int Width { get => width; set => width = value; }
 
         public double Filter(double zval)
         {
-          return  this.zFilter.Filter(zval,rate);
+            return this.zFilter.Filter(zval, rate);
         }
 
 
         public bool Visible { get => visible; set => visible = value; }
 
+
+        public int AccumulateVector(double[] acc, double[] estimate)
+        {
+            if (estimate != null)
+            {
+                acc[0] = acc[0] + estimate[0];
+                acc[1] = acc[1] + estimate[1];
+                acc[2] = acc[2] + estimate[2];
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
 
 
 

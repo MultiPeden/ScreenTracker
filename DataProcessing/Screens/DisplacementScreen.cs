@@ -1,6 +1,5 @@
 ﻿using Emgu.CV;
 using ScreenTracker.DataProcessing.Screens.Points;
-using System;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
@@ -36,21 +35,19 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
-            int i = 0;
+            int j = 2;
+            int width, height, area;
             // initialize points
-            foreach (double[] point in orderedCentroidPoints)
+            for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
-                int j = i + 2;
-                int width = stats.GetData(j, 2)[0];
-                int height = stats.GetData(j, 3)[0];
-                int area = stats.GetData(j, 4)[0];
-                // set info for each point, used later to get z-coordinate
+                width = stats.GetData(j, 2)[0];
+                height = stats.GetData(j, 3)[0];
+                area = stats.GetData(j, 4)[0];
+                // set info for each point, used to paint tracked marker later
 
-                //todo
-                //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
-                this.PointInfo[i] = new PointInfoDisplacement(width, height, i, point);
-                i++;
-                Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
+                this.PointInfo[i] = new PointInfoDisplacement(width, height, i, orderedCentroidPoints[i]);
+
+                j++;
             }
 
 

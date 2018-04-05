@@ -32,19 +32,19 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
+            int j = 2;
+            int width, height, area;
             // initialize points
             for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
-
-                int j = i + 2;
-                int width = stats.GetData(j, 2)[0];
-                int height = stats.GetData(j, 3)[0];
-                int area = stats.GetData(j, 4)[0];
+                width = stats.GetData(j, 2)[0];
+                height = stats.GetData(j, 3)[0];
+                area = stats.GetData(j, 4)[0];
                 // set info for each point, used to paint tracked marker later
 
                 this.PointInfo[i] = new PointInfoExtrapolation(width, height, i);
-                i++;
 
+                j++;
             }
 
 

@@ -36,7 +36,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         {
 
             // spring
-            this.pos = new Vector3((float)position[0], (float)position[1], 0);
+            this.pos = new Vector3((float)position[0], (float)position[1], (float)position[2]);
             this.old_pos = pos;
             this.mass = 1;
             this.movable = false;
@@ -76,7 +76,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
                 old_pos = temp;
-                acceleration = new Vector3((float)0, (float)0, (float)0); // acceleration is reset since it HAS been translated into a change in position (and implicitely into velocity)	
+                ResetAcceleration(); // acceleration is reset since it HAS been translated into a change in position (and implicitely into velocity)	
             }
         }
 
@@ -137,7 +137,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         /// <param name="id"></param>
         /// <param name="numOfCols"></param>
         /// <param name="numOfRows"></param>
-        public List<int> GetCardinals(PointInfoSpring[] points, int id, int numOfCols, int numOfRows)
+        public List<int> GetCardinals(int id, int numOfCols, int numOfRows)
         {
             int index;
             int n = (numOfCols * numOfRows) - 1;

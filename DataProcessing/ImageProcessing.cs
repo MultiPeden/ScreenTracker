@@ -166,9 +166,9 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            //       this.screen = new ExtrapolationScreen(height, width);
-            this.screen = new SpringScreen(height, width);
-
+            this.screen = new ExtrapolationScreen(height, width);
+            //this.screen = new SpringScreen(height, width);
+            //      this.screen = new DisplacementScreen(height, width);
 
             int padding = 20;
 
