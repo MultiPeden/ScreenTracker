@@ -15,12 +15,7 @@ namespace ScreenTracker.DataProcessing.Screens
         private PointInfoSpring[] pointInfo;
 
 
-        /// <summary>
-        /// Array for holding points found in the previous frame
-        /// </summary>
-        private double[][] prevPoints;
 
-        public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[])value; }
 
 
@@ -94,7 +89,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
              * 
              * 
              */
-         //   AddGravity();
+            //   AddGravity();
 
             for (int i = 0; i < newPoints.Length; i++)
             {

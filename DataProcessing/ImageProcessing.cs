@@ -104,7 +104,7 @@ namespace ScreenTracker.DataProcessing
         private Rectangle mask;
 
         Mat kernel;
-        private double[][] centroidPoints;
+
 
 
         Hungarian hung;
@@ -218,20 +218,17 @@ namespace ScreenTracker.DataProcessing
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             // Process infrared image and track points
-            this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension);
+            this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
             //this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
 
 
 
 
 
-            // get z-coordinates
-            ushort[] zCoordinates = this.GetZCoordinatesSurroundingBox(e.DepthImage);
-            // Send point via UDP
 
 
 
-            SendPoints(screen.PrevPoints, zCoordinates);
+            SendPoints(screen.PrevPoints);
 
             stopwatch.Stop();
             //  Console.WriteLine(stopwatch.ElapsedMilliseconds);
@@ -429,32 +426,45 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="depthFrameData"></param>
         /// <returns> The estimated z-coodinates </returns>
-        private unsafe ushort[] GetZCoordinatesSurroundingBox(Mat depthImage)
+        private unsafe void AssignZCoordinatesSurroundingBox(double[][] newPoints, Mat stats, Mat depthImage)
         {
-            if (screen.PrevPoints != null)
+
+            // init array to the size of the array with tracked points
+            //ushort[] zCoordinates = new ushort[this.screen.PrevPoints.Length];
+
+
+
+            // list for each point's depth sample points
+            List<double> zCoords;
+
+            // find the cardinal and inter-candinal points and their values
+            // to the list zCoords.
+            int x, y;
+            int j;
+            int BoxWidth, BoxHeight, width, height;
+            double[] point;
+
+            for (int i = 0; i < newPoints.Length; i++)
             {
-                // init array to the size of the array with tracked points
-                ushort[] zCoordinates = new ushort[this.screen.PrevPoints.Length];
-
-
-
-                // list for each point's depth sample points
-                List<double> zCoords;
-
-                // find the cardinal and inter-candinal points and their values
-                // to the list zCoords.
-                for (int i = 0; i < screen.PrevPoints.Length; i++)
+                zCoords = new List<double>();
+                point = newPoints[i];
+                if (point != null)
                 {
-                    zCoords = new List<double>();
-                    PointInfo p = screen.PointInfo[i];
 
-                    int x = (int)screen.PrevPoints[i][0];
-                    int y = (int)screen.PrevPoints[i][1];
+                    x = (int)Math.Round(point[0]);
+                    y = (int)Math.Round(point[1]);
+
+
+                    j = i + 2;
+
+                    BoxWidth = stats.GetData(j, 2)[0];
+                    BoxHeight = stats.GetData(j, 3)[0];
+
 
                     // We want to go half the with and hight(+ padding) 
                     // in each direction to get the estimate
-                    int width = (p.Width / 2) + 1;
-                    int height = (p.Height / 2) + 1;
+                    width = (BoxWidth / 2) + 1;
+                    height = (BoxHeight / 2) + 1;
 
                     // add cardinal points (N,E,S,W)
                     AddDephtPixel(x + width, y, ref depthImage, ref zCoords);
@@ -468,28 +478,36 @@ namespace ScreenTracker.DataProcessing
                     AddDephtPixel(x + width, y - height, ref depthImage, ref zCoords);
                     AddDephtPixel(x - width, y + height, ref depthImage, ref zCoords);
 
+
+
+
+
                     // if we did not find any valid estimate the z-coordinate is set to 0
                     if (zCoords.Count != 0)
                     {
+
+
+
                         // find the z-val by calc the median of the cardinal and inter-cardinal points
                         double zval = Measures.Median(zCoords.ToArray());
 
                         // apply one-euro-filter 
-                        zCoordinates[i] = (ushort)p.Filter(zval);
+                        //   zCoordinates[i] = (ushort)p.Filter(zval);
+
+                        point[2] = zval;
+
                     }
                     else
                     {
-                        zCoordinates[i] = 0;
+                        // zCoordinates[i] = 0;
+                        point[2] = 0;
                     }
                     // todo
                     // zCoordinates[i] = 130;
                 }
-                return zCoordinates;
             }
-            else
-            {
-                return null;
-            }
+
+
 
         }
 
@@ -604,8 +622,9 @@ namespace ScreenTracker.DataProcessing
         /// <param name="thresholdImg"></param>
         /// <param name="showThesholdedImg"></param>
         /// <returns></returns>
-        private void TrackedData(Mat thresholdImg)
+        private void TrackedData(Mat thresholdImg, Mat depthFrame)
         {
+
 
 
 
@@ -622,9 +641,11 @@ namespace ScreenTracker.DataProcessing
                 int n;
                 n = CvInvoke.ConnectedComponentsWithStats(thresholdImg, labels, stats, centroids, LineType.EightConnected, DepthType.Cv16U);
 
+
                 // Copy centroid points to point array
 
                 int numbOfPoints = n - 2;
+
 
 
 
@@ -636,11 +657,14 @@ namespace ScreenTracker.DataProcessing
                 centroids.CopyTo(centroidPointsEmgu);
 
 
-                this.centroidPoints = new double[centroidPointsEmgu.Length - 2][];
+
 
 
                 // Convert centoid points to jagged array
-                SetCentroidPoints(centroidPointsEmgu, n);
+                double[][] centroidPoints = GetCentroidPoints(centroidPointsEmgu, n);
+
+                // add z-coordinates to the tracked points
+                AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
 
 
 
@@ -655,13 +679,15 @@ namespace ScreenTracker.DataProcessing
                 {
 
 
-
                     if (this.maxPoints != numbOfPoints)
                     {
                         mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image";
 
                         return;
                     }
+
+
+
 
 
 
@@ -690,6 +716,7 @@ namespace ScreenTracker.DataProcessing
 
 
                     }
+
 
 
 
@@ -723,6 +750,10 @@ namespace ScreenTracker.DataProcessing
 
                     // build KD-tree for nearest neighbour search
                     //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+
+                    // add z-coordinates to the tracked points
+                    AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
+
 
                     // Use Hungarian algorithm to find points from the old frame, in the new frame
                     int[] minInd = GetPointsIndices(centroidPoints);
@@ -763,6 +794,8 @@ namespace ScreenTracker.DataProcessing
 
 
 
+
+
                     //Update points
                     foreach (double[] point in rearranged)
                     {
@@ -788,6 +821,7 @@ namespace ScreenTracker.DataProcessing
 
                         i++;
                     }
+
 
 
 
@@ -865,27 +899,23 @@ namespace ScreenTracker.DataProcessing
         /// <param name="points"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        private void SetCentroidPoints(MCvPoint2D64f[] points, int n)
+        private double[][] GetCentroidPoints(MCvPoint2D64f[] points, int n)
         {
 
-
+            double[][] jaggedPoints = new double[points.Length - 2][];
 
 
             System.Drawing.Point offsetP = mask.Location;
+            MCvPoint2D64f point;
 
 
-            for (int i = 0; i < centroidPoints.Length; i++)
+            for (int i = 0; i < jaggedPoints.Length; i++)
             {
-
-                MCvPoint2D64f point = points[i + 2];
-
-                centroidPoints[i] = new double[2] { point.X + offsetP.X, point.Y + offsetP.Y };
-
-
-
+                point = points[i + 2];
+                jaggedPoints[i] = new double[3] { point.X + offsetP.X, point.Y + offsetP.Y, 0 };
             }
 
-
+            return jaggedPoints;
 
         }
 
@@ -897,12 +927,12 @@ namespace ScreenTracker.DataProcessing
         /// Converts a list of points to Json and sends it via UDP socket
         /// </summary>
         /// <param name="newPoints"></param>
-        private void SendPoints(double[][] newPoints, ushort[] zCoordinates)
+        private void SendPoints(double[][] points)
         {
             // Convert to world-coordinates
-            double[][] worldCoordinates = cameraData.ScreenToWorldCoordinates(newPoints, zCoordinates);
+            double[][] worldCoordinates = cameraData.ScreenToWorldCoordinates(points);
             // Convert to Json
-            String jSon = IRUtils.PointstoJson(worldCoordinates, zCoordinates);
+            String jSon = IRUtils.PointstoJson(worldCoordinates);
             if (jSon != null)
             {
                 // Send to socket via.
@@ -974,8 +1004,11 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="infraredFrame"> the InfraredFrame image </param>
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private void ProcessInfraredFrame(Mat infraredFrameOrg, FrameDimension infraredFrameDimension)
+        private void ProcessInfraredFrame(Mat infraredFrameOrg, FrameDimension infraredFrameDimension, Mat depthFrame)
         {
+
+
+
             // init threshold image variable
             //            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDimension.Width, infraredFrameDimension.Height);
 
@@ -1048,7 +1081,7 @@ namespace ScreenTracker.DataProcessing
 
 
                 // find controids of reflective surfaces and mark them on the image 
-                TrackedData(thresholdImg);
+                TrackedData(thresholdImg, depthFrame);
 
 
 
@@ -1298,7 +1331,7 @@ namespace ScreenTracker.DataProcessing
 
 
                         // find controids of reflective surfaces and mark them on the image 
-                        TrackedData(testMat);
+                        //        TrackedData(testMat);
 
 
 

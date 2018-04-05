@@ -13,18 +13,12 @@ namespace ScreenTracker.DataProcessing.Screens
         private PointInfoDisplacement[] pointInfo;
 
 
-        /// <summary>
-        /// Array for holding points found in the previous frame
-        /// </summary>
-        public double[][] prevPoints;
 
-        public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoDisplacement[])value; }
 
 
 
-        int num_particles_width = Properties.UserSettings.Default.GridColums;
-        int num_particles_height = Properties.UserSettings.Default.GridRows;
+
 
 
         //constructor
@@ -38,7 +32,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
-            PointInfo = new PointInfoDisplacement[num_particles_height * num_particles_width];
+            PointInfo = new PointInfoDisplacement[Num_particles_height * Num_particles_width];
 
 
 
@@ -64,7 +58,7 @@ namespace ScreenTracker.DataProcessing.Screens
             // assign kardinal points to pointInfo
             for (int k = 0; k < pointInfo.Length; k++)
             {
-                pointInfo[k].AssignCardinalPoints(pointInfo, k, num_particles_width, num_particles_height);
+                pointInfo[k].AssignCardinalPoints(pointInfo, k, Num_particles_width, Num_particles_height);
             }
 
 

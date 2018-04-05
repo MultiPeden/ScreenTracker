@@ -1,6 +1,5 @@
 ﻿using Emgu.CV;
 using ScreenTracker.DataProcessing.Screens.Points;
-using System;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
@@ -13,12 +12,7 @@ namespace ScreenTracker.DataProcessing.Screens
         private PointInfoExtrapolation[] pointInfo;
 
 
-        /// <summary>
-        /// Array for holding points found in the previous frame
-        /// </summary>
-        public double[][] prevPoints;
 
-        public double[][] PrevPoints { get => prevPoints; set => prevPoints = value; }
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoExtrapolation[])value; }
 
 
@@ -38,29 +32,27 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
-            int i = 0;
             // initialize points
-            foreach (double[] point in orderedCentroidPoints)
+            for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
+
                 int j = i + 2;
                 int width = stats.GetData(j, 2)[0];
                 int height = stats.GetData(j, 3)[0];
                 int area = stats.GetData(j, 4)[0];
-                // set info for each point, used later to get z-coordinate
+                // set info for each point, used to paint tracked marker later
 
-                //todo
-                //screen.PointInfo[i] = new PointInfoSpring(width, height, i, new double[] {point[0], point[1],0 });
                 this.PointInfo[i] = new PointInfoExtrapolation(width, height, i);
                 i++;
-                Console.WriteLine("X: " + point[0] + " Y: " + point[1]);
+
             }
 
 
 
             // assign kardinal points to pointInfo
-            for (int k = 0; k < pointInfo.Length; k++)
+            for (int i = 0; i < pointInfo.Length; i++)
             {
-                pointInfo[k].AssignCardinalPoints(pointInfo, k, num_particles_width, num_particles_height);
+                pointInfo[i].AssignCardinalPoints(pointInfo, i, num_particles_width, num_particles_height);
             }
 
 

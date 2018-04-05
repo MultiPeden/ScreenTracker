@@ -459,24 +459,28 @@ namespace ScreenTracker.DataReceiver
         /// <param name="points"></param>
         /// <param name="zCoordinates"></param>
         /// <returns></returns>
-        public double[][] ScreenToWorldCoordinates(double[][] points, ushort[] zCoordinates)
+        public double[][] ScreenToWorldCoordinates(double[][] points)
         {
-            if (points != null && zCoordinates != null)
+            if (points != null)
             {
-                double[][] newPointsTest = new double[points.Length][];
+                DepthSpacePoint depthSpacePoint;
+                double[][] WorldCoordinates = new double[points.Length][];
+                double[] point;
+
                 for (int i = 0; i < points.Length; i++)
                 {
-                    DepthSpacePoint depthSpacePoint = new DepthSpacePoint
+                    point = points[i];
+                    depthSpacePoint = new DepthSpacePoint
                     {
-                        X = (float)points[i][0],
-                        Y = (float)points[i][1]
+                        X = (float)point[0],
+                        Y = (float)point[1]
                     };
                     // Find the lutValue for the given set of coordinates
-                    CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, zCoordinates[i]);
+                    CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, (ushort)point[2]);
                     // Convert coordinates using the found lutValue
-                    newPointsTest[i] = new double[2] { lutValue.X * 1000, lutValue.Y * 1000 };
+                    WorldCoordinates[i] = new double[3] { lutValue.X * 1000, lutValue.Y * 1000, (ushort)point[2] };
                 }
-                return newPointsTest;
+                return WorldCoordinates;
             }
             else
             {

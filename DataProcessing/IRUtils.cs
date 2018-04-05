@@ -14,7 +14,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="points"></param>
         /// <returns></returns>
-        public static String PointstoJson(double[][] points, ushort[] zCoordinates)
+        public static String PointstoJson(double[][] points)
         {
             if (points != null)
             {
@@ -28,7 +28,7 @@ namespace ScreenTracker.DataProcessing
                     // invert y axis
                     //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
                     // no invert
-                    jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1] , (int)zCoordinates[i]);
+                    jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1], (int)point[2]);
                     if (i < points.Length - 1)
                         jSon += ",";
                     i++;
