@@ -126,8 +126,6 @@
 
             if (count != 0)
             {
-                //  estPoint[0] = accX / count;
-                //  estPoint[1] = accY / count;
 
                 return new double[3]
                 {
