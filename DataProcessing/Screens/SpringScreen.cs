@@ -20,7 +20,7 @@ namespace ScreenTracker.DataProcessing.Screens
 
 
 
-        Dictionary<String, Constraint> pairDict = new Dictionary<String, Constraint>();
+        Dictionary<String, Spring> pairDict = new Dictionary<String, Spring>();
 
         int num_particles_width = Properties.UserSettings.Default.GridColums;
         int num_particles_height = Properties.UserSettings.Default.GridRows;
@@ -147,7 +147,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                 foreach (int cardinal in cardinals)
                 {
 
-                    Constraint constraint = new Constraint(pointInfo[i], pointInfo[cardinal], PointPair(i, cardinal));
+                    Spring constraint = new Spring(pointInfo[i], pointInfo[cardinal], PointPair(i, cardinal));
 
                     pairDict.Add(PointPair(i, cardinal), constraint);
                 }
@@ -167,9 +167,9 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
         public void SatisfyConstraints(double[][] newPoints)
         {
-            HashSet<Constraint> missingPointsConstraints = new HashSet<Constraint>();
+            HashSet<Spring> missingPointsConstraints = new HashSet<Spring>();
 
-            HashSet<Constraint> missingPointsConstraintsNorth = new HashSet<Constraint>();
+            HashSet<Spring> missingPointsConstraintsNorth = new HashSet<Spring>();
 
 
             for (int i = 0; i < newPoints.Length; i++)
@@ -180,7 +180,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                     foreach (int id in pointInfo[i].CardinalIDs)
                     {
 
-                        Constraint constraint = pairDict[PointPair(i, id)];
+                        Spring constraint = pairDict[PointPair(i, id)];
 
                         if (id < i)
                         {
@@ -200,16 +200,16 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
             }
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 1; i++)
             {
 
 
-                foreach (Constraint constraint in missingPointsConstraints)
+                foreach (Spring constraint in missingPointsConstraints)
                 {
                     constraint.SatisfyConstraint();
                 }
 
-                foreach (Constraint constraint in missingPointsConstraintsNorth)
+                foreach (Spring constraint in missingPointsConstraintsNorth)
                 {
                     constraint.SatisfyConstraintNorth();
                 }

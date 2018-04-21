@@ -16,6 +16,8 @@ namespace ScreenTracker.DataProcessing
         /// <returns></returns>
         public static String PointstoJson(double[][] points)
         {
+
+
             if (points != null)
             {
                 int i = 0;
@@ -28,7 +30,8 @@ namespace ScreenTracker.DataProcessing
                     // invert y axis
                     //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
                     // no invert
-                    jSon += IRUtils.IRPointsJson(i, (int)point[0] * -1, (int)point[1], (int)point[2]);
+                    jSon += IRUtils.IRPointsJson(i, point[0] * -1, point[1], point[2]);
+                    //   break;
                     if (i < points.Length - 1)
                         jSon += ",";
                     i++;
@@ -48,14 +51,14 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        public static String IRPointsJson(int id, int x, int y)
+        public static String IRPointsJson(int id, double x, double y)
         {
             // return String.Format("{{\"IRPoint\":{{\"id\":{0},\"x\":{1},\"y\":{2}}}}}", id, x, y);
             return String.Format("{{\"id\":{0},\"x\":{1},\"y\":{2}}}", id, x, y);
             // return String.Format("{{\"id\":\"{0}\",\"x\":\"{1}\",\"y\":\"{2}\"}}", id, x, y);
         }
 
-        public static String IRPointsJson(int id, int x, int y, int z)
+        public static String IRPointsJson(int id, double x, double y, double z)
         {
             // return String.Format("{{\"IRPoint\":{{\"id\":{0},\"x\":{1},\"y\":{2}}}}}", id, x, y);
             return String.Format("{{\"id\":{0},\"x\":{1},\"y\":{2},\"z\":{3}}}", id, x, y, z);
@@ -137,17 +140,17 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        public static int[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
+        public static double[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
         {
 
-            int[,] costMatrix = new int[prevPoints.Length, newpoints.Length];
+            double[,] costMatrix = new double[prevPoints.Length, newpoints.Length];
 
             for (int i = 0; i < prevPoints.Length; i++)
             {
 
                 for (int j = 0; j < newpoints.Length; j++)
                 {
-                    costMatrix[i, j] = (int)Math.Round(UnsqrtDist(prevPoints[i], newpoints[j]));
+                    costMatrix[i, j] = UnsqrtDist(prevPoints[i], newpoints[j]);
                 }
             }
 

@@ -4,14 +4,14 @@ using System.Numerics;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
-    class Constraint
+    class Spring
     {
         private float rest_distance; // the length between particle p1 and p2 in rest configuration
         public PointInfoSpring p1, p2; // the two particles that are connected through this constraint
         public string name;
         private float springConstant;
 
-        public Constraint(PointInfoSpring p1, PointInfoSpring p2, string name)
+        public Spring(PointInfoSpring p1, PointInfoSpring p2, string name)
         {
             this.p1 = p1;
             this.p2 = p2;

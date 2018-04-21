@@ -33,6 +33,10 @@ namespace ScreenTracker.DataReceiver
         /// <returns></returns>
         double[][] ScreenToWorldCoordinates(double[][] points);
 
+        void ScreenToWorldCoordinates2(double[][] points);
+
+        double[][] CameraToIR(double[][] points);
+
 
         int[] IRFrameDImensions();
     }

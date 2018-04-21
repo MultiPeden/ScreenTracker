@@ -114,7 +114,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DataProcessing\Screens\BaseScreen.cs" />
-    <Compile Include="DataProcessing\Screens\Constraint.cs" />
+    <Compile Include="DataProcessing\Screens\Spring.cs" />
     <Compile Include="DataProcessing\Screens\ExtrapolationScreen.cs" />
     <Compile Include="DataProcessing\Screens\Points\PointInfoExtrapolation.cs" />
     <Compile Include="DataProcessing\Screens\Points\PointInfoSpring.cs" />
@@ -128,7 +128,7 @@
     <Compile Include="DataProcessing\ImageProcessing.cs" />
     <Compile Include="DataProcessing\IRUtils.cs" />
     <Compile Include="DataReceiver\KinectData.cs" />
-    <Compile Include="DataProcessing\OneEuroFilter.cs" />
+    <Compile Include="DataProcessing\Screens\OneEuroFilter.cs" />
     <Compile Include="DataProcessing\Screens\Points\PointInfo.cs" />
     <Compile Include="DataProcessing\Screens\Points\PointInfoDisplacement.cs" />
     <Compile Include="GUI\FPSCounter.cs" />

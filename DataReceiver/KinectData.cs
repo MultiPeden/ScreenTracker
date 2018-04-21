@@ -270,6 +270,7 @@ namespace ScreenTracker.DataReceiver
                     {
                         // Conversion to needed EMGU image
                         Mat depthImage = this.ProcessDepthFrameData(depthFrame);
+
                         emguArgs.DepthImage = depthImage;
                         emguArgs.DepthFrameDimension = new FrameDimension(depthFrameDescription.Width, depthFrameDescription.Height);
                     }
@@ -488,6 +489,79 @@ namespace ScreenTracker.DataReceiver
             }
         }
 
+
+
+        /// <summary>
+        ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="zCoordinates"></param>
+        /// <returns></returns>
+        public void ScreenToWorldCoordinates2(double[][] points)
+        {
+            if (points != null)
+            {
+                DepthSpacePoint depthSpacePoint;
+                CameraSpacePoint lutValue;
+
+                double[] point;
+
+                for (int i = 0; i < points.Length; i++)
+                {
+                    point = points[i];
+                    depthSpacePoint = new DepthSpacePoint
+                    {
+                        X = (float)point[0],
+                        Y = (float)point[1]
+                    };
+                    // Find the lutValue for the given set of coordinates
+                    lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, (ushort)(point[2]));
+
+                    // Convert coordinates using the found lutValue
+                    points[i][0] = lutValue.X;
+                    points[i][1] = lutValue.Y;
+                    points[i][2] = lutValue.Z;
+
+
+                }
+
+            }
+        }
+
+
+        public double[][] CameraToIR(double[][] points)
+        {
+            if (points != null)
+            {
+                CameraSpacePoint camPoint = new CameraSpacePoint();
+                DepthSpacePoint depthSpacePoint;
+                double[][] depthSpacePoints = new double[points.Length][];
+                double[] point;
+
+
+                for (int i = 0; i < points.Length; i++)
+                {
+                    point = points[i];
+                    camPoint.X = (float)point[0];
+                    camPoint.Y = (float)point[1];
+                    camPoint.Z = (float)point[2];
+                    depthSpacePoint = mapper.MapCameraPointToDepthSpace(camPoint);
+                    depthSpacePoints[i] = new double[]
+                    {
+                    depthSpacePoint.X,
+                    depthSpacePoint.Y
+                    };
+
+                }
+
+                return depthSpacePoints;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
 
 
         CameraSpacePoint[] result;

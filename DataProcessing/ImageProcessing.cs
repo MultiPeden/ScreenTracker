@@ -489,7 +489,7 @@ namespace ScreenTracker.DataProcessing
 
 
                         // find the z-val by calc the median of the cardinal and inter-cardinal points
-                        double zval = Measures.Median(zCoords.ToArray());
+                        double zval = Measures.Mean(zCoords.ToArray());
 
                         // apply one-euro-filter 
                         //   zCoordinates[i] = (ushort)p.Filter(zval);
@@ -500,7 +500,7 @@ namespace ScreenTracker.DataProcessing
                     else
                     {
                         // zCoordinates[i] = 0;
-                        point[2] = 0;
+                        point[2] = 1500;
                     }
                     // todo
                     // zCoordinates[i] = 130;
@@ -546,7 +546,7 @@ namespace ScreenTracker.DataProcessing
                 {
                     // X and Y has med interchanged because the GetData get the trasposed pixel values
                     short zCoord = BitConverter.ToInt16(depthImage.GetData(y, x), 0);
-                    // short zCoord = 1500;
+
                     zCoords.Add(zCoord);
                 }
                 catch (Exception)
@@ -647,7 +647,11 @@ namespace ScreenTracker.DataProcessing
                 int numbOfPoints = n - 2;
 
 
-
+                if (this.maxPoints < numbOfPoints)
+                {
+                    mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
+                    return;
+                }
 
 
 
@@ -665,6 +669,19 @@ namespace ScreenTracker.DataProcessing
 
                 // add z-coordinates to the tracked points
                 AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
+
+                try
+                {
+                    cameraData.ScreenToWorldCoordinates2(centroidPoints);
+                }
+                catch (Exception)
+                {
+
+                    int k = 1;
+                }
+
+
+
 
 
 
@@ -695,7 +712,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
+                    Array.Sort(centroidPoints, (left, right) => right[1].CompareTo(left[1]));
 
                     int count = 0;
 
@@ -730,11 +747,7 @@ namespace ScreenTracker.DataProcessing
                     // copy previous points to new point to avoid loosing any points
                     // newPoints = prevPoints;
 
-                    if (this.maxPoints < numbOfPoints)
-                    {
-                        mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
-                        return;
-                    }
+
 
 
 
@@ -752,13 +765,20 @@ namespace ScreenTracker.DataProcessing
                     //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
 
                     // add z-coordinates to the tracked points
-                    AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
-
+                    // AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
 
                     // Use Hungarian algorithm to find points from the old frame, in the new frame
                     int[] minInd = GetPointsIndices(centroidPoints);
 
+                    watch.Stop();
+                    var elapsedMs = watch.ElapsedMilliseconds;
+
+                    Console.WriteLine("tracked points: " + numbOfPoints + "  Hugarian ms: " + elapsedMs);
+
                     double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
+
+
 
                     /*
 
@@ -879,7 +899,7 @@ namespace ScreenTracker.DataProcessing
         /// <returns></returns>
         private int[] GetPointsIndices(double[][] centroidPoints)
         {
-            int[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
+            double[,] costMatrix = IRUtils.GetCostMatrixArray(centroidPoints, screen.PrevPoints);
             hung.Solve(costMatrix);
 
             int[,] M = hung.M;
@@ -929,15 +949,21 @@ namespace ScreenTracker.DataProcessing
         /// <param name="newPoints"></param>
         private void SendPoints(double[][] points)
         {
-            // Convert to world-coordinates
-            double[][] worldCoordinates = cameraData.ScreenToWorldCoordinates(points);
-            // Convert to Json
-            String jSon = IRUtils.PointstoJson(worldCoordinates);
-            if (jSon != null)
-            {
-                // Send to socket via.
-                udpSender.WriteToSocket(jSon);
-            }
+
+            if (points != null)
+                udpSender.WriteToSocket(points);
+
+            /*
+                // Convert to Json
+                String jSon = IRUtils.PointstoJson(points);
+                if (jSon != null)
+                {
+                    // Send to socket via.
+                    udpSender.WriteToSocket(jSon);
+                }
+                */
+
+
         }
 
 
@@ -1395,59 +1421,69 @@ namespace ScreenTracker.DataProcessing
 
             CvInvoke.CvtColor(infraredImage, colImg, ColorConversion.Gray2Bgr, 3);
 
-
-
-
             if (screen.PrevPoints != null)
             {
 
 
-                for (int i = 0; i < screen.PrevPoints.Length; i++)
+                double[][] cameraSpaceCoordinates = cameraData.CameraToIR(screen.PrevPoints);
+                ////double[][] cameraSpaceCoordinates = screen.PrevPoints;
+
+
+
+                if (cameraSpaceCoordinates != null)
                 {
-                    int width = screen.PointInfo[i].Width;
-                    int height = screen.PointInfo[i].Height;
-                    int x = (int)screen.PrevPoints[i][0];
-                    int y = (int)screen.PrevPoints[i][1];
 
-                    Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
-                    /*
-                    CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+                    int width, height;
+                    int x, y;
+                    double[] point;
 
-                    CvInvoke.PutText(infraredImage,
-                                    i.ToString(),
-                                    new System.Drawing.Point((int)prevPoints[i][0], (int)prevPoints[i][1]),
-                                    FontFace.HersheyComplex,
-                                    1.0,
-                                    new Gray(colorcode).MCvScalar);
-        */
-                    if (screen.PointInfo[i].Visible)
+                    for (int i = 0; i < cameraSpaceCoordinates.Length; i++)
                     {
-                        CvInvoke.Rectangle(colImg, rect, new Bgr(100, 100, 0).MCvScalar, -1); // 2 pixel box thick
+                        point = cameraSpaceCoordinates[i];
+                        width = screen.PointInfo[i].Width;
+                        height = screen.PointInfo[i].Height;
+                        x = (int)point[0];
+                        y = (int)point[1];
+
+                        Rectangle rect = new Rectangle(x - (width / 2) - padding, y - (height / 2) - padding, width + padding * 2, height + padding * 2);
+                        /*
+                        CvInvoke.Rectangle(infraredImage, rect, new Gray(colorcode).MCvScalar, thickness); // 2 pixel box thick
+
+                        CvInvoke.PutText(infraredImage,
+                                        i.ToString(),
+                                        new System.Drawing.Point((int)prevPoints[i][0], (int)prevPoints[i][1]),
+                                        FontFace.HersheyComplex,
+                                        1.0,
+                                        new Gray(colorcode).MCvScalar);
+            */
+                        if (screen.PointInfo[i].Visible)
+                        {
+                            CvInvoke.Rectangle(colImg, rect, new Bgr(100, 100, 0).MCvScalar, -1); // 2 pixel box thick
+                        }
+                        else
+                        {
+                            CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
+                        }
+
+
+
+                        CvInvoke.PutText(colImg,
+                        i.ToString(),
+                                            new System.Drawing.Point((int)point[0] - (width) + 2, (int)point[1] + (height / 2)),
+                                            FontFace.HersheyPlain,
+                                            .4,
+                                            new Bgr(200, 200, 255).MCvScalar);
+
                     }
-                    else
-                    {
-                        CvInvoke.Rectangle(colImg, rect, new Bgr(0, 0, 255).MCvScalar, thickness); // 2 pixel box thick
-                    }
 
-
-
-                    CvInvoke.PutText(colImg,
-                    i.ToString(),
-                    new System.Drawing.Point((int)screen.PrevPoints[i][0] - (width) + 2, (int)screen.PrevPoints[i][1] + (height / 2)),
-                    FontFace.HersheyPlain,
-                    .4,
-                    new Bgr(200, 200, 255).MCvScalar);
 
                 }
 
-
+                int height1 = 10;
+                int width1 = 10;
+                Rectangle rect1 = new Rectangle((int)missingx[0] - (width1 / 2) - padding, (int)missingx[1] - (height1 / 2) - padding, width1 + padding * 2, height1 + padding * 2);
+                CvInvoke.Rectangle(colImg, rect1, new Bgr(255, 0, 255).MCvScalar, thickness); // 2 pixel box thick
             }
-
-            int height1 = 10;
-            int width1 = 10;
-            Rectangle rect1 = new Rectangle((int)missingx[0] - (width1 / 2) - padding, (int)missingx[1] - (height1 / 2) - padding, width1 + padding * 2, height1 + padding * 2);
-            CvInvoke.Rectangle(colImg, rect1, new Bgr(255, 0, 255).MCvScalar, thickness); // 2 pixel box thick
-
             return colImg;
 
         }

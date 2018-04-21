@@ -33,7 +33,7 @@ namespace ScreenTracker.DataProcessing
     class Hungarian
     {
 
-        private int[,] C;
+        private double[,] C;
         public int[,] M;
         private int[,] path;
         private int[] RowCover;
@@ -71,7 +71,7 @@ namespace ScreenTracker.DataProcessing
         }
 
 
-        public void Solve(int[,] costMatrix)
+        public void Solve(double[,] costMatrix)
         {
             resetMaskandCovers();
             path_count = 0;
@@ -104,7 +104,7 @@ namespace ScreenTracker.DataProcessing
         //it from every element in its row.  When finished, Go to Step 2.
         private void step_one(ref int step)
         {
-            int min_in_row;
+            double min_in_row;
 
             for (int r = 0; r < nrow; r++)
             {
@@ -334,7 +334,7 @@ namespace ScreenTracker.DataProcessing
         }
 
         //methods to support step 6
-        private void find_smallest(ref int minval)
+        private void find_smallest(ref double minval)
         {
             for (int r = 0; r < nrow; r++)
                 for (int c = 0; c < ncol; c++)
@@ -348,7 +348,7 @@ namespace ScreenTracker.DataProcessing
         //altering any stars, primes, or covered lines.
         private void step_six(ref int step)
         {
-            int minval = int.MaxValue;
+            double minval = double.MaxValue;
             find_smallest(ref minval);
             for (int r = 0; r < nrow; r++)
                 for (int c = 0; c < ncol; c++)
