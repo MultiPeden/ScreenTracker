@@ -120,7 +120,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-
+        List<double[]> notAssigned;
 
 
         /// <summary>
@@ -783,7 +783,21 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    screen.UpdateScreen(np);
+                    double[][] prevCopy = screen.PrevPoints;
+
+
+                    int[] estiamted = screen.UpdateScreen(np);
+
+                    if (notAssigned.Count > 0)
+                    {
+                        AssignRest(stats, centroidPoints, estiamted);
+                    }
+
+
+
+
+
+
                     //     PointInfo sprinInfo = screen.PointInfo[12];
                     // if (sprinInfo.Visible)
                     //   {
@@ -831,6 +845,50 @@ namespace ScreenTracker.DataProcessing
         }
 
 
+        private void AssignRest(Mat stats, double[][] centroidPoints, int[] estiamted)
+        {
+
+
+            double[][] estiamtedPoints = new double[estiamted.Length][];
+            double[][] notAssignedPoints = notAssigned.ToArray();
+            int i = 0;
+            foreach (int j in estiamted)
+            {
+                estiamtedPoints[i] = screen.PrevPoints[j];
+                i++;
+            }
+
+            i = 0;
+
+
+
+
+            int index;
+            double[] point;
+            KDTree<int> tree = KDTree.FromData<int>(estiamtedPoints, estiamted);
+            // find nearest neighbour
+
+            for (i = 0; i < notAssignedPoints.Length; i++)
+            {
+                point = notAssignedPoints[i];
+
+
+                KDTreeNode<int> nearest = tree.Nearest(point);
+                // get its index
+                index = nearest.Value;
+                screen.PrevPoints[index] = notAssignedPoints[i];
+
+
+                PointInfo pInfo = screen.PointInfo[i];
+
+                pInfo.Visible = true;
+
+            }
+
+
+
+        }
+
         private double[][] FindNearest(Mat stats, double[][] centroidPoints)
         {
 
@@ -839,6 +897,13 @@ namespace ScreenTracker.DataProcessing
             double[][] newPoints = new double[screen.PrevPoints.Length][];
             int[] mapping = new int[screen.PrevPoints.Length];
             int index;
+            notAssigned = new List<double[]>();
+
+            for (int k = 0; k < mapping.Length; k++)
+            {
+                mapping[k] = -1;
+            }
+
 
             int i = 0;
             //Update points
@@ -876,6 +941,9 @@ namespace ScreenTracker.DataProcessing
                     else
                     {
                         newPoints[index] = null;
+                        notAssigned.Add(point);
+                        notAssigned.Add(centroidPoints[mapping[index]]);
+
                         /*
 
                         double[] n1 = point;
@@ -894,14 +962,20 @@ namespace ScreenTracker.DataProcessing
                         {
                             newPoints[index] = n2;
                         }
-                        */
+
+
+                    */
                     }
-                    mapping[index] = i; ;
+                    mapping[index] = i;
 
                 }
 
                 i++;
             }
+
+
+
+
             return newPoints;
 
         }
@@ -1238,7 +1312,7 @@ namespace ScreenTracker.DataProcessing
                         i.ToString(),
                                             new System.Drawing.Point((int)point[0] - (width) + 2, (int)point[1] + (height / 2)),
                                             FontFace.HersheyPlain,
-                                            .4,
+                                            .5,
                                             new Bgr(200, 200, 255).MCvScalar);
 
                     }

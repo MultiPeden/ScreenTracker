@@ -24,7 +24,7 @@ namespace ScreenTracker.DataProcessing.Screens
         void Initialize(double[][] newPoints, Mat stats);
 
 
-        void UpdateScreen(double[][] newPoints);
+        int[] UpdateScreen(double[][] newPoints);
 
 
         bool InFrame(double[] point);

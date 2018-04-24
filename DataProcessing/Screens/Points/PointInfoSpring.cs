@@ -52,6 +52,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
         }
 
+
         //// spring model
         /* This is one of the important methods, where the time is progressed a single step size (TIME_STEPSIZE)
    The method is called by Cloth.time_step()
@@ -127,6 +128,63 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         public List<int> CardinalIDs { get => cardinalIDs; }
 
 
+
+
+        public bool RelativePosOK(double[] pos, double[][] newpoints, int numOfCols, int numOfRows)
+        {
+            int index;
+            int n = (numOfCols * numOfRows) - 1;
+            int idModCols = id % numOfCols;
+
+            double x = pos[0];
+            double y = pos[1];
+
+            // north
+            int north = CanGoNorth(id, n, numOfCols);
+            if (north != -1)
+            {
+
+                if (newpoints[north] == null)
+                    return true;
+                if (newpoints[north][1] < y)
+                    return false;
+            }
+
+            // south
+            int south = CanGoSouth(id, n, numOfCols);
+            if (south != -1)
+            {
+                if (newpoints[south] == null)
+                    return true;
+                if (newpoints[south][1] > y)
+                    return false;
+            }
+
+
+            // east
+            int east = CanGoEast(id, n, numOfCols, idModCols);
+            if (east != -1)
+            {
+                if (newpoints[east] == null)
+                    return true;
+                if (newpoints[east][0] < x)
+                    return false;
+            }
+
+
+            // west
+            int west = CanGoWest(id, n, numOfCols, idModCols);
+            if (west != -1)
+            {
+                if (newpoints[west] == null)
+                    return true;
+                if (newpoints[west][0] > x)
+                    return false;
+            }
+
+
+            return true;
+        }
 
 
 

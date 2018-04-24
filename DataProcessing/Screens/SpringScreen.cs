@@ -58,9 +58,9 @@ namespace ScreenTracker.DataProcessing.Screens
         }
 
 
-        public void UpdateScreen(double[][] newPoints)
+        public int[] UpdateScreen(double[][] newPoints)
         {
-            TimeStep(newPoints);
+            return TimeStep(newPoints);
         }
 
 
@@ -68,10 +68,10 @@ namespace ScreenTracker.DataProcessing.Screens
 This includes calling satisfyConstraint() for every constraint, and calling timeStep() for all particles
 */
 
-        public void TimeStep(double[][] newPoints)
+        public int[] TimeStep(double[][] newPoints)
         {
 
-
+            List<int> estimated = new List<int>();
             /*
              * 
              * 
@@ -117,11 +117,14 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                     pointInfo[i].TimeStep();
                     point = pointInfo[i].GetPos();
                     newPoints[i] = new double[] { point.X, point.Y, point.Z };
+                    estimated.Add(i);
                 }
             }
 
             this.prevPoints = newPoints;
 
+
+            return estimated.ToArray();
         }
 
 
@@ -226,7 +229,8 @@ This includes calling satisfyConstraint() for every constraint, and calling time
         /// <param name="newPoints"></param>
         public void UpdateKnownPoints(double[][] newPoints)
         {
-
+            int num_particles_width = Properties.UserSettings.Default.GridColums;
+            int num_particles_height = Properties.UserSettings.Default.GridRows;
 
             for (int i = 0; i < newPoints.Length; i++)
             {
@@ -235,11 +239,18 @@ This includes calling satisfyConstraint() for every constraint, and calling time
 
                 if (point != null)
                 {
-                    Vector3 vec = new Vector3((float)point[0], (float)point[1], (float)point[2]);
-                    PointInfoSpring pinfo = pointInfo[i];
-                    pinfo.SetOldPos(pinfo.GetPos());
-                    pinfo.SetPos(vec);
+                    if (pointInfo[i].RelativePosOK(point, newPoints, num_particles_width, num_particles_height))
+                    {
+                        Vector3 vec = new Vector3((float)point[0], (float)point[1], (float)point[2]);
+                        PointInfoSpring pinfo = pointInfo[i];
+                        pinfo.SetOldPos(pinfo.GetPos());
+                        pinfo.SetPos(vec);
+                    }
+                    else
+                    {
 
+                        newPoints[i] = null;
+                    }
                 }
 
             }

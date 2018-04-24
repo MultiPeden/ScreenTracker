@@ -3,7 +3,7 @@ using ScreenTracker.DataProcessing.Screens.Points;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
-    class ExtrapolationScreen : BaseScreen, IScreen
+    class ExtrapolationScreen : BaseScreen
     {
 
         /// <summary>
