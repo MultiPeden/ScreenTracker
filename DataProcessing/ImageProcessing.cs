@@ -19,6 +19,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 
+
+
 namespace ScreenTracker.DataProcessing
 {
     [CLSCompliant(false)]
@@ -760,9 +762,11 @@ namespace ScreenTracker.DataProcessing
                         firstDetected = false;
                     }
 
-
                     // build KD-tree for nearest neighbour search
-                    //      KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+                    KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
+
+
+
 
                     // add z-coordinates to the tracked points
                     // AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
