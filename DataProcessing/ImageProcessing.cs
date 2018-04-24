@@ -1,4 +1,5 @@
-﻿using Accord.Statistics;
+﻿using Accord.Collections;
+using Accord.Statistics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -221,7 +222,6 @@ namespace ScreenTracker.DataProcessing
 
             // Process infrared image and track points
             this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
-            //this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
 
 
 
@@ -762,94 +762,28 @@ namespace ScreenTracker.DataProcessing
                         firstDetected = false;
                     }
 
-                    // build KD-tree for nearest neighbour search
-                    KDTree<int> tree = KDTree.FromData<int>(prevPoints, Enumerable.Range(0, prevPoints.Length).ToArray());
-
-
-
-
-                    // add z-coordinates to the tracked points
-                    // AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
                     var watch = System.Diagnostics.Stopwatch.StartNew();
 
-                    // Use Hungarian algorithm to find points from the old frame, in the new frame
-                    int[] minInd = GetPointsIndices(centroidPoints);
+                    double[][] np = FindNearest(stats, centroidPoints);
+
+                    foreach (double[] p in np)
+                    {
+                        if (p == null)
+                        {
+
+                        }
+                    }
+
 
                     watch.Stop();
-                    var elapsedMs = watch.ElapsedMilliseconds;
 
+                    var elapsedMs = watch.ElapsedMilliseconds;
                     Console.WriteLine("tracked points: " + numbOfPoints + "  Hugarian ms: " + elapsedMs);
 
-                    double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
 
 
 
-                    /*
-
-                    double[][] rearranged = new double[centroidPointsEmgu.Length - 2][];
-
-
-                    Array.Sort(centroidPoints, (left, right) => left[1].CompareTo(right[1]));
-
-                    int count = 0;
-                    int j = 0;
-
-                    for (int k = 0; k < rows; k++)
-                    {
-
-
-
-                        double[][] colArray = centroidPoints.Skip(k * cols).Take(cols).ToArray();
-                        Array.Sort(colArray, (left, right) => left[0].CompareTo(right[0]));
-
-                        foreach (double[] p in colArray)
-                        {
-                            if (j < 2 || j > colArray.Length - 3)
-                                rearranged[count] = p;
-                            count++;
-                            j++;
-
-                        }
-
-                        break;
-
-                    }
-                    */
-
-
-
-
-
-                    //Update points
-                    foreach (double[] point in rearranged)
-                    {
-
-                        if (point != null)
-                        {
-                            index = minInd[i] + 2;
-
-                            int width = stats.GetData(index, 2)[0];
-                            int height = stats.GetData(index, 3)[0];
-                            int area = stats.GetData(index, 4)[0];
-
-                            // if the area is more than minArea, discard 
-                            if (true) // (area > minArea)
-                            {
-                                PointInfo pInfo = screen.PointInfo[i];
-                                pInfo.Width = width;
-                                pInfo.Height = height;
-                                pInfo.Visible = true;
-
-                            }
-                        }
-
-                        i++;
-                    }
-
-
-
-
-                    screen.UpdateScreen(rearranged);
+                    screen.UpdateScreen(np);
                     //     PointInfo sprinInfo = screen.PointInfo[12];
                     // if (sprinInfo.Visible)
                     //   {
@@ -895,6 +829,86 @@ namespace ScreenTracker.DataProcessing
             }
 
         }
+
+
+        private double[][] FindNearest(Mat stats, double[][] centroidPoints)
+        {
+
+            // build KD-tree for nearest neighbour search
+            KDTree<int> tree = KDTree.FromData<int>(screen.PrevPoints, Enumerable.Range(0, screen.PrevPoints.Length).ToArray());
+            double[][] newPoints = new double[screen.PrevPoints.Length][];
+            int[] mapping = new int[screen.PrevPoints.Length];
+            int index;
+
+            int i = 0;
+            //Update points
+            foreach (double[] point in centroidPoints)
+            {
+                int j = i + 2;
+                int width = stats.GetData(j, 2)[0];
+                int height = stats.GetData(j, 3)[0];
+                int area = stats.GetData(j, 4)[0];
+
+                // if the area is more than minArea, discard 
+                if (true) // (area > minArea)
+                {
+
+                    // find nearest neighbour
+                    KDTreeNode<int> nearest = tree.Nearest(point);
+                    // get its index
+                    index = nearest.Value;
+
+
+                    // update info for the point
+                    PointInfo pInfo = screen.PointInfo[i];
+                    pInfo.Width = width;
+                    pInfo.Height = height;
+                    pInfo.Visible = true;
+
+
+                    double[] dublicate = newPoints[index];
+
+                    if (newPoints[index] == null)
+                    {
+                        newPoints[index] = point;
+
+                    }
+                    else
+                    {
+                        newPoints[index] = null;
+                        /*
+
+                        double[] n1 = point;
+                        int n2Index = mapping[index];
+                        double[] n2 = centroidPoints[n2Index];
+                        double[] old = screen.PrevPoints[index];
+
+
+                        double dist1 = IRUtils.UnsqrtDist(n1, old);
+                        double dist2 = IRUtils.UnsqrtDist(n2, old);
+                        if (dist1 < dist2)
+                        {
+                            newPoints[index] = n1;
+                        }
+                        else
+                        {
+                            newPoints[index] = n2;
+                        }
+                        */
+                    }
+                    mapping[index] = i; ;
+
+                }
+
+                i++;
+            }
+            return newPoints;
+
+        }
+
+
+
+
 
         /// <summary>
         /// Uses the Hungarian algorithm to recognize points from the old frame, in the new frame.
@@ -1149,258 +1163,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        private void GetColorMask(Mat hsvFrame, FrameDimension colorFrameDimension)
-        {
 
-
-
-
-            //    Mat redFrameHSV= new Mat();//z½ = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 3);
-
-
-
-            //   CvInvoke.CvtColor(rgbFrame, redFrameHSV, ColorConversion.Bgr2Hsv,3);
-
-
-
-            //  Mat redFrameHSVgray = new Mat();
-            // CvInvoke.InRange(redFrameHSV, new ScalarArray(new MCvScalar(0, 70, 50)), new ScalarArray(new MCvScalar(10, 255, 255)), redFrameHSVgray);
-            //  CvInvoke.InRange(redFrameHSV, new ScalarArray(new MCvScalar(170, 180, 180)), new ScalarArray(new MCvScalar(180, 255, 255)), redFrameHSVgray);
-
-            // find red elements in the image
-
-            using (Mat redFrame = new Mat(),
-                       labels = new Mat(),
-                       stats = new Mat(),
-                       centroids = new Mat())
-            {
-
-
-                //   CvInvoke.InRange(hsvFrame, new ScalarArray(new MCvScalar(0, 100, 100)), new ScalarArray(new MCvScalar(10, 255, 255)), redFrame);
-
-                CvInvoke.InRange(hsvFrame, new ScalarArray(new MCvScalar(160, 100, 100)), new ScalarArray(new MCvScalar(180, 255, 255)), redFrame);
-
-                //   CvInvoke.InRange(hsvFrame, new ScalarArray(new MCvScalar(0, 70, 50)), new ScalarArray(new MCvScalar(10, 255, 255)), redFrame);
-                //                CvInvoke.InRange(colorFrame, new ScalarArray(new MCvScalar(0, 0, 150, 255)), new ScalarArray(new MCvScalar(80, 80, 255, 255)), redFrame);
-
-
-
-                // Dialate to remove noise
-                int kernelSize = Properties.UserSettings.Default.kernelSize;
-                Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
-                CvInvoke.MorphologyEx(redFrame, redFrame, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 5, BorderType.Default, new MCvScalar(1.0));
-
-
-
-
-                // Get Connected component in the frame
-
-                MCvPoint2D64f[] centroidPointsEmgu;
-                int n;
-                n = CvInvoke.ConnectedComponentsWithStats(redFrame, labels, stats, centroids, LineType.FourConnected, DepthType.Cv16U);
-
-                if (n > 2)//n > 2)
-                {
-
-                    // Copy centroid points to point array
-                    centroidPointsEmgu = new MCvPoint2D64f[n];
-                    centroids.CopyTo(centroidPointsEmgu);
-
-                    int[] areas = new int[centroidPointsEmgu.Length - 1];
-
-
-                    int[] twoMaxArea = findNLargest(areas, 2);
-
-
-                    MCvPoint2D64f p1 = centroidPointsEmgu[twoMaxArea[0] + 1];
-                    MCvPoint2D64f p2 = centroidPointsEmgu[twoMaxArea[1] + 1];
-                    MCvPoint2D64f upperLeft;
-                    MCvPoint2D64f bottomRight;
-
-
-                    if (p1.X < p2.X && p1.Y > p2.Y)
-                    {
-                        upperLeft = p1;
-                        bottomRight = p2;
-
-                    }
-                    else
-                    {
-                        upperLeft = p2;
-                        bottomRight = p1;
-                    }
-
-                    int padding = 30;
-
-                    int rectHeight = (int)Math.Round(Math.Abs(p1.Y - p2.Y)) - padding;
-                    int rectWidth = (int)Math.Round(Math.Abs(p1.X - p2.X)) - padding;
-                    if (rectHeight > 100 && rectWidth > 100)
-                        mask = new Rectangle((int)upperLeft.X + padding / 2, (int)upperLeft.Y - rectHeight - padding / 2, rectWidth, rectHeight);
-
-                }
-
-                //   CvInvoke.Rectangle(mask, rect1, new MCvScalar(255), -1); // 2 pixel box thick
-                //   return rect1;
-
-                //  SetThresholdedInfraredImage(redFrame, colorFrameDimension);
-
-            }
-
-
-
-
-        }
-
-        /// <summary> 
-        /// Processes the infrared frame:
-        /// 1. Thesholds the infrared image
-        /// 2. Opens the thesholded image
-        /// 3. Tracks refletive markers in the thresholded image.
-        /// 4. Show infrared/thresholded image if mainwindow is present 
-        /// </summary>
-        /// <param name="infraredFrame"> the InfraredFrame image </param>
-        /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private void ProcessRGBFrame(Mat colorFrame, FrameDimension colorFrameDimension)
-        {
-
-
-
-            Mat hsv = new Mat();
-            CvInvoke.CvtColor(colorFrame, hsv, ColorConversion.Bgr2Hsv);
-
-
-            // init threshold image variable
-            using (Mat grayImage = new Mat(colorFrameDimension.Height, colorFrameDimension.Width, DepthType.Cv8U, 1))
-            {
-
-                CvInvoke.CvtColor(colorFrame, grayImage, ColorConversion.Bgr2Gray);
-
-
-
-
-
-                //  Mat hsvImg = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
-
-
-                //  Mat[] channels  = colorFrame.Split();
-
-
-                //   Mat imgprocessed = colorFrame.InRange(new Bgr(0, 0, 175),  // min filter value ( if color is greater than or equal to this)
-                //                                      new Bgr(100, 100, 256)); // max filter value ( if color is less than or equal to this)
-
-                /*
-                CvInvoke.CvtColor(colorFrame, hsvImg, ColorConversion.Bgr2Hsv);
-
-
-                 Mat imageHSVDest = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
-
-                CvInvoke.InRange(hsvImg, new ScalarArray(new MCvScalar(20, 100, 100)), new ScalarArray(new MCvScalar(20, 255, 255)), imageHSVDest);
-
-
-                Mat thresholdImg2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 1);
-                Mat colorFrame2 = new Mat(colorFrameDimension.Width, colorFrameDimension.Width, DepthType.Cv8U, 3);
-
-                CvInvoke.CvtColor(imageHSVDest, colorFrame2, ColorConversion.Hsv2Bgr);
-                CvInvoke.CvtColor(colorFrame2, thresholdImg2, ColorConversion.Bgr2Gray);
-
-                */
-
-
-                //  colorFrame2.CopyTo(colorFrame2, mask);
-                if (mask.IsEmpty == true)
-                {
-                    GetColorMask(hsv, colorFrameDimension);
-                }
-                if (mask.IsEmpty == false)
-                {
-                    //   CvInvoke.BitwiseNot
-
-
-                    using (Mat testMat = new Mat(grayImage, mask))
-                    {
-
-                        //   CvInvoke.Threshold(testMat, testMat, 100, 255, ThresholdType.BinaryInv);
-
-
-                        CvInvoke.AdaptiveThreshold(testMat, testMat, 255, AdaptiveThresholdType.GaussianC, ThresholdType.BinaryInv, 5, 30);
-
-                        //       Mat hsv = new Mat();
-
-
-                        // HSVMasked.CopyTo(HSVMasked, mask);
-
-
-                        //  CvInvoke.CvtColor(colorFrame, hsv, ColorConversion.Bgra2Bgr);
-
-                        CvInvoke.CvtColor(colorFrame, hsv, ColorConversion.Bgr2Hsv);
-
-                        //   Mat hsvMasked = new Mat(hsv, mask);
-                        Mat hsvMasked = new Mat();
-
-                        CvInvoke.InRange(hsv, new ScalarArray(new MCvScalar(0, 0, 0)), new ScalarArray(new MCvScalar(255, 80, 80)), hsvMasked);
-
-
-                        //  hsvMasked.Dispose();
-
-                        // Dialate to remove noise
-                        int kernelSize = Properties.UserSettings.Default.kernelSize;
-                        Mat kernel2 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
-                        Mat kernel3 = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(3, 3), new System.Drawing.Point(-1, -1));
-                        /*
-
-                        CvInvoke.MorphologyEx(testMat, testMat, MorphOp.Erode, kernel3, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
-
-                        CvInvoke.MorphologyEx(testMat, testMat, MorphOp.Dilate, kernel2, new System.Drawing.Point(-1, -1), 1, BorderType.Default, new MCvScalar(1.0));
-                        */
-
-
-                        //
-                        //  CvInvoke.AdaptiveThreshold(testMat, testMat, 255, AdaptiveThresholdType.GaussianC, ThresholdType.BinaryInv,3,2);
-
-
-
-
-                        // find controids of reflective surfaces and mark them on the image 
-                        //        TrackedData(testMat);
-
-
-
-
-                        //      CvInvoke.Threshold(grayImage, thresholdImg, 0,255, ThresholdType.);
-
-                        //   CvInvoke.BitwiseXor(mask, thresholdImg, thresholdImg);
-
-                        if (thresholdedClicked)
-                        {
-                            SetThresholdedInfraredImage(hsvMasked, colorFrameDimension);
-
-                        }
-                        else
-                        {
-                            //  CvInvoke.BitwiseAnd(mask, grayImage, grayImage);
-
-                            Mat colImg = DrawTrackedData(grayImage);
-                            SetInfraredImage(colImg, colorFrameDimension);
-                            colImg.Dispose();
-
-                        }
-                        hsvMasked.Dispose();
-                    }
-
-                }
-
-            }
-            hsv.Dispose();
-        }
-
-        private int[] findNLargest(int[] numbers, int n)
-        {
-
-            int N = numbers.Length;
-            int[] index = Enumerable.Range(0, N).ToArray<int>();
-            Array.Sort<int>(index, (a, b) => numbers[b].CompareTo(numbers[a]));
-            return index.Take(n).ToArray();
-        }
 
 
         /// <summary>

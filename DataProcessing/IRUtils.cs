@@ -164,12 +164,21 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        private static double UnsqrtDist(double[] a, double[] b)
+        public static double UnsqrtDist(double[] a, double[] b)
+        {
+
+            return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2) + Math.Pow(b[2] - a[2], 2);
+        }
+
+
+
+
+
+        public static double UnsqrtDist2Dim(double[] a, double[] b)
         {
 
             return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2);
         }
-
 
         public static double[][] RearrangeArray(double[][] points, int[] indices)
         {
