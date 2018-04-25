@@ -15,6 +15,8 @@ namespace ScreenTracker.DataProcessing.Screens
         private PointInfoSpring[] pointInfo;
 
 
+        public List<double[]> removedPoints;
+
 
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[])value; }
 
@@ -232,6 +234,8 @@ This includes calling satisfyConstraint() for every constraint, and calling time
             int num_particles_width = Properties.UserSettings.Default.GridColums;
             int num_particles_height = Properties.UserSettings.Default.GridRows;
 
+            removedPoints = new List<double[]>();
+
             for (int i = 0; i < newPoints.Length; i++)
             {
 
@@ -248,7 +252,7 @@ This includes calling satisfyConstraint() for every constraint, and calling time
                     }
                     else
                     {
-
+                        removedPoints.Add(point);
                         newPoints[i] = null;
                     }
                 }

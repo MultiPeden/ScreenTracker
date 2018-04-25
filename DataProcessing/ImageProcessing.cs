@@ -1,4 +1,5 @@
 ﻿using Accord.Collections;
+
 using Accord.Statistics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -783,7 +785,6 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    double[][] prevCopy = screen.PrevPoints;
 
 
                     int[] estiamted = screen.UpdateScreen(np);
@@ -849,8 +850,17 @@ namespace ScreenTracker.DataProcessing
         {
 
 
+            SpringScreen thisscrren = (SpringScreen)screen;
+
+
+            List<double[]> removedPoints = thisscrren.removedPoints;
+            //      removedPoints
+            List<double[]> notAssigned2 = notAssigned.Concat(removedPoints).ToList();
+            //    notAssigned.ass
+
+
             double[][] estiamtedPoints = new double[estiamted.Length][];
-            double[][] notAssignedPoints = notAssigned.ToArray();
+            double[][] notAssignedPoints = notAssigned2.ToArray();
             int i = 0;
             foreach (int j in estiamted)
             {
@@ -870,16 +880,18 @@ namespace ScreenTracker.DataProcessing
 
             for (i = 0; i < notAssignedPoints.Length; i++)
             {
-                point = notAssignedPoints[i];
+                point = notAssignedPoints[i]; // from centroid points
 
 
                 KDTreeNode<int> nearest = tree.Nearest(point);
                 // get its index
                 index = nearest.Value;
-                screen.PrevPoints[index] = notAssignedPoints[i];
+                screen.PrevPoints[index] = point; // from centroid points
 
 
-                PointInfo pInfo = screen.PointInfo[i];
+                PointInfoSpring pInfo = (PointInfoSpring)screen.PointInfo[index];
+                pInfo.SetOldPos(pInfo.GetPos());
+                pInfo.SetPos(new Vector3((float)point[0], (float)point[1], (float)point[2]));
 
                 pInfo.Visible = true;
 
@@ -925,7 +937,7 @@ namespace ScreenTracker.DataProcessing
 
 
                     // update info for the point
-                    PointInfo pInfo = screen.PointInfo[i];
+                    PointInfoSpring pInfo = (PointInfoSpring)screen.PointInfo[index];
                     pInfo.Width = width;
                     pInfo.Height = height;
                     pInfo.Visible = true;
@@ -936,37 +948,114 @@ namespace ScreenTracker.DataProcessing
                     if (newPoints[index] == null)
                     {
                         newPoints[index] = point;
+                        mapping[index] = i;
 
                     }
                     else
                     {
-                        newPoints[index] = null;
-                        notAssigned.Add(point);
-                        notAssigned.Add(centroidPoints[mapping[index]]);
 
                         /*
+                        if (mapping[index] == 1)
+                        {
+                            notAssigned.Add(point);
+                        }
+                        else
+                        {
+                            notAssigned.Add(point);
+                            notAssigned.Add(dublicate);
+                            newPoints[index] = null;
+                        }
+
+                    */
+
 
                         double[] n1 = point;
                         int n2Index = mapping[index];
                         double[] n2 = centroidPoints[n2Index];
                         double[] old = screen.PrevPoints[index];
 
+                        Vector3 oldOldp = pInfo.GetOldPos();
+                        Vector3 oldp = pInfo.GetPos();
 
-                        double dist1 = IRUtils.UnsqrtDist(n1, old);
-                        double dist2 = IRUtils.UnsqrtDist(n2, old);
-                        if (dist1 < dist2)
+                        Vector3 n1V = new Vector3((float)n1[0], (float)n1[1], (float)n1[2]);
+                        Vector3 n2V = new Vector3((float)n2[0], (float)n2[1], (float)n2[2]);
+
+
+                        Vector3 oldVel = oldp - oldOldp;
+                        Vector3 n1Vvel = n1V - oldp;
+                        Vector3 n2Vvel = n2V - oldp;
+
+
+                        float n1DotOldVel = Vector3.Dot(n1Vvel, oldVel);
+                        float n2DotOldVel = Vector3.Dot(n2Vvel, oldVel);
+                        float oldVelLength = oldVel.Length();
+                        float n1VvelLength = n1Vvel.Length();
+                        float n2VvelLength = n2Vvel.Length();
+                        float velLendiff1 = Math.Abs(oldVelLength - n1VvelLength);
+                        float velLendiff2 = Math.Abs(oldVelLength - n2VvelLength);
+
+
+
+                        float CosSim1 = n1DotOldVel / (n1VvelLength * oldVelLength);
+                        float CosSim2 = n2DotOldVel / (n2VvelLength * oldVelLength);
+                        float n1Dist = Vector3.Distance(oldp, n1V);
+                        float n2Dist = Vector3.Distance(oldp, n2V);
+
+
+                        //      float CosSim2 = pInfo.CosineSim(n2);
+
+
+
+                        int score = 0;
+
+                        if (velLendiff1 < velLendiff2)
+                        {
+                            score++;
+                        }
+                        else
+                        {
+                            score--;
+                        }
+
+                        if (CosSim1 > CosSim2)
+                        {
+                            score++;
+                        }
+                        else
+                        {
+                            score--;
+                        }
+
+                        if (n2Dist > n1Dist)
+                        {
+                            score++;
+                        }
+                        {
+                            score--;
+                        }
+
+
+
+
+
+
+                        if (score > 0)
                         {
                             newPoints[index] = n1;
+                            notAssigned.Add(n2);
+                            mapping[index] = i;
                         }
                         else
                         {
                             newPoints[index] = n2;
+                            notAssigned.Add(n1);
+                            mapping[index] = n2Index;
                         }
 
 
-                    */
+
                     }
-                    mapping[index] = i;
+
 
                 }
 

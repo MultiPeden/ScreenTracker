@@ -15,8 +15,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         private Vector3 pos; // the current position of the particle in 3D space
         private Vector3 old_pos; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
         private Vector3 acceleration; // a vector representing the current acceleration of the particle
-                                      //  private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
-
+        private double stepsize;
 
         private List<int> cardinalIDs;
         // end spring
@@ -41,7 +40,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             this.mass = 1;
             this.movable = false;
             ///
-
+            this.stepsize = Properties.UserSettings.Default.Spring_StepSize;
 
             this.id = id;
             this.Visible = true;
@@ -50,6 +49,56 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             this.cardinalIDs = new List<int>();
 
 
+        }
+
+
+        public double[] GetVelocity(double[] newPos)
+        {
+            return new double[] {
+            stepsize * (this.pos.X - newPos[0]),
+            stepsize * (this.pos.Y - newPos[0]),
+            stepsize * (this.pos.Z - newPos[0])
+            };
+
+
+        }
+
+        public double[] GetOldVelocity()
+        {
+            return new double[] {
+            stepsize * (this.pos.X - this.old_pos.X),
+            stepsize * (this.pos.Y - this.old_pos.Y),
+            stepsize * (this.pos.Z - this.old_pos.Z)
+            };
+
+
+        }
+
+
+
+
+
+        public float CosineSim(double[] newPos)
+        {
+
+            Vector3 newp = new Vector3((float)newPos[0], (float)newPos[1], (float)newPos[2]);
+            //      P -> Q
+            //from oldpos -> newp
+            Vector3 newDir = newp - this.pos;
+            Vector3 olddir = this.pos - this.old_pos;
+
+
+            float dotp = Vector3.Dot(olddir, newDir);
+            float Lenghts = olddir.Length() * newDir.Length();
+
+            if (Lenghts == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return dotp / Lenghts;
+            }
         }
 
 
@@ -62,7 +111,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             if (movable)
             {
                 float damping = Properties.UserSettings.Default.Spring_Damping;
-                float stepsize = Properties.UserSettings.Default.Spring_StepSize;
+
                 Vector3 temp = pos;
 
 
@@ -72,7 +121,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
                 // 	pos = pos + (pos-old_pos)*(1.0-DAMPING) 
 
-                pos = pos + Vector3.Multiply((pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
+                pos = pos + Vector3.Multiply((pos - old_pos), (float)(1.0 - damping)) + acceleration * (float)stepsize;
 
 
 
@@ -113,10 +162,17 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             this.pos = vec;
         }
 
+
         public void SetOldPos(Vector3 vec)
         {
             this.old_pos = vec;
         }
+
+        public Vector3 GetOldPos()
+        {
+            return this.old_pos;
+        }
+
 
         public void MakeUnmovable() { movable = false; }
 
@@ -126,9 +182,6 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
         public List<int> CardinalIDs { get => cardinalIDs; }
-
-
-
 
         public bool RelativePosOK(double[] pos, double[][] newpoints, int numOfCols, int numOfRows)
         {

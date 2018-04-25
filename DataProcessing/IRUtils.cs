@@ -259,6 +259,26 @@ namespace ScreenTracker.DataProcessing
         }
 
 
+        private static double DotProduct(double[] vec1, double[] vec2)
+        {
+            if (vec1 == null)
+                return 0;
+
+            if (vec2 == null)
+                return 0;
+
+            if (vec1.Length != vec2.Length)
+                return 0;
+
+            double tVal = 0;
+            for (int x = 0; x < vec1.Length; x++)
+            {
+                tVal += vec1[x] * vec2[x];
+            }
+
+            return tVal;
+        }
+
 
 
 
