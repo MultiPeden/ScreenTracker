@@ -30,10 +30,64 @@ namespace ScreenTracker.DataProcessing
                     // invert y axis
                     //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
                     // no invert
-                    jSon += IRUtils.IRPointsJson(i, point[0] * -1, point[1], point[2]);
+                    jSon += IRUtils.IRPointsJson(i, point[0], point[1], point[2]);
                     //   break;
                     if (i < points.Length - 1)
                         jSon += ",";
+                    i++;
+                }
+
+
+                jSon += "]}";
+
+
+                return jSon;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// generates String for point-info in Json format 
+        /// </summary>
+        /// <param name="points"></param>
+        /// <returns></returns>
+        public static String PointstoJson(double[][] points, double[][] cameraPoints)
+        {
+
+
+            if (points != null)
+            {
+                int i = 0;
+                String jSon = "{\"Items\":[";
+
+
+
+                foreach (double[] point in points)
+                {
+                    // invert y axis
+                    //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
+                    // no invert
+                    if (point != null)
+                    {
+                        jSon += IRUtils.IRPointsJson(i, cameraPoints[i][0], cameraPoints[i][1], point[2]);
+                        //   break;
+
+
+                    }
+                    else
+                    {
+                        jSon += IRUtils.IRPointsJsonNull(i);
+
+                    }
+                    if (i < points.Length - 1)
+                        jSon += ",";
+
                     i++;
                 }
 
@@ -61,8 +115,16 @@ namespace ScreenTracker.DataProcessing
         public static String IRPointsJson(int id, double x, double y, double z)
         {
             // return String.Format("{{\"IRPoint\":{{\"id\":{0},\"x\":{1},\"y\":{2}}}}}", id, x, y);
-            return String.Format("{{\"id\":{0},\"x\":{1},\"y\":{2},\"z\":{3}}}", id, x, y, z);
+            return String.Format("{{\"id\":{0},\"visible\":1,\"x\":{1},\"y\":{2},\"z\":{3}}}", id, (float)x, (float)y, (float)(z * 1000));
             // return String.Format("{{\"id\":\"{0}\",\"x\":\"{1}\",\"y\":\"{2}\"}}", id, x, y);
+        }
+
+        public static String IRPointsJsonNull(int id)
+        {
+
+            return String.Format("{{\"id\":{0},\"visible\":0,\"x\":null,\"y\":null,\"z\":null}}", id);
+
+
         }
 
         public static int LowDist(MCvPoint2D64f p, MCvPoint2D64f[] prevPoints)

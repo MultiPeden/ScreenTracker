@@ -248,6 +248,18 @@ namespace ScreenTracker.DataReceiver
             }
             try
             {
+                /*
+                DepthSpacePoint dp = new DepthSpacePoint
+                {
+                    X = 50,
+                    Y = 20
+                };
+                DepthSpacePoint[] dps = new DepthSpacePoint[] { dp };
+                ushort[] depths = new ushort[] { 2000 };
+                CameraSpacePoint[] ameraSpacePoints = new CameraSpacePoint[1];
+                
+                mapper.MapDepthPointsToCameraSpace(dps, depths, ameraSpacePoints);
+                */
                 InfraredFrameReference infraredFrameReference = multiSourceFrame.InfraredFrameReference;
                 infraredFrame = infraredFrameReference.AcquireFrame();
 
@@ -542,15 +554,20 @@ namespace ScreenTracker.DataReceiver
                 for (int i = 0; i < points.Length; i++)
                 {
                     point = points[i];
-                    camPoint.X = (float)point[0];
-                    camPoint.Y = (float)point[1];
-                    camPoint.Z = (float)point[2];
-                    depthSpacePoint = mapper.MapCameraPointToDepthSpace(camPoint);
-                    depthSpacePoints[i] = new double[]
+                    if (point == null)
                     {
-                    depthSpacePoint.X,
-                    depthSpacePoint.Y
-                    };
+                        depthSpacePoints[i] = null;
+
+                    }
+                    else
+                    {
+                        camPoint.X = (float)point[0];
+                        camPoint.Y = (float)point[1];
+                        camPoint.Z = (float)point[2];
+                        depthSpacePoint = mapper.MapCameraPointToDepthSpace(camPoint);
+                        depthSpacePoints[i] = new double[] {depthSpacePoint.X,
+                                                            depthSpacePoint.Y};
+                    }
 
                 }
 

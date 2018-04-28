@@ -85,6 +85,13 @@ namespace ScreenTracker.DataProcessing
 
 
         private IScreen screen;
+        private IScreen screenExtrapolation;
+        private IScreen screenDisplacement;
+
+
+
+
+        Experiment experiment;
 
         /// <summary>
         /// Holds a reference to the camera
@@ -114,6 +121,9 @@ namespace ScreenTracker.DataProcessing
         int cols;
         int rows;
         int maxPoints;
+
+
+        int frameCounter;
 
 
 
@@ -156,6 +166,8 @@ namespace ScreenTracker.DataProcessing
             // get handle to Kinectdata
             this.cameraData = cameraData;
 
+            frameCounter = 0;
+
             // show the window
             showWindow = true;
 
@@ -166,9 +178,14 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            //this.screen = new ExtrapolationScreen(height, width);
+            this.screenExtrapolation = new ExtrapolationScreen(height, width);
             this.screen = new SpringScreen(height, width);
-            //      this.screen = new DisplacementScreen(height, width);
+            this.screenDisplacement = new DisplacementScreen(height, width);
+
+
+
+
+
 
             int padding = 20;
 
@@ -191,6 +208,9 @@ namespace ScreenTracker.DataProcessing
             hung = new Hungarian(maxPoints, maxPoints);
 
             //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
+
+
+            experiment = new Experiment();
 
         }
 
@@ -222,8 +242,7 @@ namespace ScreenTracker.DataProcessing
             //this.ProcessRGBFrame(e.Colorimage, e.ColorFrameDimension);
 
 
-
-
+            experiment.RecordFrame(e.InfraredImage);
 
 
 
@@ -738,6 +757,9 @@ namespace ScreenTracker.DataProcessing
 
 
                     screen.Initialize(orderedCentroidPoints, stats);
+                    screenExtrapolation.Initialize(orderedCentroidPoints, stats);
+                    screenDisplacement.Initialize(orderedCentroidPoints, stats);
+
 
 
                 }
@@ -836,6 +858,21 @@ namespace ScreenTracker.DataProcessing
                                 pInfo.Height = height;
                                 pInfo.Visible = true;
 
+                                PointInfo pInfoextra = screenExtrapolation.PointInfo[i];
+                                pInfoextra.Width = width;
+                                pInfoextra.Height = height;
+                                pInfoextra.Visible = true;
+
+
+                                PointInfo pInfodisp = screenDisplacement.PointInfo[i];
+                                pInfodisp.Width = width;
+                                pInfodisp.Height = height;
+                                pInfodisp.Visible = true;
+
+
+
+
+
                             }
                         }
 
@@ -844,8 +881,33 @@ namespace ScreenTracker.DataProcessing
 
 
 
+                    double[][] rearrangedcopy = (double[][])rearranged.Clone();
+                    double[][] rearrangedcopy1 = (double[][])rearranged.Clone();
+                    double[][] rearrangedcopy2 = (double[][])rearranged.Clone();
 
                     screen.UpdateScreen(rearranged);
+                    screenExtrapolation.UpdateScreen(rearrangedcopy1);
+                    screenDisplacement.UpdateScreen(rearrangedcopy2);
+
+
+
+
+                    if (screen.PrevPoints != null && experiment.ShouldRecord())
+                    {
+                        double[][] cameraSpaceCoordinatesNulls = cameraData.CameraToIR(rearrangedcopy);
+
+                        double[][] cameraSpaceCoordinatesSpring = cameraData.CameraToIR(screen.PrevPoints);
+                        double[][] cameraSpaceCoordinatesExtrap = cameraData.CameraToIR(screenExtrapolation.PrevPoints);
+                        double[][] cameraSpaceCoordinatesDispos = cameraData.CameraToIR(screenDisplacement.PrevPoints);
+
+
+
+                        experiment.RecordTracking(rearrangedcopy, cameraSpaceCoordinatesNulls,
+                                                  screen.PrevPoints, cameraSpaceCoordinatesSpring,
+                                                  screenExtrapolation.PrevPoints, cameraSpaceCoordinatesExtrap,
+                                                  screenDisplacement.PrevPoints, cameraSpaceCoordinatesDispos);
+                    }
+
                     //     PointInfo sprinInfo = screen.PointInfo[12];
                     // if (sprinInfo.Visible)
                     //   {
@@ -1135,6 +1197,10 @@ namespace ScreenTracker.DataProcessing
                         {
                             //  CvInvoke.Normalize(colImg, colImg, 0, 255, NormType.MinMax, DepthType.Cv8U);
                             SetInfraredImage(colImg, infraredFrameDimension);
+
+
+
+
                         }
                     }
                 }
@@ -1548,5 +1614,24 @@ namespace ScreenTracker.DataProcessing
         }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
+
+
+
+
+
+
 }
