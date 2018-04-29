@@ -10,7 +10,6 @@ namespace ScreenTracker.DataReceiver
     using Emgu.CV.CvEnum;
     using Microsoft.Kinect;
     using System;
-    using System.Diagnostics;
 
     [CLSCompliant(false)]
 
@@ -581,37 +580,7 @@ namespace ScreenTracker.DataReceiver
         }
 
 
-        CameraSpacePoint[] result;
-        /// <summary>
-        ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="zCoordinates"></param>
-        /// <returns></returns>
-        public CameraSpacePoint[] BgrToDephtPixel(IntPtr DepthFramePtr, uint size)
-        {
 
-
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            if (result == null)
-            {
-                result = new CameraSpacePoint[1080 * 1920];
-            }
-            // 512 * 424
-
-            //   mapper.MapColorFrameToDepthSpaceUsingIntPtr(DepthFramePtr, size, result);
-            mapper.MapColorFrameToCameraSpaceUsingIntPtr(DepthFramePtr, size, result);
-            //  result = null;
-
-            stopwatch.Stop();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds);
-
-
-
-
-            return result;
-
-        }
 
         public int[] IRFrameDImensions()
         {

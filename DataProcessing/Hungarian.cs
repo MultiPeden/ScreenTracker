@@ -48,7 +48,7 @@ namespace ScreenTracker.DataProcessing
         private int path_count;
         private int step;
 
-
+        private int[] indices;
         public Hungarian(int rows, int cols)
         {
 
@@ -62,27 +62,69 @@ namespace ScreenTracker.DataProcessing
 
 
             this.M = new int[rows, cols];
+            this.C = new double[rows, cols];
             this.path = new int[rows + cols + 1, 2];
             this.RowCover = new int[rows];
             this.ColCover = new int[cols];
 
+            this.indices = new int[M.GetLength(1)];
+
+        }
+
+
+
+
+
+        public void Solve(double[][] prevPoints, double[][] newpoints, TrackerTimer trackerTimer)
+        {
+
+
+            resetMaskandCovers();
+            path_count = 0;
+            step = 1;
+
+            trackerTimer.StartCostMatrixTimer();
+            AssignCostMatrixArray(prevPoints, newpoints);
+
+            trackerTimer.StopCostMatrixTimer();
+
+            this.nrow = newpoints.Length;
+            this.ncol = prevPoints.Length;
+
+
+
+
+
+
+
+            this.RunMunkres();
+
+        }
+
+
+        public void AssignCostMatrixArray(double[][] prevPoints, double[][] newpoints)
+        {
+
+
+
+            for (int i = 0; i < newpoints.Length; i++)
+            {
+
+                for (int j = 0; j < prevPoints.Length; j++)
+                {
+                    this.C[i, j] = UnsqrtDist(newpoints[i], prevPoints[j]);
+                }
+            }
 
 
         }
 
 
-        public void Solve(double[,] costMatrix)
+
+        private double UnsqrtDist(double[] a, double[] b)
         {
-            resetMaskandCovers();
-            path_count = 0;
-            step = 1;
 
-            this.C = costMatrix;
-
-            this.nrow = costMatrix.GetLength(0);
-            this.ncol = costMatrix.GetLength(1);
-            this.RunMunkres();
-
+            return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2) + Math.Pow(b[2] - a[2], 2);
         }
 
 
@@ -433,13 +475,14 @@ namespace ScreenTracker.DataProcessing
             }
         }
 
+
         public int[] GetMinimizedIndicies()
         {
-            int len = M.GetLength(0);
-            int[] money = new int[M.GetLength(1)];
-            for (int i = 0; i < money.Length; i++)
+
+
+            for (int i = 0; i < indices.Length; i++)
             {
-                money[i] = -1;
+                indices[i] = -1;
             }
 
             for (int j = 0; j < M.GetLength(1); j++)
@@ -448,7 +491,7 @@ namespace ScreenTracker.DataProcessing
                 {
                     if (M[i, j] == 1)
                     {
-                        money[j] = i;
+                        indices[j] = i;
                         continue;
                     }
                 }
@@ -457,35 +500,15 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            return money;
+            return indices;
 
 
         }
 
 
-        public int[] GetMinimizedIndiciesorg()
-        {
-
-            int len = M.GetLength(0);
-            int[] money = new int[len];
 
 
-            for (int i = 0; i < len; i++)
-            {
-                money[i] = -1;
-                for (int j = 0; j < M.GetLength(1); j++)
-                {
-                    if (M[i, j] == 1)
-                    {
-                        money[i] = j;
-                    }
-                }
-            }
 
-            return money;
-
-
-        }
 
     }
 }

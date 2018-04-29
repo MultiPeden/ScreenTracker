@@ -16,7 +16,7 @@ namespace ScreenTracker.DataProcessing
 
         public Experiment()
         {
-
+            record = false;
             frameCounter = 0;
             imageCounter = 0;
             fpsLimiter = 15;
@@ -46,22 +46,24 @@ namespace ScreenTracker.DataProcessing
         public void RecordFrame(Mat img)
         {
 
-            if (ShouldRecord())
+            if (this.record)
             {
                 img.Save("C:\\test\\test" + imageCounter + ".png");
+                this.record = false;
                 imageCounter++;
+                frameCounter = 0;
             }
 
-
-
-            frameCounter++;
 
         }
 
 
         public bool ShouldRecord()
         {
-            return (frameCounter % fpsLimiter) == 0;
+            bool shouldRecord = frameCounter == fpsLimiter;
+            frameCounter++;
+            return shouldRecord;
+
         }
 
 
@@ -99,6 +101,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
+            record = true;
 
 
 

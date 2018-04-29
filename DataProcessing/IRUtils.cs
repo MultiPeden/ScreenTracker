@@ -202,34 +202,18 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        public static double[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
+
+
+
+
+
+
+
+
+        public static double UnsqrtDist(double[] a, double[] b)
         {
 
-            double[,] costMatrix = new double[prevPoints.Length, newpoints.Length];
-
-            for (int i = 0; i < prevPoints.Length; i++)
-            {
-
-                for (int j = 0; j < newpoints.Length; j++)
-                {
-                    costMatrix[i, j] = UnsqrtDist(prevPoints[i], newpoints[j]);
-                }
-            }
-
-            return costMatrix;
-        }
-
-
-
-
-
-
-
-
-        private static double UnsqrtDist(double[] a, double[] b)
-        {
-
-            return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2);
+            return Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2) + Math.Pow(b[2] - a[2], 2);
         }
 
 
@@ -311,6 +295,25 @@ namespace ScreenTracker.DataProcessing
             return ArrangedPoints;
         }
 
+
+
+
+        public static double[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
+        {
+
+            double[,] costMatrix = new double[newpoints.Length, prevPoints.Length];
+
+            for (int i = 0; i < newpoints.Length; i++)
+            {
+
+                for (int j = 0; j < prevPoints.Length; j++)
+                {
+                    costMatrix[i, j] = UnsqrtDist(newpoints[i], prevPoints[j]);
+                }
+            }
+
+            return costMatrix;
+        }
 
 
 
