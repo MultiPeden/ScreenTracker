@@ -31,9 +31,9 @@ namespace ScreenTracker.DataReceiver
         /// <param name="newPoints"></param>
         /// <param name="zCoordinates"></param>
         /// <returns></returns>
-        double[][] ScreenToWorldCoordinates(double[][] points);
 
-        void ScreenToWorldCoordinates2(double[][] points);
+
+        void ScreenToWorldCoordinates(double[][] points);
 
         double[][] CameraToIR(double[][] points);
 

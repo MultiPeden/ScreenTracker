@@ -1,5 +1,4 @@
-﻿using Accord.Collections;
-using Accord.Statistics;
+﻿using Accord.Statistics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -47,7 +46,6 @@ namespace ScreenTracker.DataProcessing
         /// colorBitmap - for the color sensor
         /// depthBitmap - for the depth sensor
         /// </summary>
-        private WriteableBitmap infraredThesholdedBitmap = null;
         private WriteableBitmap colorThesholdedBitmap = null;
 
         private WriteableBitmap infraredBitmap = null;
@@ -155,10 +153,10 @@ namespace ScreenTracker.DataProcessing
 
 
             // listen for images from the Camera
-            cameraData.EmguArgsProcessed += KinectData_EmguImageReceived;
+            cameraData.EmguArgsProcessed += EmguImageReceived;
 
             // listen for status changes from the camera object's kinectSensor
-            cameraData.ChangeStatusText += KinectData_ChangeStatusText;
+            cameraData.ChangeStatusText += ChangeStatusText;
 
             // get handle to Kinectdata
             this.cameraData = cameraData;
@@ -194,17 +192,12 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            //maskMat = new Mat(424,512, DepthType.Cv8U,1);
-
-
 
 
             cols = Properties.UserSettings.Default.GridColums;
             rows = Properties.UserSettings.Default.GridRows;
             maxPoints = rows * cols;
             hung = new Hungarian(maxPoints, maxPoints);
-
-            //        CvInvoke.Rectangle(maskMat, mask, new Gray(1).MCvScalar , -1); // 2 pixel box thick
 
 
             experiment = new Experiment();
@@ -231,7 +224,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void KinectData_EmguImageReceived(object sender, EMGUargs e)
+        private void EmguImageReceived(object sender, EMGUargs e)
         {
 
 
@@ -462,6 +455,7 @@ namespace ScreenTracker.DataProcessing
                         // find the z-val by calc the median of the cardinal and inter-cardinal points
                         double zval = Measures.Mean(zCoords.ToArray());
 
+
                         // apply one-euro-filter 
                         //   zCoordinates[i] = (ushort)p.Filter(zval);
 
@@ -497,21 +491,6 @@ namespace ScreenTracker.DataProcessing
             {
 
 
-                // Get pointer to first pixel
-                //    ushort* pixelP = (ushort*)depthImage.DataPointer.ToPointer();
-
-
-                //   ushort der = pixelP[x + depthImage.Width + y];
-
-                //   ushort caller = pixelP[x+y];
-
-                // Mat objects created using the create method are stored
-                // in one continous memory block.
-                //    const Pixel* endPixel = pixel + image1.cols * image1.rows;
-
-
-                /// todo check correct z vals
-                //   string zCoordy = depthImage.GetData(x, y)[1].ToString();//.Data[y, x, 0];
 
                 try
                 {
@@ -534,55 +513,7 @@ namespace ScreenTracker.DataProcessing
         }
 
 
-        /// <summary>
-        /// Finds the z-coordinate in the depthImage using the x and y-coordinates
-        /// and adds it to zCoords.
-        /// Does not add anything if x or is outside the bounds, or if the z-val is 0.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="depthImage"></param>
-        /// <param name="zCoords"></param>
-        private void AddDephtPixelcpy(int x, int y, ref Mat depthImage, ref List<double> zCoords)
-        {
-            if (x >= 0 && x < depthImage.Width && y >= 0 && y < depthImage.Height)
-            {
 
-                /// todo check correct z vals
-                ushort zCoordy = (ushort)depthImage.GetData(x, y)[0];//.Data[y, x, 0];
-                ushort zCoord = 1500;
-
-
-                if (zCoord > 0)
-                {
-                    zCoords.Add(zCoord);
-                }
-            }
-
-        }
-
-
-
-
-
-
-
-        private double GetAvgY(double[][] centroidPoints, int from, int to)
-        {
-            if (from == to)
-            {
-                return centroidPoints[from][1];
-            }
-
-            int numbElem = 0;
-            double acc = 0;
-            for (int i = from; i < to; i++)
-            {
-                acc = +centroidPoints[i][1];
-                numbElem++;
-            }
-            return acc / numbElem;
-        }
 
 
         /// <summary>
@@ -642,7 +573,7 @@ namespace ScreenTracker.DataProcessing
                 AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
 
 
-                cameraData.ScreenToWorldCoordinates2(centroidPoints);
+                cameraData.ScreenToWorldCoordinates(centroidPoints);
 
 
 
@@ -870,206 +801,6 @@ namespace ScreenTracker.DataProcessing
 
         }
 
-        private double[][] FindNearest(Mat stats, double[][] centroidPoints)
-        {
-
-            // build KD-tree for nearest neighbour search
-            KDTree<int> tree = KDTree.FromData<int>(screen.PrevPoints, Enumerable.Range(0, screen.PrevPoints.Length).ToArray());
-            double[][] newPoints = new double[screen.PrevPoints.Length][];
-            int[] mapping = new int[screen.PrevPoints.Length];
-
-            int[] taken = new int[screen.PrevPoints.Length];
-            int index;
-            //  notAssigned = new List<double[]>();
-
-            for (int k = 0; k < mapping.Length; k++)
-            {
-                mapping[k] = -1;
-            }
-
-
-            int i = 0;
-            //Update points
-            foreach (double[] point in centroidPoints)
-            {
-                int j = i + 2;
-                int width = stats.GetData(j, 2)[0];
-                int height = stats.GetData(j, 3)[0];
-                int area = stats.GetData(j, 4)[0];
-
-                // if the area is more than minArea, discard 
-                if (true) // (area > minArea)
-                {
-
-                    // find nearest neighbour
-                    KDTreeNode<int> nearest = tree.Nearest(point);
-                    // get its index
-                    index = nearest.Value;
-                    // update info for the point
-                    PointInfoSpring pInfo = (PointInfoSpring)screen.PointInfo[index];
-                    pInfo.Width = width;
-                    pInfo.Height = height;
-                    pInfo.Visible = true;
-
-
-                    double[] dublicate = newPoints[index];
-
-                    if (newPoints[index] == null)
-                    {
-                        newPoints[index] = point;
-                        mapping[index] = i;
-
-                    }
-                    else
-                    {
-
-
-                        double[] n1 = point;
-                        int n2Index = mapping[index];
-                        double[] n2 = centroidPoints[n2Index];
-                        double[] old = screen.PrevPoints[index];
-
-
-
-                        double dist1 = IRUtils.UnsqrtDist(n1, old);
-                        double dist2 = IRUtils.UnsqrtDist(n2, old);
-
-
-
-                        if (dist1 < dist2)
-                        {
-                            newPoints[index] = n1;
-                            //   notAssigned.Add(n2);
-                            mapping[index] = i;
-                        }
-                        else
-                        {
-                            newPoints[index] = n2;
-                            //    notAssigned.Add(n1);
-                            mapping[index] = n2Index;
-                        }
-
-
-
-                    }
-
-
-                }
-
-                i++;
-            }
-
-
-            while (mapping.Any(j => j != -1))
-            {
-
-                FindRest(stats, centroidPoints, newPoints, mapping);
-            }
-
-            return newPoints;
-
-        }
-
-        private void FindRest(Mat stats, double[][] centroidPoints, double[][] newPoints, int[] mapping)
-        {
-            List<int> missingMatchedPrev = new List<int>();
-            for (int i = 0; i < newPoints.Length; i++)
-            {
-                if (newPoints[i] == null)
-                {
-                    missingMatchedPrev.Add(i);
-                }
-            }
-
-
-            double[][] missingMathedPoints = new double[missingMatchedPrev.Count][];
-            for (int i = 0; i < missingMathedPoints.Length; i++)
-            {
-                missingMathedPoints[i] = screen.PrevPoints[missingMatchedPrev[i]];
-            }
-
-
-
-
-
-            KDTree<int> tree = KDTree.FromData<int>(missingMathedPoints, Enumerable.Range(0, missingMathedPoints.Length).ToArray());
-
-
-            int index;
-
-            for (int i = 0; i < mapping.Length; i++)
-            {
-                if (mapping[i] == -1)
-                {
-
-                    double[] point = centroidPoints[i];
-
-
-                    int j = i + 2;
-                    int width = stats.GetData(j, 2)[0];
-                    int height = stats.GetData(j, 3)[0];
-                    int area = stats.GetData(j, 4)[0];
-
-
-                    // find nearest neighbour
-                    KDTreeNode<int> nearest = tree.Nearest(point);
-                    // get its index from the prevois points list
-                    index = missingMatchedPrev[nearest.Value];
-                    // update info for the point
-                    PointInfoSpring pInfo = (PointInfoSpring)screen.PointInfo[index];
-                    pInfo.Width = width;
-                    pInfo.Height = height;
-                    pInfo.Visible = true;
-
-
-
-
-                    double[] dublicate = newPoints[index];
-
-                    if (newPoints[index] == null)
-                    {
-                        newPoints[index] = point;
-                        mapping[index] = i;
-
-                    }
-                    else
-                    {
-
-
-                        double[] n1 = point;
-                        int n2Index = mapping[index];
-                        double[] n2 = centroidPoints[n2Index];
-                        double[] old = screen.PrevPoints[index];
-
-
-
-                        double dist1 = IRUtils.UnsqrtDist(n1, old);
-                        double dist2 = IRUtils.UnsqrtDist(n2, old);
-
-
-
-                        if (dist1 < dist2)
-                        {
-                            newPoints[index] = n1;
-                            //   notAssigned.Add(n2);
-                            mapping[index] = i;
-                        }
-                        else
-                        {
-                            newPoints[index] = n2;
-                            //    notAssigned.Add(n1);
-                            mapping[index] = n2Index;
-                        }
-
-                    }
-                }
-
-            }
-        }
-
-
-
-
 
         /// <summary>
         /// Uses the Hungarian algorithm to recognize points from the old frame, in the new frame.
@@ -1199,7 +930,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="infraredFrame"> the InfraredFrame image </param>
         /// <param name="infraredFrameDataSize">Size of the InfraredFrame image data</param>
-        private void ProcessInfraredFrame(Mat infraredFrameOrg, FrameDimension infraredFrameDimension, Mat depthFrame)
+        private void ProcessIRFrame(Mat infraredFrameOrg, FrameDimension infraredFrameDimension, Mat depthFrame)
         {
 
 
@@ -1396,7 +1127,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="IsAvailable"></param>
-        private void KinectData_ChangeStatusText(object sender, bool IsAvailable)
+        private void ChangeStatusText(object sender, bool IsAvailable)
         {
             String statusText = "Kinect Status: ";
             statusText += IsAvailable ? Properties.Resources.RunningStatusText
@@ -1424,18 +1155,10 @@ namespace ScreenTracker.DataProcessing
 
 
 
-
-
-
-
         public void KillTimer()
         {
             trackerTimer.FlushTimer();
         }
-
-
-
-
 
 
     }

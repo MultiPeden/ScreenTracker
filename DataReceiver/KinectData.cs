@@ -465,40 +465,6 @@ namespace ScreenTracker.DataReceiver
             ChangeStatusText?.Invoke(this, e);
         }
 
-        /// <summary>
-        ///  use the cameras mapper function to convert X and y's camara coordinates to world coordinates  
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="zCoordinates"></param>
-        /// <returns></returns>
-        public double[][] ScreenToWorldCoordinates(double[][] points)
-        {
-            if (points != null)
-            {
-                DepthSpacePoint depthSpacePoint;
-                double[][] WorldCoordinates = new double[points.Length][];
-                double[] point;
-
-                for (int i = 0; i < points.Length; i++)
-                {
-                    point = points[i];
-                    depthSpacePoint = new DepthSpacePoint
-                    {
-                        X = (float)point[0],
-                        Y = (float)point[1]
-                    };
-                    // Find the lutValue for the given set of coordinates
-                    CameraSpacePoint lutValue = mapper.MapDepthPointToCameraSpace(depthSpacePoint, (ushort)point[2]);
-                    // Convert coordinates using the found lutValue
-                    WorldCoordinates[i] = new double[3] { lutValue.X * 1000, lutValue.Y * 1000, (ushort)point[2] };
-                }
-                return WorldCoordinates;
-            }
-            else
-            {
-                return null;
-            }
-        }
 
 
 
@@ -508,7 +474,7 @@ namespace ScreenTracker.DataReceiver
         /// <param name="points"></param>
         /// <param name="zCoordinates"></param>
         /// <returns></returns>
-        public void ScreenToWorldCoordinates2(double[][] points)
+        public void ScreenToWorldCoordinates(double[][] points)
         {
             if (points != null)
             {
