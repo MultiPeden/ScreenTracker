@@ -39,5 +39,7 @@ namespace ScreenTracker.DataReceiver
 
 
         int[] IRFrameDImensions();
+
+        double[][] CameraToColor(double[][] points);
     }
 }

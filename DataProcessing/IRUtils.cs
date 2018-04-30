@@ -30,8 +30,17 @@ namespace ScreenTracker.DataProcessing
                     // invert y axis
                     //  jSon += IRUtils.IRPointsJson(i, (width - (int)point[0]) - (width/2) , (height - (int)point[1]) - (height/2) , (int)zCoordinates[i]);
                     // no invert
-                    jSon += IRUtils.IRPointsJson(i, point[0], point[1], point[2]);
-                    //   break;
+                    if (point != null)
+                    {
+
+                        jSon += IRUtils.IRPointsJson(i, point[0], point[1], point[2]);
+                        //   break;
+                    }
+                    else
+                    {
+                        jSon += IRUtils.IRPointsJsonNull(i);
+
+                    }
                     if (i < points.Length - 1)
                         jSon += ",";
                     i++;

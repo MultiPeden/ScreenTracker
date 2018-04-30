@@ -67,7 +67,7 @@ namespace ScreenTracker.DataProcessing
             this.RowCover = new int[rows];
             this.ColCover = new int[cols];
 
-            this.indices = new int[M.GetLength(1)];
+            indices = new int[M.GetLength(1)];
 
         }
 

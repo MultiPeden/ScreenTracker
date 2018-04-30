@@ -122,10 +122,7 @@ namespace ScreenTracker.DataProcessing
         int rows;
         int maxPoints;
 
-
-        int frameCounter;
-
-
+        bool timerOn = false;
 
         TrackerTimer trackerTimer;
 
@@ -166,7 +163,7 @@ namespace ScreenTracker.DataProcessing
             // get handle to Kinectdata
             this.cameraData = cameraData;
 
-            frameCounter = 0;
+
 
             // show the window
             showWindow = true;
@@ -242,15 +239,21 @@ namespace ScreenTracker.DataProcessing
             // Process infrared image and track points
             this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
 
-
-            if (screen.PrevPoints != null)
+            if (timerOn)
             {
-
-                experiment.RecordFrame(e.InfraredImage);
-
                 trackerTimer.WriteTimersToFile();
 
             }
+            if (experiment.SaveFrame)
+            {
+
+
+                experiment.RecordFrame(e.InfraredImage.Clone(), e.Colorimage.Clone());
+                timerOn = true;
+
+            }
+
+
 
 
             SendPoints(screen.PrevPoints);
@@ -638,17 +641,8 @@ namespace ScreenTracker.DataProcessing
                 // add z-coordinates to the tracked points
                 AssignZCoordinatesSurroundingBox(centroidPoints, stats, depthFrame);
 
-                try
-                {
-                    cameraData.ScreenToWorldCoordinates2(centroidPoints);
-                }
-                catch (Exception)
-                {
 
-                    int k = 1;
-                }
-
-
+                cameraData.ScreenToWorldCoordinates2(centroidPoints);
 
 
 
@@ -811,7 +805,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    if (screen.PrevPoints != null && experiment.ShouldRecord())
+                    if (experiment.ShouldRecord())
                     {
                         double[][] cameraSpaceCoordinatesNulls = cameraData.CameraToIR(rearrangedcopy);
 
@@ -819,12 +813,15 @@ namespace ScreenTracker.DataProcessing
                         double[][] cameraSpaceCoordinatesExtrap = cameraData.CameraToIR(screenExtrapolation.PrevPoints);
                         double[][] cameraSpaceCoordinatesDispos = cameraData.CameraToIR(screenDisplacement.PrevPoints);
 
+                        double[][] colorCamCoordiates = cameraData.CameraToColor(rearrangedcopy);
+
 
 
                         experiment.RecordTracking(rearrangedcopy, cameraSpaceCoordinatesNulls,
                                                   screen.PrevPoints, cameraSpaceCoordinatesSpring,
                                                   screenExtrapolation.PrevPoints, cameraSpaceCoordinatesExtrap,
-                                                  screenDisplacement.PrevPoints, cameraSpaceCoordinatesDispos);
+                                                  screenDisplacement.PrevPoints, cameraSpaceCoordinatesDispos,
+                                                  colorCamCoordiates);
                     }
 
                     //     PointInfo sprinInfo = screen.PointInfo[12];
@@ -1354,10 +1351,12 @@ namespace ScreenTracker.DataProcessing
 
                 }
 
+                /*
                 int height1 = 10;
                 int width1 = 10;
                 Rectangle rect1 = new Rectangle((int)missingx[0] - (width1 / 2) - padding, (int)missingx[1] - (height1 / 2) - padding, width1 + padding * 2, height1 + padding * 2);
                 CvInvoke.Rectangle(colImg, rect1, new Bgr(255, 0, 255).MCvScalar, thickness); // 2 pixel box thick
+                */
             }
             return colImg;
 

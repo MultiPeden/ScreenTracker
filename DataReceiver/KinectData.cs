@@ -579,6 +579,67 @@ namespace ScreenTracker.DataReceiver
 
         }
 
+        public double[][] CameraToColor(double[][] points)
+        {
+
+
+            CameraSpacePoint[] cameraSpacePoints = new CameraSpacePoint[points.Length];
+            ColorSpacePoint[] colorSpacePoints = new ColorSpacePoint[points.Length];
+            CameraSpacePoint cameraSpacePoint;
+            ColorSpacePoint colorSpacePoint;
+            double[] point;
+            double[][] colorSpacePointsRes = new double[colorSpacePoints.Length][];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+
+                point = points[i];
+                if (point != null)
+                {
+
+
+                    cameraSpacePoint.X = (float)point[0];
+                    cameraSpacePoint.Y = (float)point[1];
+                    cameraSpacePoint.Z = (float)point[2];
+                    cameraSpacePoints[i] = cameraSpacePoint;
+                }
+
+
+            }
+
+
+            mapper.MapCameraPointsToColorSpace(cameraSpacePoints, colorSpacePoints);
+
+            for (int i = 0; i < colorSpacePoints.Length; i++)
+            {
+
+
+
+
+                colorSpacePoint = colorSpacePoints[i];
+                if (colorSpacePoint != null && points[i] != null)
+                {
+
+                    point = new double[3];
+
+                    point[0] = colorSpacePoint.X;
+                    point[1] = colorSpacePoint.Y;
+                    point[2] = points[i][2];
+
+
+                    colorSpacePointsRes[i] = point;
+                }
+                else
+                {
+                    colorSpacePointsRes[i] = null;
+                }
+
+            }
+
+
+            return colorSpacePointsRes;
+        }
+
 
 
 

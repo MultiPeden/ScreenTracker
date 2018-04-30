@@ -16,14 +16,13 @@ namespace ScreenTracker.DataProcessing
         private CsvWriter csvWriter;
         private TimerRes timerRes;
         private bool timerON;
-        private bool first;
+
 
 
         public TrackerTimer()
         {
 
 
-            this.first = true;
             this.timerON = true;
 
             writer = new StreamWriter(@"C:\test\TrackerTimers.csv", append: true);
@@ -134,13 +133,13 @@ namespace ScreenTracker.DataProcessing
 
         public void WriteTimersToFile()
         {
-            if (this.timerON && !this.first)
+            if (this.timerON)
             {
                 csvWriter.WriteRecord(timerRes);
                 csvWriter.NextRecord();
 
             }
-            this.first = false;
+
 
         }
 

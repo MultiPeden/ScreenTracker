@@ -64,7 +64,7 @@ namespace ScreenTracker.GUI
         public MainWindow()
         {
             //initialize button values
-            this.colorClicked = false;
+            this.colorClicked = true;
             this.thresholdedClicked = false;
 
             // use the window object as the view model
