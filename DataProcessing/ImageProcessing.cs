@@ -182,7 +182,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            int padding = 20;
+            int padding = Properties.UserSettings.Default.IRPixelPadding;
 
             mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
 
@@ -230,7 +230,7 @@ namespace ScreenTracker.DataProcessing
 
 
             // Process infrared image and track points
-            this.ProcessInfraredFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
+            this.ProcessIRFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
 
             if (timerOn)
             {
@@ -407,6 +407,7 @@ namespace ScreenTracker.DataProcessing
             int j;
             int BoxWidth, BoxHeight, width, height;
             double[] point;
+            PointInfo p;
 
             for (int i = 0; i < newPoints.Length; i++)
             {
@@ -456,10 +457,18 @@ namespace ScreenTracker.DataProcessing
                         double zval = Measures.Mean(zCoords.ToArray());
 
 
-                        // apply one-euro-filter 
-                        //   zCoordinates[i] = (ushort)p.Filter(zval);
 
-                        point[2] = zval;
+                        if (screen.PointInfo != null)
+                        {
+                            p = screen.PointInfo[i];
+                            // apply one-euro-filter 
+                            point[2] = (ushort)p.Filter(zval);
+                        }
+                        else
+                        {
+                            point[2] = zval;
+                        }
+                        //   point[2] = zval;
 
                     }
                     else
@@ -666,7 +675,7 @@ namespace ScreenTracker.DataProcessing
                     int[] minInd = GetPointsIndices(centroidPoints);
 
 
-                    double[][] rearranged = IRUtils.RearrangeArray2(centroidPoints, minInd, screen.PrevPoints.Length);
+                    double[][] rearranged = IRUtils.RearrangeArray(centroidPoints, minInd, screen.PrevPoints.Length);
 
 
 

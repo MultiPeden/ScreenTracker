@@ -136,27 +136,6 @@ namespace ScreenTracker.DataProcessing
 
         }
 
-        public static int LowDist(MCvPoint2D64f p, MCvPoint2D64f[] prevPoints)
-        {
-            int index = 0;
-            double lowDist = 10000;
-            int i = 0;
-            double dist = 0;
-
-            while (i < prevPoints.Length)
-            {
-                dist = Dist(p, prevPoints[i]);
-                if (dist < lowDist)
-                {
-                    lowDist = dist;
-                    index = i;
-                }
-                i++;
-            }
-            return index;
-        }
-
-
 
 
 
@@ -166,48 +145,6 @@ namespace ScreenTracker.DataProcessing
 
             return Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
         }
-
-
-
-
-        public static double[][] GetCostMatrix(double[][] prevPoints, double[][] newpoints)
-        {
-
-            double[][] costMatrix = new double[prevPoints.Length][];
-
-            for (int i = 0; i < prevPoints.Length; i++)
-            {
-                double[] costRow = new double[newpoints.Length];
-                for (int j = 0; j < newpoints.Length; j++)
-                {
-                    costRow[j] = UnsqrtDist(prevPoints[i], newpoints[j]);
-                }
-                costMatrix[i] = costRow;
-            }
-
-            return costMatrix;
-        }
-
-
-        public static double[][] GetCostMatrix2(double[][] prevPoints, double[][] newpoints)
-        {
-
-            double[][] costMatrix = new double[newpoints.Length][];
-
-            for (int i = 0; i < newpoints.Length; i++)
-            {
-                double[] costRow = new double[prevPoints.Length];
-                for (int j = 0; j < prevPoints.Length; j++)
-                {
-                    costRow[j] = UnsqrtDist(newpoints[i], prevPoints[j]);
-                }
-                costMatrix[i] = costRow;
-            }
-
-            return costMatrix;
-        }
-
-
 
 
 
@@ -226,23 +163,9 @@ namespace ScreenTracker.DataProcessing
         }
 
 
-        public static double[][] RearrangeArray(double[][] points, int[] indices)
-        {
-
-            double[][] ArrangedPoints = new double[indices.Length][];
-
-            for (int i = 0; i < indices.Length; i++)
-            {
-                if (indices[i] != -1)
-                    ArrangedPoints[i] = points[indices[i]];
-            }
-
-            return ArrangedPoints;
-        }
 
 
-
-        public static double[][] RearrangeArray2(double[][] points, int[] indices, int n)
+        public static double[][] RearrangeArray(double[][] points, int[] indices, int n)
         {
 
 
@@ -277,95 +200,8 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        public static double[][] RearrangeArray3(double[][] points, int[] indices, int n)
-        {
-
-
-
-
-            double[][] ArrangedPoints = new double[n][];
-
-            try
-            {
-
-                for (int i = 0; i < indices.Length; i++)
-                {
-                    if (indices[i] != -1)
-                        ArrangedPoints[indices[i]] = points[i];
-                }
-
-            }
-            catch (Exception)
-            {
-
-
-            }
-
-            return ArrangedPoints;
-        }
-
-
-
-
-        public static double[,] GetCostMatrixArray(double[][] prevPoints, double[][] newpoints)
-        {
-
-            double[,] costMatrix = new double[newpoints.Length, prevPoints.Length];
-
-            for (int i = 0; i < newpoints.Length; i++)
-            {
-
-                for (int j = 0; j < prevPoints.Length; j++)
-                {
-                    costMatrix[i, j] = UnsqrtDist(newpoints[i], prevPoints[j]);
-                }
-            }
-
-            return costMatrix;
-        }
-
-
-
-
-        public static double[][] RearrangeArray4(double[][] points, int[] indices, int n)
-        {
-
-
-
-
-            double[][] ArrangedPoints = new double[n][];
-
-            int index = 0;
-            double[] point;
-            int mappedindex;
-
-            try
-            {
-
-                for (int i = 0; i < indices.Length; i++)
-                {
-
-                    index = i;
-                    if (indices[i] != -1)
-                    {
-                        point = points[i];
-                        mappedindex = indices[i];
-
-                        ArrangedPoints[mappedindex] = point;
-                    }
-                }
-
-            }
-            catch (Exception)
-            {
-
-
-            }
-
-            return ArrangedPoints;
-        }
-
     }
+
 
 
 
