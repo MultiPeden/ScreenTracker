@@ -8,13 +8,16 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         PointInfoDisplacement pN, pE, pS, pW, p2N, p2E, p2S, p2W;
         PointInfoDisplacement pNE, pSE, pSW, pNW;
 
-
-        //  scaling hariable  double[] sN, sE, sS, sW, s2N, s2E, s2S, s2W;
-
-
         //for displacement calculations 
         public double[] orignalPos;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="height"></param>
+        /// <param name="width"></param>
+        /// <param name="id"></param>
+        /// <param name="position"></param>
         public PointInfoDisplacement(int height, int width, int id, double[] position) : base(height, width)
         {
             this.id = id;
@@ -22,8 +25,6 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             this.orignalPos = position;
 
         }
-
-
 
 
         /// <summary>
@@ -140,20 +141,17 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             };
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="displacement"></param>
+        /// <returns></returns>
         private double DisplacementFunction(double displacement)
         {
             var sign = Math.Sign(displacement);
             displacement = Math.Abs(displacement);
-
             return sign * displacement;
-
-            //   return sign * (2 / (0.1 + Math.Exp(-displacement)));
-
-
         }
-
-
 
 
 
@@ -163,12 +161,11 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         /// <param name="points"></param>
         /// <param name="mode"></param>
         /// <returns></returns>
-        public double[] EstimatePostitionDisplacement(double[][] points, int mode)
+        public double[] EstimatePostition(double[][] points, int mode)
         {
             double[] estPoint;
             double[] acc = new double[3] { 0, 0, 0 };
             int count = 0;
-
 
             estPoint = ExtrapolateDisplacement(pN, points);
             count += AccumulateVector(acc, estPoint);
@@ -181,49 +178,40 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
             estPoint = ExtrapolateDisplacement(pS, points);
             count += AccumulateVector(acc, estPoint);
-
-
-
-
             if (mode == 1)
             {
-
-
                 estPoint = ExtrapolateDisplacement(pNE, points);
                 count += AccumulateVector(acc, estPoint);
 
                 estPoint = ExtrapolateDisplacement(pSE, points);
                 count += AccumulateVector(acc, estPoint);
 
-
                 estPoint = ExtrapolateDisplacement(pSW, points);
                 count += AccumulateVector(acc, estPoint);
 
                 estPoint = ExtrapolateDisplacement(pNW, points);
                 count += AccumulateVector(acc, estPoint);
-
             }
 
 
             if (count != 0)
             {
-                //  estPoint[0] = accX / count;
-                //  estPoint[1] = accY / count;
-
                 return new double[3]{
                    this.orignalPos[0] + ScaleDistx(acc[0] / count),
                    this.orignalPos[1] + ScaleDisty(acc[1] / count),
                    this.orignalPos[2] + ScaleDisty(acc[2] / count)};
-
-
             }
             else
             {
                 return null;
             }
-
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
         private double ScalarFun(double x)
         {
             //  return (-0.0558 * Math.Pow(x, 3)) + (43.223 * Math.Pow(x, 2)) - (11148 * x) + 958141;
@@ -236,6 +224,11 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
         private double ScaleDistx(double x)
         {
             // v1 y = -0.0596x3 - 0.0097x2 + 6.7821x + 0.5564
@@ -248,7 +241,11 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         }
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="y"></param>
+        /// <returns></returns>
         private double ScaleDisty(double y)
         {
             //  y = -0.0318x3 - 0.6185x2 + 7.4246x - 2.0988
@@ -267,27 +264,16 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         /// <returns></returns>
         private double[] ExtrapolateDisplacement(PointInfoDisplacement cardinal, double[][] points)
         {
-
-
-
             if (cardinal != null && cardinal.Visible)
             {
-
-
                 int cardinalId = cardinal.id;
-
-
-
                 double[] p = points[cardinalId];
-
-
                 if (p == null)
                 {
                     return null;
                 }
                 else
                 {
-
                     return cardinal.Displacement(p);
                 }
             }
@@ -295,9 +281,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             {
                 return null;
             }
-
         }
-
 
     }
 }
