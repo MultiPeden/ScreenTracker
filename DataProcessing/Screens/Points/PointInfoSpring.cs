@@ -17,7 +17,8 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         private Vector3 acceleration; // a vector representing the current acceleration of the particle
                                       //  private Vector3 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 
-
+        float damping = Properties.UserSettings.Default.Spring_Damping;
+        float stepsize2 = Properties.UserSettings.Default.Spring_StepSize * Properties.UserSettings.Default.Spring_StepSize;
         private List<int> cardinalIDs;
         // end spring
 
@@ -38,7 +39,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
             // spring
             this.pos = new Vector3((float)position[0], (float)position[1], (float)position[2]);
             this.old_pos = pos;
-            this.mass = 1;
+            this.mass = (float)1;
             this.movable = false;
             ///
 
@@ -60,20 +61,15 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         {
             if (movable)
             {
-                float damping = Properties.UserSettings.Default.Spring_Damping;
-                float stepsize = Properties.UserSettings.Default.Spring_StepSize;
+
                 Vector3 temp = pos;
 
 
-                ///   pos = pos + (pos - old_pos) * (1.0 - damping) + acceleration * stepsize;
 
-                //    pos = Vector3.Multiply(pos + (pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
-
-                // 	pos = pos + (pos-old_pos)*(1.0-DAMPING) 
-
-                pos = pos + Vector3.Multiply((pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize;
+                pos = pos + Vector3.Multiply((pos - old_pos), (float)(1.0 - damping)) + acceleration * stepsize2;
 
 
+                //
 
                 old_pos = temp;
                 ResetAcceleration(); // acceleration is reset since it HAS been translated into a change in position (and implicitely into velocity)	
@@ -84,7 +80,10 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
         public void AddForce(Vector3 f)
         {
-            acceleration += f / mass;
+            if (this.movable)
+            {
+                acceleration += f / mass;
+            }
         }
 
 

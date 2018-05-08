@@ -35,8 +35,8 @@ the method is called by Cloth.time_step() many times per frame*/
             Vector3 correctionVectorHalf = Vector3.Multiply(correctionVector, springConstant * (float)0.5); // Lets make it half that length, so that we can move BOTH p1 and p2.
 
 
-            p1.OffsetPos(correctionVectorHalf); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
-            p2.OffsetPos(-correctionVectorHalf); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
+            p1.AddForce(correctionVectorHalf); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
+            p2.AddForce(-correctionVectorHalf); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
         }
 
 
@@ -48,8 +48,8 @@ the method is called by Cloth.time_step() many times per frame*/
             float current_distance = p1_to_p2.Length(); // current distance between p1 and p2
             Vector3 correctionVector = p1_to_p2 * (1 - rest_distance / current_distance); // The offset vector that could moves p1 into a distance of rest_distance to p2
             Vector3 correctionVectorHalf = Vector3.Multiply(correctionVector, springConstant * (float)0.5); // Lets make it half that length, so that we can move BOTH p1 and p2.
-            p1.OffsetPos(-correctionVectorHalf); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
-            p2.OffsetPos(correctionVectorHalf); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
+            p1.AddForce(-correctionVectorHalf); // correctionVectorHalf is pointing from p1 to p2, so the length should move p1 half the length needed to satisfy the constraint.
+            p2.AddForce(correctionVectorHalf); // we must move p2 the negative direction of correctionVectorHalf since it points from p2 to p1, and not p1 to p2.	
         }
 
 

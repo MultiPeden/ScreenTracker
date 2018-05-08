@@ -12,6 +12,8 @@ namespace ScreenTracker.DataProcessing
         int frameCounter;
         int imageCounter;
         int fpsLimiter;
+        int sound;
+        int delay = 0;
         System.IO.StreamWriter fileNull, fileSpring, fileExtra, fileDisp, fileColor;
         private bool record;
         private bool saveFrame;
@@ -21,16 +23,19 @@ namespace ScreenTracker.DataProcessing
 
         public Experiment()
         {
-            Record = false;
+            Record = true;
             frameCounter = 0;
             imageCounter = -1;
-            fpsLimiter = 15;
-            fileNull = new System.IO.StreamWriter(@"C:\\test\\trackingNull.txt", false);
-            fileSpring = new System.IO.StreamWriter(@"C:\\test\\trackingSpring.txt", false);
-            fileExtra = new System.IO.StreamWriter(@"C:\\test\\trackingExtrapolation.txt", false);
-            fileDisp = new System.IO.StreamWriter(@"C:\\test\\trackingDisplacement.txt", false);
-            fileColor = new System.IO.StreamWriter(@"C:\\test\\trackingColor.txt", false);
+
+
+            fpsLimiter = 6;
+            fileNull = new System.IO.StreamWriter(@"C:\\test\\estimation\\trackingNull.txt", false);
+            fileSpring = new System.IO.StreamWriter(@"C:\\test\\estimation\\trackingSpring.txt", false);
+            fileExtra = new System.IO.StreamWriter(@"C:\\test\\estimation\\trackingExtrapolation.txt", false);
+            fileDisp = new System.IO.StreamWriter(@"C:\\test\\estimation\\trackingDisplacement.txt", false);
+            fileColor = new System.IO.StreamWriter(@"C:\\test\\estimation\\trackingColor.txt", false);
             SaveFrame = false;
+            sound = 10;
         }
 
 
@@ -53,15 +58,34 @@ namespace ScreenTracker.DataProcessing
         /// <param name="e">event arguments</param>
         public void RecordFrame(Mat img, Mat color)
         {
-            imageCounter++;
-
-            Task.Factory.StartNew(() => { SaveFramesAsync(img, color, imageCounter); });
 
 
-            //     this.record = false;
-            SaveFrame = false;
-            frameCounter = 0;
+            if (Record)
+            {
+                if (imageCounter % sound == 0)
+                {
+                    System.Media.SystemSounds.Asterisk.Play();
+                }
 
+
+
+                imageCounter++;
+
+                Task.Factory.StartNew(() => { SaveFramesAsync(img, color, imageCounter); });
+
+
+                //     this.record = false;
+                SaveFrame = false;
+                frameCounter = 0;
+
+
+                if (imageCounter == 29)
+                {
+                    Record = false;
+                }
+
+
+            }
 
 
         }
@@ -69,8 +93,8 @@ namespace ScreenTracker.DataProcessing
         private void SaveFramesAsync(Mat img, Mat color, int count)
         {
 
-            img.Save("C:\\test\\test" + count + ".png");
-            color.Save("C:\\test\\test" + count + "color.png");
+            img.Save("C:\\test\\estimation\\test" + count + ".png");
+            color.Save("C:\\test\\estimation\\test" + count + "color.png");
             img.Dispose();
             color.Dispose();
         }
@@ -78,8 +102,21 @@ namespace ScreenTracker.DataProcessing
 
         public bool ShouldRecord()
         {
-            frameCounter++;
-            bool shouldRecord = frameCounter == fpsLimiter;
+            delay++;
+            bool shouldRecord;
+
+            if (delay > 90)
+            {
+
+                frameCounter++;
+                shouldRecord = frameCounter == fpsLimiter;
+
+            }
+            else
+            {
+
+                shouldRecord = false;
+            }
 
             return shouldRecord;
 
@@ -99,9 +136,34 @@ namespace ScreenTracker.DataProcessing
         {
 
 
+            if (Record)
+            {
+
+                Task.Factory.StartNew(() =>
+                {
+                    RecordTrackingAsync(points, cameraPoints,
+                pointsSpring, cameraPointsSpring,
+                pointsExtra, cameraPointsExtra,
+                 pointsDisp, cameraPointsDisp,
+                colorCamCoordiates);
+                });
 
 
 
+
+
+
+            }
+
+
+        }
+
+        private void RecordTrackingAsync(double[][] points, double[][] cameraPoints,
+                                           double[][] pointsSpring, double[][] cameraPointsSpring,
+                                           double[][] pointsExtra, double[][] cameraPointsExtra,
+                                           double[][] pointsDisp, double[][] cameraPointsDisp,
+                                           double[][] colorCamCoordiates)
+        {
             string jSon = IRUtils.PointstoJson(points, cameraPoints);
             fileNull.WriteLine(jSon);
             fileNull.Flush();
@@ -126,12 +188,7 @@ namespace ScreenTracker.DataProcessing
             SaveFrame = true;
 
 
-
-
-
-
         }
-
 
 
 

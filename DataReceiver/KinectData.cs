@@ -80,10 +80,6 @@ namespace ScreenTracker.DataReceiver
         /// </summary>
         private byte[] depthPixels = null;
 
-        /// <summary>
-        /// Settings changable by user at runtime
-        /// </summary>
-        int minThreshold = Properties.UserSettings.Default.minThreshold;
 
         /// <summary>
         /// EventHandler for passing on the Kinects availibility status on

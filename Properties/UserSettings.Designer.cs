@@ -25,37 +25,13 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("40000")]
-        public int minThreshold {
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public int KernelSize {
             get {
-                return ((int)(this["minThreshold"]));
+                return ((int)(this["KernelSize"]));
             }
             set {
-                this["minThreshold"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("5")]
-        public int kernelSize {
-            get {
-                return ((int)(this["kernelSize"]));
-            }
-            set {
-                this["kernelSize"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2")]
-        public int DataIndicatorMinimumArea {
-            get {
-                return ((int)(this["DataIndicatorMinimumArea"]));
-            }
-            set {
-                this["DataIndicatorMinimumArea"] = value;
+                this["KernelSize"] = value;
             }
         }
         
@@ -68,18 +44,6 @@ namespace ScreenTracker.Properties {
             }
             set {
                 this["DataIndicatorThickness"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.8")]
-        public float PercentageThreshold {
-            get {
-                return ((float)(this["PercentageThreshold"]));
-            }
-            set {
-                this["PercentageThreshold"] = value;
             }
         }
         
@@ -109,7 +73,7 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.01")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
         public float Spring_Damping {
             get {
                 return ((float)(this["Spring_Damping"]));
@@ -121,7 +85,7 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.25")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.0333")]
         public float Spring_StepSize {
             get {
                 return ((float)(this["Spring_StepSize"]));
@@ -133,10 +97,10 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("15")]
-        public float Spring_ConstraintIterations {
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
+        public int Spring_ConstraintIterations {
             get {
-                return ((float)(this["Spring_ConstraintIterations"]));
+                return ((int)(this["Spring_ConstraintIterations"]));
             }
             set {
                 this["Spring_ConstraintIterations"] = value;
@@ -157,7 +121,7 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
         public int IRPixelPadding {
             get {
                 return ((int)(this["IRPixelPadding"]));

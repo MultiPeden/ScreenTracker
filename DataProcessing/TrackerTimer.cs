@@ -25,8 +25,8 @@ namespace ScreenTracker.DataProcessing
 
             this.timerON = true;
 
-            writer = new StreamWriter(@"C:\test\TrackerTimers.csv", append: true);
-            long FileLength = new FileInfo(@"C:\test\TrackerTimers.csv").Length;
+            writer = new StreamWriter(@"C:\test\timer\TrackerTimers.csv", append: true);
+            long FileLength = new FileInfo(@"C:\test\timer\TrackerTimers.csv").Length;
 
             csvWriter = new CsvWriter(writer);
             timerRes = new TimerRes();

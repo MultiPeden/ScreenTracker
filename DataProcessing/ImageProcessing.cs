@@ -186,8 +186,11 @@ namespace ScreenTracker.DataProcessing
 
             mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
 
-            int kernelSize = Properties.UserSettings.Default.kernelSize;
+            int kernelSize = Properties.UserSettings.Default.KernelSize;
             this.kernel = CvInvoke.GetStructuringElement(ElementShape.Ellipse, new System.Drawing.Size(kernelSize, kernelSize), new System.Drawing.Point(-1, -1));
+
+
+
 
 
 
@@ -226,6 +229,9 @@ namespace ScreenTracker.DataProcessing
         /// <param name="e"></param>
         private void EmguImageReceived(object sender, EMGUargs e)
         {
+
+
+
 
 
 
@@ -454,7 +460,7 @@ namespace ScreenTracker.DataProcessing
 
 
                         // find the z-val by calc the median of the cardinal and inter-cardinal points
-                        double zval = Measures.Mean(zCoords.ToArray());
+                        double zval = Measures.Median(zCoords.ToArray());
 
 
 
@@ -963,10 +969,10 @@ namespace ScreenTracker.DataProcessing
 
                 // perform opening 
 
-
-
                 CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Dilate, kernel, new System.Drawing.Point(-1, -1), 2, BorderType.Constant, new MCvScalar(1.0));
                 CvInvoke.MorphologyEx(thresholdImg, thresholdImg, MorphOp.Erode, kernel, new System.Drawing.Point(-1, -1), 1, BorderType.Constant, new MCvScalar(1.0));
+
+
 
 
                 // find controids of reflective surfaces and mark them on the image 

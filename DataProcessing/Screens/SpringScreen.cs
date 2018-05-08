@@ -14,14 +14,16 @@ namespace ScreenTracker.DataProcessing.Screens
         /// </summary>
         private PointInfoSpring[] pointInfo;
         public PointInfo[] PointInfo { get => pointInfo; set => pointInfo = (PointInfoSpring[])value; }
-        Dictionary<String, Spring> pairDict = new Dictionary<String, Spring>();
-
+        private Dictionary<String, Spring> pairDict;
+        private int iterations;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="height"></param>
         /// <param name="width"></param>
-        public SpringScreen(int height, int width) : base(height, width) { }
+        public SpringScreen(int height, int width) : base(height, width)
+        {
+        }
 
         /// <summary>
         /// 
@@ -31,7 +33,7 @@ namespace ScreenTracker.DataProcessing.Screens
         public void Initialize(double[][] orderedCentroidPoints, Mat stats)
         {
 
-
+            this.iterations = Properties.UserSettings.Default.Spring_ConstraintIterations;
             PointInfo = new PointInfoSpring[Num_particles_height * Num_particles_width];
 
             int j = 2;
@@ -116,6 +118,8 @@ namespace ScreenTracker.DataProcessing.Screens
         /// </summary>
         public void AssignConstraints()
         {
+            pairDict = new Dictionary<String, Spring>();
+
             for (int i = 0; i < prevPoints.Length; i++)
             {
                 List<int> cardinals = pointInfo[i].GetCardinals(i, Num_particles_width, Num_particles_height);
@@ -169,7 +173,7 @@ namespace ScreenTracker.DataProcessing.Screens
                 }
             }
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < this.iterations; i++)
             {
                 foreach (Spring constraint in missingPointsConstraints)
                 {

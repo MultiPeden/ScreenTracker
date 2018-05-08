@@ -2,20 +2,11 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ScreenTracker.Properties" GeneratedClassName="UserSettings">
   <Profiles />
   <Settings>
-    <Setting Name="minThreshold" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">40000</Value>
-    </Setting>
-    <Setting Name="kernelSize" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">5</Value>
-    </Setting>
-    <Setting Name="DataIndicatorMinimumArea" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">2</Value>
+    <Setting Name="KernelSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
     </Setting>
     <Setting Name="DataIndicatorThickness" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4</Value>
-    </Setting>
-    <Setting Name="PercentageThreshold" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.8</Value>
     </Setting>
     <Setting Name="GridRows" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">12</Value>
@@ -24,19 +15,19 @@
       <Value Profile="(Default)">16</Value>
     </Setting>
     <Setting Name="Spring_Damping" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.01</Value>
+      <Value Profile="(Default)">0.1</Value>
     </Setting>
     <Setting Name="Spring_StepSize" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.25</Value>
+      <Value Profile="(Default)">0.0333</Value>
     </Setting>
-    <Setting Name="Spring_ConstraintIterations" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">15</Value>
+    <Setting Name="Spring_ConstraintIterations" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">20</Value>
     </Setting>
     <Setting Name="Spring_constant" Type="System.Single" Scope="User">
       <Value Profile="(Default)">1</Value>
     </Setting>
     <Setting Name="IRPixelPadding" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">10</Value>
+      <Value Profile="(Default)">20</Value>
     </Setting>
   </Settings>
 </SettingsFile>
