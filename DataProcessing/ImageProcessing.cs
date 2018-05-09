@@ -83,9 +83,6 @@ namespace ScreenTracker.DataProcessing
 
 
         private IScreen screen;
-        private IScreen screenExtrapolation;
-        private IScreen screenDisplacement;
-
 
 
 
@@ -173,10 +170,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            this.screenExtrapolation = new ExtrapolationScreen(height, width);
-            this.screen = new SpringScreen(height, width);
-            this.screenDisplacement = new DisplacementScreen(height, width);
-
+            this.screen = new ExtrapolationScreen(height, width);
 
 
 
@@ -646,9 +640,6 @@ namespace ScreenTracker.DataProcessing
 
 
                     screen.Initialize(orderedCentroidPoints, stats);
-                    screenExtrapolation.Initialize(orderedCentroidPoints, stats);
-                    screenDisplacement.Initialize(orderedCentroidPoints, stats);
-
 
 
                 }
@@ -707,17 +698,6 @@ namespace ScreenTracker.DataProcessing
                                 pInfo.Height = height;
                                 pInfo.Visible = true;
 
-                                PointInfo pInfoextra = screenExtrapolation.PointInfo[i];
-                                pInfoextra.Width = width;
-                                pInfoextra.Height = height;
-                                pInfoextra.Visible = true;
-
-
-                                PointInfo pInfodisp = screenDisplacement.PointInfo[i];
-                                pInfodisp.Width = width;
-                                pInfodisp.Height = height;
-                                pInfodisp.Visible = true;
-
 
 
 
@@ -730,9 +710,6 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                    double[][] rearrangedcopy = (double[][])rearranged.Clone();
-                    double[][] rearrangedcopy1 = (double[][])rearranged.Clone();
-                    double[][] rearrangedcopy2 = (double[][])rearranged.Clone();
 
                     trackerTimer.StopPointMatchingTimer(numbOfPoints, maxPoints);
 
@@ -740,35 +717,9 @@ namespace ScreenTracker.DataProcessing
                     screen.UpdateScreen(rearranged);
                     trackerTimer.StopSpringEstimationTimer();
 
-                    trackerTimer.StartExtrapolatioEstimationtimer();
-                    screenExtrapolation.UpdateScreen(rearrangedcopy1);
-                    trackerTimer.StopExtrapolationEstimationTimer();
-
-                    trackerTimer.StartDisplacementEstimationtimer();
-                    screenDisplacement.UpdateScreen(rearrangedcopy2);
-                    trackerTimer.StopDisplacementEstimationTimer();
 
 
 
-
-                    if (experiment.ShouldRecord())
-                    {
-                        double[][] cameraSpaceCoordinatesNulls = cameraData.CameraToIR(rearrangedcopy);
-
-                        double[][] cameraSpaceCoordinatesSpring = cameraData.CameraToIR(screen.PrevPoints);
-                        double[][] cameraSpaceCoordinatesExtrap = cameraData.CameraToIR(screenExtrapolation.PrevPoints);
-                        double[][] cameraSpaceCoordinatesDispos = cameraData.CameraToIR(screenDisplacement.PrevPoints);
-
-                        double[][] colorCamCoordiates = cameraData.CameraToColor(rearrangedcopy);
-
-
-
-                        experiment.RecordTracking(rearrangedcopy, cameraSpaceCoordinatesNulls,
-                                                  screen.PrevPoints, cameraSpaceCoordinatesSpring,
-                                                  screenExtrapolation.PrevPoints, cameraSpaceCoordinatesExtrap,
-                                                  screenDisplacement.PrevPoints, cameraSpaceCoordinatesDispos,
-                                                  colorCamCoordiates);
-                    }
 
                     //     PointInfo sprinInfo = screen.PointInfo[12];
                     // if (sprinInfo.Visible)
