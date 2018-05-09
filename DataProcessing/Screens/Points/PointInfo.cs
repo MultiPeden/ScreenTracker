@@ -20,10 +20,8 @@
         // Chosen Rate for Filtering
         private double rate = 15;
 
-        public PointInfo(int height, int width)
+        public PointInfo()
         {
-            this.height = height;
-            this.width = width;
             this.zFilter = new OneEuroFilter(1, 0);
         }
 

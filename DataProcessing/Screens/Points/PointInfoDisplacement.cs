@@ -18,7 +18,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
         /// <param name="width"></param>
         /// <param name="id"></param>
         /// <param name="position"></param>
-        public PointInfoDisplacement(int height, int width, int id, double[] position) : base(height, width)
+        public PointInfoDisplacement(int id, double[] position) : base()
         {
             this.id = id;
             Visible = true;

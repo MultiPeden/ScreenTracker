@@ -33,7 +33,7 @@ namespace ScreenTracker.DataProcessing.Screens.Points
 
 
 
-        public PointInfoSpring(int height, int width, int id, double[] position) : base(height, width)
+        public PointInfoSpring(int id, double[] position) : base()
         {
 
             // spring

@@ -18,7 +18,7 @@
       <Value Profile="(Default)">0.1</Value>
     </Setting>
     <Setting Name="Spring_StepSize" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">0.0333</Value>
+      <Value Profile="(Default)">0.0933</Value>
     </Setting>
     <Setting Name="Spring_ConstraintIterations" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">20</Value>
@@ -27,7 +27,7 @@
       <Value Profile="(Default)">1</Value>
     </Setting>
     <Setting Name="IRPixelPadding" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">20</Value>
+      <Value Profile="(Default)">10</Value>
     </Setting>
   </Settings>
 </SettingsFile>

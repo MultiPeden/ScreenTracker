@@ -1,5 +1,4 @@
-﻿using Emgu.CV;
-using ScreenTracker.DataProcessing.Screens.Points;
+﻿using ScreenTracker.DataProcessing.Screens.Points;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -25,28 +24,26 @@ namespace ScreenTracker.DataProcessing.Screens
         {
         }
 
+
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="orderedCentroidPoints"></param>
         /// <param name="stats"></param>
-        public void Initialize(double[][] orderedCentroidPoints, Mat stats)
+        public void Initialize(double[][] orderedCentroidPoints)
         {
 
             this.iterations = Properties.UserSettings.Default.Spring_ConstraintIterations;
             PointInfo = new PointInfoSpring[Num_particles_height * Num_particles_width];
 
             int j = 2;
-            int width, height, area;
             // initialize points
             for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
-                width = stats.GetData(j, 2)[0];
-                height = stats.GetData(j, 3)[0];
-                area = stats.GetData(j, 4)[0];
                 // set info for each point, used to paint tracked marker later
 
-                this.PointInfo[i] = new PointInfoSpring(width, height, i, orderedCentroidPoints[i]);
+                this.PointInfo[i] = new PointInfoSpring(i, orderedCentroidPoints[i]);
 
                 j++;
             }

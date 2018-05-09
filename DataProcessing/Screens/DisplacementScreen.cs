@@ -1,5 +1,4 @@
-﻿using Emgu.CV;
-using ScreenTracker.DataProcessing.Screens.Points;
+﻿using ScreenTracker.DataProcessing.Screens.Points;
 
 namespace ScreenTracker.DataProcessing.Screens
 {
@@ -18,19 +17,16 @@ namespace ScreenTracker.DataProcessing.Screens
         public DisplacementScreen(int height, int width) : base(height, width) { }
 
 
-        public void Initialize(double[][] orderedCentroidPoints, Mat stats)
+        public void Initialize(double[][] orderedCentroidPoints)
         {
             PointInfo = new PointInfoDisplacement[Num_particles_height * Num_particles_width];
             int j = 2;
-            int width, height, area;
             // initialize points
             for (int i = 0; i < orderedCentroidPoints.Length; i++)
             {
-                width = stats.GetData(j, 2)[0];
-                height = stats.GetData(j, 3)[0];
-                area = stats.GetData(j, 4)[0];
+
                 // set info for each point, used to paint tracked marker later
-                this.PointInfo[i] = new PointInfoDisplacement(width, height, i, orderedCentroidPoints[i]);
+                this.PointInfo[i] = new PointInfoDisplacement(i, orderedCentroidPoints[i]);
                 j++;
             }
             // assign kardinal points to pointInfo
@@ -56,7 +52,7 @@ namespace ScreenTracker.DataProcessing.Screens
                 {
                     double[] estPoint = pointInfo[k].EstimatePostition(newPoints, 1);
                     // if we can get an estimate using extrapolation, update with the estimated point
-                    if (estPoint != null && InFrame(estPoint))
+                    if (estPoint != null )
                     {
                         newPoints[k] = estPoint;
                     }

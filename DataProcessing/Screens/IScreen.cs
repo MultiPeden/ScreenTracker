@@ -1,5 +1,4 @@
-﻿using Emgu.CV;
-using ScreenTracker.DataProcessing.Screens.Points;
+﻿using ScreenTracker.DataProcessing.Screens.Points;
 
 
 namespace ScreenTracker.DataProcessing.Screens
@@ -21,7 +20,7 @@ namespace ScreenTracker.DataProcessing.Screens
             set;
         }
 
-        void Initialize(double[][] newPoints, Mat stats);
+        void Initialize(double[][] newPoints);
 
 
         void UpdateScreen(double[][] newPoints);

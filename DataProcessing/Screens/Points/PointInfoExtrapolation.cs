@@ -8,7 +8,7 @@
 
         //      public bool Visible { get => visible; set => visible = value; }
 
-        public PointInfoExtrapolation(int height, int width, int id) : base(height, width)
+        public PointInfoExtrapolation(int id) : base()
         {
             this.id = id;
             this.visible = true;

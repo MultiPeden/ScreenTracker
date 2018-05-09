@@ -120,6 +120,7 @@ namespace ScreenTracker.DataProcessing
         bool timerOn = false;
 
         TrackerTimer trackerTimer;
+        int numbOfPoints;
 
 
         /// <summary>
@@ -170,7 +171,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            this.screen = new ExtrapolationScreen(height, width);
+            this.screen = new DisplacementScreen(height, width);
 
 
 
@@ -525,18 +526,10 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        /// <summary>
-        /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
-        /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
-        /// </summary>
-        /// <param name="img"></param>
-        /// <param name="thresholdImg"></param>
-        /// <param name="showThesholdedImg"></param>
-        /// <returns></returns>
-        private void TrackedData(Mat thresholdImg, Mat depthFrame)
+
+
+        private double[][] GetvisibleData(Mat thresholdImg, Mat depthFrame)
         {
-
-
 
 
             //int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;
@@ -555,13 +548,12 @@ namespace ScreenTracker.DataProcessing
 
                 // Copy centroid points to point array
 
-                int numbOfPoints = n - 2;
+                this.numbOfPoints = n - 2;
 
 
                 if (this.maxPoints < numbOfPoints)
                 {
-                    mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
-                    return;
+                    return null;
                 }
 
 
@@ -583,186 +575,166 @@ namespace ScreenTracker.DataProcessing
 
 
                 cameraData.ScreenToWorldCoordinates(centroidPoints);
+                return centroidPoints;
+
+            }
+        }
 
 
 
 
-                // index for array
-                int index;
+        /// <summary>
+        /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
+        /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="thresholdImg"></param>
+        /// <param name="showThesholdedImg"></param>
+        /// <returns></returns>
+        private void TrackedData(double[][] centroidPoints)
+        {
 
 
 
-                int i = 0;
-                // if we have no previous points we add the conneted components as the tracked points
-                if (screen.PrevPoints == null)
+
+
+            //int minArea = Properties.UserSettings.Default.DataIndicatorMinimumArea;
+
+            // Get Connected component in the frame
+
+
+
+
+
+            if (centroidPoints == null)
+            {
+                mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
+                return;
+            }
+
+
+
+            // index for array
+            int index;
+
+
+
+            int i = 0;
+            // if we have no previous points we add the conneted components as the tracked points
+            if (screen.PrevPoints == null)
+            {
+
+
+                if (this.maxPoints != numbOfPoints)
+                {
+                    mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image";
+
+                    return;
+                }
+
+
+
+
+
+
+                double[][] orderedCentroidPoints = new double[rows * cols][];
+
+
+
+                Array.Sort(centroidPoints, (left, right) => right[1].CompareTo(left[1]));
+
+                int count = 0;
+
+                for (int k = 0; k < rows; k++)
                 {
 
 
-                    if (this.maxPoints != numbOfPoints)
-                    {
-                        mainWindow.StatusText = "Unable to detect a r: " + rows + " c: " + cols + " grid in the image";
 
-                        return;
+                    double[][] colArray = centroidPoints.Skip(k * cols).Take(cols).ToArray();
+                    Array.Sort(colArray, (left, right) => left[0].CompareTo(right[0]));
+
+                    foreach (double[] p in colArray)
+                    {
+                        orderedCentroidPoints[count] = p;
+                        count++;
                     }
 
-
-
-
-
-
-                    double[][] orderedCentroidPoints = new double[rows * cols][];
-
-
-
-                    Array.Sort(centroidPoints, (left, right) => right[1].CompareTo(left[1]));
-
-                    int count = 0;
-
-                    for (int k = 0; k < rows; k++)
-                    {
-
-
-
-                        double[][] colArray = centroidPoints.Skip(k * cols).Take(cols).ToArray();
-                        Array.Sort(colArray, (left, right) => left[0].CompareTo(right[0]));
-
-                        foreach (double[] p in colArray)
-                        {
-                            orderedCentroidPoints[count] = p;
-                            count++;
-                        }
-
-
-
-                    }
-
-
-
-
-                    screen.Initialize(orderedCentroidPoints, stats);
 
 
                 }
-                else
-                { // If we have previous points, we search for their nearest neighbours in the new frame.
-
-                    // copy previous points to new point to avoid loosing any points
-                    // newPoints = prevPoints;
 
 
 
 
+                screen.Initialize(orderedCentroidPoints);
 
 
-                    if (firstDetected)
-                    {
+            }
+            else
+            { // If we have previous points, we search for their nearest neighbours in the new frame.
 
-                        mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
-
-                        firstDetected = false;
-                    }
-
-
-
-
-                    trackerTimer.StopTrackingTimer();
-                    trackerTimer.StartPointMatchingtimer();
-
-                    // Use Hungarian algorithm to find points from the old frame, in the new frame
-                    int[] minInd = GetPointsIndices(centroidPoints);
-
-
-                    double[][] rearranged = IRUtils.RearrangeArray(centroidPoints, minInd, screen.PrevPoints.Length);
+                // copy previous points to new point to avoid loosing any points
+                // newPoints = prevPoints;
 
 
 
 
 
-                    //Update points
-                    foreach (double[] point in rearranged)
-                    {
 
-                        if (point != null)
-                        {
-                            index = minInd[i] + 2;
+                if (firstDetected)
+                {
 
-                            int width = stats.GetData(index, 2)[0];
-                            int height = stats.GetData(index, 3)[0];
-                            int area = stats.GetData(index, 4)[0];
+                    mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
 
-                            // if the area is more than minArea, discard 
-                            if (true) // (area > minArea)
-                            {
-                                PointInfo pInfo = screen.PointInfo[i];
-                                pInfo.Width = width;
-                                pInfo.Height = height;
-                                pInfo.Visible = true;
-
-
-
-
-
-                            }
-                        }
-
-                        i++;
-                    }
-
-
-
-
-                    trackerTimer.StopPointMatchingTimer(numbOfPoints, maxPoints);
-
-                    trackerTimer.StartSpringEstimationtimer();
-                    screen.UpdateScreen(rearranged);
-                    trackerTimer.StopSpringEstimationTimer();
-
-
-
-
-
-                    //     PointInfo sprinInfo = screen.PointInfo[12];
-                    // if (sprinInfo.Visible)
-                    //   {
-                    //screen.UpdateScreen(newPoints);
-                    /*
-                    double[] estimatedPos = sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1);
-                    double[] orgPost = sprinInfo.orignalPos;
-
-                    double estimateDiffx = estimatedPos[0] - orgPost[0];
-                    double aactualDiffx = screen.PrevPoints[12][0] - orgPost[0];
-                    */
-                    //   double estimateDiffy = estimatedPos[1] - orgPost[1];
-                    //   double aactualDiffy = screen.PrevPoints[12][1] - orgPost[1];
-
-
-                    //    Console.Write(estimateDiffx + ",");
-
-                    //   Console.WriteLine(aactualDiffx + ",");
-
-                    //    Console.Write(estimateDiffy + ",");
-
-                    //  Console.WriteLine(aactualDiffy);
-
-                    /*
-                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0] + ",");
-                                        Console.Write(sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1] + ",");
-                                        Console.Write(screen.PrevPoints[12][0] + ",");
-                                        Console.WriteLine(screen.PrevPoints[12][0]);
-                                        */
-                    /*
-                                            missingx = new double[]
-                                            {
-                                            sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[0],
-                                            sprinInfo.EstimatePostitionDisplacement(screen.PrevPoints, 1)[1]
-                                            };
-                                            */
-                    //  }
-
-                    //do estimation using the displacement model
-                    ///                DisplacementEstimation(double[][] newPointsSparse, double[][] newPoints)
-
+                    firstDetected = false;
                 }
+
+
+
+
+                trackerTimer.StopTrackingTimer();
+                trackerTimer.StartPointMatchingtimer();
+
+                // Use Hungarian algorithm to find points from the old frame, in the new frame
+                int[] minInd = GetPointsIndices(centroidPoints);
+
+
+                double[][] rearranged = IRUtils.RearrangeArray(centroidPoints, minInd, screen.PrevPoints.Length);
+
+
+
+
+
+                //Update points
+                foreach (double[] point in rearranged)
+                {
+
+                    if (point != null)
+                    {
+                        index = minInd[i] + 2;
+
+                        // if the area is more than minArea, discard 
+                        if (true) // (area > minArea)
+                        {
+                            PointInfo pInfo = screen.PointInfo[i];
+                            pInfo.Visible = true;
+
+                        }
+                    }
+
+                    i++;
+                }
+
+
+
+
+                trackerTimer.StopPointMatchingTimer(numbOfPoints, maxPoints);
+
+                trackerTimer.StartSpringEstimationtimer();
+                screen.UpdateScreen(rearranged);
+                trackerTimer.StopSpringEstimationTimer();
+
+
             }
 
         }
@@ -927,7 +899,8 @@ namespace ScreenTracker.DataProcessing
 
 
                 // find controids of reflective surfaces and mark them on the image 
-                TrackedData(thresholdImg, depthFrame);
+                double[][] centroidPoints = GetvisibleData(thresholdImg, depthFrame);
+                TrackedData(centroidPoints);
 
 
 
@@ -1009,8 +982,8 @@ namespace ScreenTracker.DataProcessing
                     for (int i = 0; i < cameraSpaceCoordinates.Length; i++)
                     {
                         point = cameraSpaceCoordinates[i];
-                        width = screen.PointInfo[i].Width;
-                        height = screen.PointInfo[i].Height;
+                        width = 5;
+                        height = 5;
                         x = (int)point[0];
                         y = (int)point[1];
 
