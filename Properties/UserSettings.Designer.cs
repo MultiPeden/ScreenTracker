@@ -49,7 +49,7 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("12")]
+        [global::System.Configuration.DefaultSettingValueAttribute("7")]
         public int GridRows {
             get {
                 return ((int)(this["GridRows"]));
@@ -61,7 +61,7 @@ namespace ScreenTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("16")]
+        [global::System.Configuration.DefaultSettingValueAttribute("9")]
         public int GridColums {
             get {
                 return ((int)(this["GridColums"]));

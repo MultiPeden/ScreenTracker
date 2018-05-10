@@ -91,7 +91,7 @@ namespace ScreenTracker.DataProcessing
         /// <summary>
         /// Holds a reference to the camera
         /// </summary>
-        private ICamera cameraData;
+        public ICamera cameraData;
 
         /// <summary>
         /// Holds a reference to to mainWindow if it is set visible
@@ -203,6 +203,56 @@ namespace ScreenTracker.DataProcessing
 
             trackerTimer = new TrackerTimer();
         }
+
+
+
+
+        public ImageProcessing(double[][] first, string type)
+        {
+
+
+
+            int height = 0;
+            int width = 0;
+
+
+            if (type == "Displacement")
+            {
+
+                this.screen = new DisplacementScreen(height, width);
+            }
+            else if (type == "Extrapolation")
+            {
+                this.screen = new ExtrapolationScreen(height, width);
+
+            }
+
+
+
+
+            int padding = Properties.UserSettings.Default.IRPixelPadding;
+
+            mask = new Rectangle(padding, padding, width - (padding * 2), height - (padding * 2));
+
+
+
+
+            cols = Properties.UserSettings.Default.GridColums;
+            rows = Properties.UserSettings.Default.GridRows;
+
+
+
+
+
+
+            double[][] startpoints = new double[cols * rows][];
+
+            this.cameraData = new KinectData();
+
+            screen.Initialize(first);
+
+        }
+
 
 
         /// <summary>
@@ -583,6 +633,18 @@ namespace ScreenTracker.DataProcessing
 
 
 
+        public double[][] TrackedDataEst(double[][] centroidPoints)
+        {
+
+            screen.UpdateScreen(centroidPoints);
+
+            cameraData.ScreenToWorldCoordinates(screen.PrevPoints);
+            return screen.PrevPoints;
+
+        }
+
+
+
         /// <summary>
         /// Finds connected components in the thresholded image(Binary) and draws rectangles around them
         /// returns the thesholded image if "showThesholdedImg" is true, and the non-thresholded otherwise
@@ -591,7 +653,7 @@ namespace ScreenTracker.DataProcessing
         /// <param name="thresholdImg"></param>
         /// <param name="showThesholdedImg"></param>
         /// <returns></returns>
-        private void TrackedData(double[][] centroidPoints)
+        public void TrackedData(double[][] centroidPoints)
         {
 
 
@@ -683,8 +745,11 @@ namespace ScreenTracker.DataProcessing
 
                 if (firstDetected)
                 {
+                    if (mainWindow != null)
+                    {
+                        mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
+                    }
 
-                    mainWindow.StatusText = "Detected a r: " + rows + " c: " + cols + " grid in the image";
 
                     firstDetected = false;
                 }
@@ -829,7 +894,7 @@ namespace ScreenTracker.DataProcessing
         /// </summary>
         public void Stop_ImageProcessing()
         {
-            if (TCPthread.IsAlive)
+            if (TCPthread != null && TCPthread.IsAlive)
             {
                 commands.StopRunnning();
             }

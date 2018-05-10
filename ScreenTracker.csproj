@@ -99,6 +99,9 @@
     <Reference Include="Microsoft.Kinect">
       <HintPath>$(KINECTSDK20_DIR)Assemblies\Microsoft.Kinect.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -128,7 +131,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DataProcessing\Experiment.cs" />
+    <Compile Include="Testing\Experiment.cs" />
+    <Compile Include="Testing\IRpoint.cs" />
+    <Compile Include="Testing\IRItems.cs" />
+    <Compile Include="Testing\LoadAndEstimate.cs" />
     <Compile Include="DataProcessing\Screens\BaseScreen.cs" />
     <Compile Include="DataProcessing\Screens\Spring.cs" />
     <Compile Include="DataProcessing\Screens\ExtrapolationScreen.cs" />
@@ -150,7 +156,6 @@
     <Compile Include="DataProcessing\Screens\Points\PointInfo.cs" />
     <Compile Include="DataProcessing\Screens\Points\PointInfoDisplacement.cs" />
     <Compile Include="GUI\FPSCounter.cs" />
-    <Compile Include="PointsConnected.cs" />
     <Compile Include="Properties\UserSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

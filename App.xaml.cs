@@ -33,6 +33,10 @@
 
             showWindow = true;
 
+            //     LoadAndEstimate erer = new LoadAndEstimate();
+
+
+
 
             // create new cameraData object to processes frames from the Kinect camera
             ICamera cameraData = new KinectData();
@@ -50,6 +54,8 @@
 
 
             }
+
+
 
         }
     }
