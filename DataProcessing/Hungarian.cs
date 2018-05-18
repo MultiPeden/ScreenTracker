@@ -75,7 +75,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-        public void Solve(double[][] prevPoints, double[][] newpoints, TrackerTimer trackerTimer)
+        public void Solve(double[][] prevPoints, double[][] newpoints)
         {
 
 
@@ -83,10 +83,7 @@ namespace ScreenTracker.DataProcessing
             path_count = 0;
             step = 1;
 
-            trackerTimer.StartCostMatrixTimer();
             AssignCostMatrixArray(prevPoints, newpoints);
-
-            trackerTimer.StopCostMatrixTimer();
 
             this.nrow = newpoints.Length;
             this.ncol = prevPoints.Length;

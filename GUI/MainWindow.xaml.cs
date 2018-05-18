@@ -170,7 +170,7 @@ namespace ScreenTracker.GUI
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
             //TODO kinectData.Stop_KinectData(); - CALL DESTRUCTOR
-            imageProcessing.KillTimer();
+
 
         }
 

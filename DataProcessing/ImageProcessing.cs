@@ -84,12 +84,9 @@ namespace ScreenTracker.DataProcessing
 
 
         private IScreen screen;
-        private IScreen screenExtrapolation;
-        private IScreen screenDisplacement;
 
 
-
-        Experiment experiment;
+        
 
         /// <summary>
         /// Holds a reference to the camera
@@ -119,10 +116,7 @@ namespace ScreenTracker.DataProcessing
         int cols;
         int rows;
         int maxPoints;
-
-        bool timerOn = false;
-
-        TrackerTimer trackerTimer;
+        
         int numbOfPoints;
 
 
@@ -174,9 +168,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            this.screenExtrapolation = new ExtrapolationScreen(height, width);
-            this.screen = new SpringScreen(height, width);
-            this.screenDisplacement = new DisplacementScreen(height, width);
+            this.screen = new ExtrapolationScreen(height, width);
 
 
 
@@ -202,11 +194,6 @@ namespace ScreenTracker.DataProcessing
             maxPoints = rows * cols;
             hung = new Hungarian(maxPoints, maxPoints);
 
-
-            experiment = new Experiment();
-
-
-            trackerTimer = new TrackerTimer();
         }
 
 
@@ -287,20 +274,6 @@ namespace ScreenTracker.DataProcessing
 
             // Process infrared image and track points
             this.ProcessIRFrame(e.InfraredImage, e.InfraredFrameDimension, e.DepthImage);
-
-            if (timerOn)
-            {
-                trackerTimer.WriteTimersToFile();
-
-            }
-            if (experiment.SaveFrame)
-            {
-
-
-                experiment.RecordFrame(e.InfraredImage.Clone(), e.Colorimage.Clone());
-                timerOn = true;
-
-            }
 
 
 
@@ -734,8 +707,6 @@ namespace ScreenTracker.DataProcessing
 
 
                 screen.Initialize(orderedCentroidPoints);
-                screenExtrapolation.Initialize(orderedCentroidPoints);
-                screenDisplacement.Initialize(orderedCentroidPoints);
 
 
 
@@ -765,8 +736,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-                trackerTimer.StopTrackingTimer();
-                trackerTimer.StartPointMatchingtimer();
+
 
                 // Use Hungarian algorithm to find points from the old frame, in the new frame
                 int[] minInd = GetPointsIndices(centroidPoints);
@@ -793,16 +763,6 @@ namespace ScreenTracker.DataProcessing
                             pInfo.Visible = true;
 
 
-                            PointInfo pInfoextra = screenExtrapolation.PointInfo[i];
-
-                            pInfoextra.Visible = true;
-
-
-                            PointInfo pInfodisp = screenDisplacement.PointInfo[i];
-
-                            pInfodisp.Visible = true;
-
-
                         }
                     }
 
@@ -810,47 +770,10 @@ namespace ScreenTracker.DataProcessing
                 }
 
 
-                double[][] rearrangedcopy = (double[][])rearranged.Clone();
-                double[][] rearrangedcopy1 = (double[][])rearranged.Clone();
-                double[][] rearrangedcopy2 = (double[][])rearranged.Clone();
 
 
-
-                trackerTimer.StopPointMatchingTimer(numbOfPoints, maxPoints);
-
-                trackerTimer.StartSpringEstimationtimer();
                 screen.UpdateScreen(rearranged);
-                trackerTimer.StopSpringEstimationTimer();
 
-
-                trackerTimer.StartExtrapolatioEstimationtimer();
-                screenExtrapolation.UpdateScreen(rearrangedcopy1);
-                trackerTimer.StopExtrapolationEstimationTimer();
-
-                trackerTimer.StartDisplacementEstimationtimer();
-                screenDisplacement.UpdateScreen(rearrangedcopy2);
-                trackerTimer.StopDisplacementEstimationTimer();
-
-
-
-                if (experiment.ShouldRecord())
-                {
-                    double[][] cameraSpaceCoordinatesNulls = cameraData.CameraToIR(rearrangedcopy);
-
-                    double[][] cameraSpaceCoordinatesSpring = cameraData.CameraToIR(screen.PrevPoints);
-                    double[][] cameraSpaceCoordinatesExtrap = cameraData.CameraToIR(screenExtrapolation.PrevPoints);
-                    double[][] cameraSpaceCoordinatesDispos = cameraData.CameraToIR(screenDisplacement.PrevPoints);
-
-                    double[][] colorCamCoordiates = cameraData.CameraToColor(rearrangedcopy);
-
-
-
-                    experiment.RecordTracking(rearrangedcopy, cameraSpaceCoordinatesNulls,
-                                              screen.PrevPoints, cameraSpaceCoordinatesSpring,
-                                              screenExtrapolation.PrevPoints, cameraSpaceCoordinatesExtrap,
-                                              screenDisplacement.PrevPoints, cameraSpaceCoordinatesDispos,
-                                              colorCamCoordiates);
-                }
 
 
             }
@@ -869,7 +792,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            hung.Solve(screen.PrevPoints, centroidPoints, trackerTimer);
+            hung.Solve(screen.PrevPoints, centroidPoints);
 
 
             //    int[,] M = hung.M;
@@ -994,8 +917,6 @@ namespace ScreenTracker.DataProcessing
             // init threshold image variable
             //            Image<Gray, Byte> thresholdImg = new Image<Gray, Byte>(infraredFrameDimension.Width, infraredFrameDimension.Height);
 
-
-            trackerTimer.StartTrackingtimer();
 
             using (Mat thresholdImg = new Mat(),
                  infraredFrameROI = new Mat(infraredFrameOrg, mask))
@@ -1211,11 +1132,7 @@ namespace ScreenTracker.DataProcessing
 
 
 
-
-        public void KillTimer()
-        {
-            trackerTimer.FlushTimer();
-        }
+        
 
 
     }
