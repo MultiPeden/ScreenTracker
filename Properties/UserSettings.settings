@@ -9,10 +9,10 @@
       <Value Profile="(Default)">4</Value>
     </Setting>
     <Setting Name="GridRows" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">7</Value>
+      <Value Profile="(Default)">13</Value>
     </Setting>
     <Setting Name="GridColums" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">9</Value>
+      <Value Profile="(Default)">17</Value>
     </Setting>
     <Setting Name="Spring_Damping" Type="System.Single" Scope="User">
       <Value Profile="(Default)">0.1</Value>

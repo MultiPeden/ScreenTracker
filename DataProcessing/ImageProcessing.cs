@@ -73,7 +73,7 @@ namespace ScreenTracker.DataProcessing
         /// <summary>
         /// bool indicating in the MainWindow should be shown
         /// </summary>
-        private bool showWindow;
+        private bool showWindow = false;
 
         /// <summary>
         /// bool indicating if the thresholded image should be passed on
@@ -131,9 +131,11 @@ namespace ScreenTracker.DataProcessing
             if (mainWindow != null && mainWindow.colorClicked)
             {
                 cameraData.GenerateColorImage(true);
+                this.mainWindow = mainWindow;
+                showWindow = true;
             }
 
-            this.mainWindow = mainWindow;
+            
             this.cameraData = cameraData;
 
             // create UDPsender object responsible outgoing data(via UDP socket)
@@ -158,8 +160,6 @@ namespace ScreenTracker.DataProcessing
 
 
 
-            // show the window
-            showWindow = true;
 
             //this.screen = new DisplacementScreen();
             int[] irdims = cameraData.IRFrameDImensions();
@@ -648,6 +648,7 @@ namespace ScreenTracker.DataProcessing
 
             if (centroidPoints == null)
             {
+                if(mainWindow != null)
                 mainWindow.StatusText = "Detected too many makers in the frame  N =" + numbOfPoints + " should be lower than " + maxPoints;
                 return;
             }

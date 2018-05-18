@@ -54,6 +54,11 @@
 
 
             }
+            else
+            {
+                ImageProcessing imgProc = new ImageProcessing(cameraData, null);
+
+            }
 
 
 
