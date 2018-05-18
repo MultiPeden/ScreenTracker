@@ -31,7 +31,7 @@
                 }
             }
 
-            showWindow = true;
+            showWindow = false;
 
             //     LoadAndEstimate erer = new LoadAndEstimate();
 
